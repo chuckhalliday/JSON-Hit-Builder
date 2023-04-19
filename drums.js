@@ -66,7 +66,7 @@ export function snareString(arr) {
     if (Number.isInteger(sum + 0.5)) {
       snare += "y";
     } else {
-      snare += "-";
+      snare += Math.random() < 0.9 ? "-" : "y";
     }
     sum += arr[i];
     if (Number.isInteger(sum / 4)) {
@@ -97,15 +97,17 @@ export function hatString(arr) {
   return hihat;
 }
 
-export function flairString(arr, snare, hihat) {
+export function flairString(arr, snareString, hihatString) {
   let flair = "";
   let sum = 0;
+  let snare = snareString.replace(/\|/g, '');
+  let hihat = hihatString.replace(/\|/g, '');
 
   const possibleTomValues = ["u", "U", "t", "T", "s", "S", "y", "Y"];
   let tom = possibleTomValues[Math.floor(Math.random() * possibleTomValues.length)];
 
   for (let i = 0; i < arr.length; i++) {
-    if (snare.charAt(arr[i] === '-') || hihat.charAt(arr[i] === '-')) {
+    if (snare.charAt(i) === '-' || hihat.charAt(i) === '-') {
       if (sum === 0 || sum === 8) {
         flair += Math.random() < 0.4 ? "R" : "-";
       } else if (sum === 4 || sum === 12) {
@@ -120,10 +122,12 @@ export function flairString(arr, snare, hihat) {
         flair += Math.random() < 0.4 ? "Z" : "-";
       } else if (arr[i] === 0.0833 || arr[i] === 0.0834 ||
         arr[i] === 0.1667 || arr[i] === 0.1666) {
-        flair += Math.random() < 0.6 ? tom : "-"; 
+        flair += Math.random() < 0.6 ? tom : "-";
       } else {
         flair += "-";
       }
+    } else {
+      flair += '-';
     }
     sum += arr[i];
     if (sum === 4 || sum === 8 || sum === 12 || sum === 16) {
