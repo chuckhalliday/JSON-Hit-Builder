@@ -337,33 +337,35 @@ console.log(`]|
 end
 `);
 
-console.log(`v_kick = ("` + bassDrumV + `").gsub(/\\|/, '')`);
-console.log(`c_kick = ("` + bassDrumC + `").gsub(/\\|/, '')`);
+console.log(`v_flare = ("` + flareV + `").gsub(/\\|/, '')`);
+console.log(`v_hihat = ("` + hiHatV + `").gsub(/\\|/, '')`);
+console.log(`v_snare = ("` + snareDrumV + `").gsub(/\\|/, '')`);
+console.log(`v_kick = ("` + bassDrumV + `").gsub(/\\|/, '')
+`);
+
+console.log(`c_flare = ("` + flareC + `").gsub(/\\|/, '')`);
+console.log(`c_hihat = ("` + hiHatC + `").gsub(/\\|/, '')`);
+console.log(`c_snare = ("` + snareDrumC + `").gsub(/\\|/, '')`);
+console.log(`c_kick = ("` + bassDrumC + `").gsub(/\\|/, '')
+`);
+
+console.log(`b_flare = ("` + flareB + `").gsub(/\\|/, '')`);
+console.log(`b_hihat = ("` + hiHatB + `").gsub(/\\|/, '')`);
+console.log(`b_snare = ("` + snareDrumB + `").gsub(/\\|/, '')`);
 console.log(`b_kick = ("` + bassDrumB +`").gsub(/\\|/, '')
 `);
 
-console.log(`v_snare = ("` + snareDrumV + `").gsub(/\\|/, '')`);
-console.log(`c_snare = ("` + snareDrumC + `").gsub(/\\|/, '')`);
-console.log(`b_snare = ("` + snareDrumB + `").gsub(/\\|/, '')
+console.log(`v_bass = ("` + bassV + `").gsub(/\\|/, '')
 `);
-
-console.log(`v_hihat = ("` + hiHatV + `").gsub(/\\|/, '')`);
-console.log(`c_hihat = ("` + hiHatC + `").gsub(/\\|/, '')`);
-console.log(`b_hihat = ("` + hiHatB + `").gsub(/\\|/, '')
+console.log(`c_bass = ("` + bassC + `").gsub(/\\|/, '')
 `);
-
-console.log(`v_flare = ("` + flareV + `").gsub(/\\|/, '')`);
-console.log(`c_flare = ("` + flareC + `").gsub(/\\|/, '')`);
-console.log(`b_flare = ("` + flareB + `").gsub(/\\|/, '')
-`);
-
-console.log(`v_bass = ("` + bassV + `").gsub(/\\|/, '')`);
-console.log(`c_bass = ("` + bassC + `").gsub(/\\|/, '')`);
 console.log(`b_bass = ("` + bassB + `").gsub(/\\|/, '')
 `);
 
-console.log(`v_melody = ("` + melodyV + `").gsub(/\\|/, '')`);
-console.log(`c_melody = ("` + melodyC + `").gsub(/\\|/, '')`);
+console.log(`v_melody = ("` + melodyV + `").gsub(/\\|/, '')
+`);
+console.log(`c_melody = ("` + melodyC + `").gsub(/\\|/, '')
+`);
 console.log(`b_melody = ("` + melodyB + `").gsub(/\\|/, '')
 `);
 
