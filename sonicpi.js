@@ -211,7 +211,23 @@ chordTones[key] = value.map {|note| note + ` + keyAdjust + `} end
 midi_ports = ["iac_driver_bus_1", "iac_driver_bus_2", "iac_driver_bus_3", "iac_driver_bus_4"]`)
 
 console.log(`define :playBeat do |pattern,
-groove = [` + initDrums.concat(initDrums) + `]|
+groove = [`) 
+
+let line = '';
+let sum = 0;
+
+for (let i = 0; i < initDrums.length; i++) {
+  sum += initDrums[i];
+  line += initDrums[i] + ',';
+
+  if (sum >= 3.9 && sum <= 4.1) {
+    console.log(line);
+    line = '';
+    sum = 0;
+  }
+}
+
+console.log(`]|
     in_thread do
     (pattern.length).times do |index|
       drum = drumHits[pattern[index]]
@@ -235,7 +251,20 @@ end
 `);
 
 console.log(`define :playBass do |pattern,
-  groove = [` + initBass.concat(initBass) + `]|
+  groove = [`)
+  
+  for (let i = 0; i < initBass.length; i++) {
+    sum += initBass[i];
+    line += initBass[i] + ',';
+  
+    if (sum >= 3.9 && sum <= 4.1) {
+      console.log(line);
+      line = '';
+      sum = 0;
+    }
+  } 
+  
+console.log(`]|
 
   in_thread do
     (pattern.length).times do |index|
@@ -255,7 +284,20 @@ end
 `)
 
 console.log(`define :playMelody do |pattern,
-  groove= [` + initMelody.concat(initMelody) + `]|
+  groove= [`)
+  
+  for (let i = 0; i < initMelody.length; i++) {
+    sum += initMelody[i];
+    line += initMelody[i] + ',';
+  
+    if (sum >= 3.9 && sum <= 4.1) {
+      console.log(line);
+      line = '';
+      sum = 0;
+    }
+  }
+  
+console.log(`]|
 
 in_thread do
   (pattern.length).times do |index|
