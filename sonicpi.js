@@ -228,6 +228,7 @@ for (let i = 0; i < initDrums.length; i++) {
 }
 
 console.log(`]|
+
     in_thread do
     (pattern.length).times do |index|
       drum = drumHits[pattern[index]]
@@ -328,33 +329,33 @@ end
 
 
 console.log(`v_kick = ("` + bassDrumV + `").gsub(/\\|/, '')`);
-console.log(`b_kick = ("` + bassDrumB + `").gsub(/\\|/, '')`);
-console.log(`c_kick = ("` + bassDrumC + `").gsub(/\\|/, '')
+console.log(`c_kick = ("` + bassDrumC + `").gsub(/\\|/, '')`);
+console.log(`b_kick = ("` + bassDrumB + `").gsub(/\\|/, '')
 `);
 
 console.log(`v_snare = ("` + snareDrumV + `").gsub(/\\|/, '')`);
-console.log(`b_snare = ("` + snareDrumB + `").gsub(/\\|/, '')`);
-console.log(`c_snare = ("` + snareDrumC + `").gsub(/\\|/, '')
+console.log(`c_snare = ("` + snareDrumC + `").gsub(/\\|/, '')`);
+console.log(`b_snare = ("` + snareDrumB + `").gsub(/\\|/, '')
 `);
 
 console.log(`v_hihat = ("` + hiHatV + `").gsub(/\\|/, '')`);
-console.log(`b_hihat = ("` + hiHatB + `").gsub(/\\|/, '')`);
-console.log(`c_hihat = ("` + hiHatC + `").gsub(/\\|/, '')
+console.log(`c_hihat = ("` + hiHatC + `").gsub(/\\|/, '')`);
+console.log(`b_hihat = ("` + hiHatB + `").gsub(/\\|/, '')
 `);
 
 console.log(`v_flare = ("` + flareV + `").gsub(/\\|/, '')`);
-console.log(`b_flare = ("` + flareB + `").gsub(/\\|/, '')`);
-console.log(`c_flare = ("` + flareC + `").gsub(/\\|/, '')
+console.log(`c_flare = ("` + flareC + `").gsub(/\\|/, '')`);
+console.log(`b_flare = ("` + flareB + `").gsub(/\\|/, '')
 `);
 
 console.log(`v_bass = ("` + bassV + `").gsub(/\\|/, '')`)
-console.log(`b_bass = ("` + bassB + `").gsub(/\\|/, '')`)
-console.log(`c_bass = ("` + bassC + `").gsub(/\\|/, '')
+console.log(`c_bass = ("` + bassC + `").gsub(/\\|/, '')`)
+console.log(`b_bass = ("` + bassB + `").gsub(/\\|/, '')
 `)
 
 console.log(`v_melody = ("` + melodyV + `").gsub(/\\|/, '')`)
-console.log(`b_melody = ("` + melodyB + `").gsub(/\\|/, '')`)
-console.log(`c_melody = ("` + melodyC + `").gsub(/\\|/, '')
+console.log(`c_melody = ("` + melodyC + `").gsub(/\\|/, '')`)
+console.log(`b_melody = ("` + melodyB + `").gsub(/\\|/, '')
 `)
 
 console.log(`define :verse do
@@ -365,7 +366,7 @@ console.log(`define :verse do
       playBeat (ring v_hihat).tick
       playBeat (ring v_flare).tick
       playBass (ring v_bass).tick
-      playMelody (ring v_melody).tick
+      #playMelody (ring v_melody).tick
     end
     sleep 16
   end
@@ -379,7 +380,7 @@ define :chorus do
       playBeat (ring c_hihat).tick
       playBeat (ring c_flare).tick
       playBass (ring c_bass).tick
-      playMelody (ring c_melody).tick
+      #playMelody (ring c_melody).tick
     end
     sleep 16
   end
@@ -393,7 +394,7 @@ define :bridge do
       playBeat (ring b_hihat).tick
       playBeat (b_flare.tick)
       playBass (ring b_bass).tick
-      playMelody (ring b_melody).tick
+      #playMelody (ring b_melody).tick
     end
     sleep 16
   end
