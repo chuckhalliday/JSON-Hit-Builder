@@ -3,8 +3,7 @@ export function melodyGroove(arr) {
   let randQH = Math.random() < 0.5 ? 0.25 : 0.5;
   let randSQ = Math.random() < 0.5 ? 0.125 : 0.25;
   const possibleLengths = [0.25, 0.5, 0.75, 1];
-  let beat1 =
-    possibleLengths[Math.floor(Math.random() * possibleLengths.length)];
+  let beat1 = possibleLengths[Math.floor(Math.random() * possibleLengths.length)];
 
   for (let i = 0; i < arr.length; i++)
     if (arr[i] === 1.5) {

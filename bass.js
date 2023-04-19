@@ -63,15 +63,15 @@ export function bassString2(arr, string1) {
   } else if (string1.includes("a")) {
     possibleBassValues = ["d", "e"];
   }
-  let bass2 =
-    possibleBassValues[Math.floor(Math.random() * possibleBassValues.length)];
-  const dVals = ["o", "e", "f", "a", "-"];
+  let bass2 = possibleBassValues[Math.floor(Math.random() * possibleBassValues.length)];
+
+  const dVals = ["o", "e", "f", "a"];
   let dAcc = dVals[Math.floor(Math.random() * dVals.length)];
-  const eVals = ["D", "f", "g", "b", "-"];
+  const eVals = ["D", "f", "g", "b"];
   let eAcc = eVals[Math.floor(Math.random() * eVals.length)];
-  const fVals = ["a", "c", "g", "-"];
+  const fVals = ["a", "c", "g"];
   let fAcc = fVals[Math.floor(Math.random() * fVals.length)];
-  const gVals = ["b", "d", "f", "-"];
+  const gVals = ["b", "d", "f"];
   let gAcc = gVals[Math.floor(Math.random() * gVals.length)];
 
   let acc2;
@@ -92,7 +92,7 @@ export function bassString2(arr, string1) {
     if (arr[i] <= 0.25) {
       bass += "-";
     } else if (sum <= 1 || (sum > 2 && sum <= 3)) {
-      bass += Math.random() < 0.8 ? bass2 : "-";
+      bass += bass2;
     } else if ((sum > 1 && sum <= 2) || (sum > 3 && sum < 4)) {
       bass += Math.random() < 0.3 ? bass2 : acc2;
     } else {
@@ -108,18 +108,17 @@ export function bassString3(arr) {
   let bass = "";
   let sum = 0;
   const possibleBassValues = ["d", "e", "f", "g", "b"];
-  let bass3 =
-    possibleBassValues[Math.floor(Math.random() * possibleBassValues.length)];
+  let bass3 = possibleBassValues[Math.floor(Math.random() * possibleBassValues.length)];
 
-  const dVals = ["o", "e", "f", "a", "-"];
+  const dVals = ["o", "e", "f", "a"];
   let dAcc = dVals[Math.floor(Math.random() * dVals.length)];
-  const eVals = ["D", "f", "g", "b", "-"];
+  const eVals = ["D", "f", "g", "b"];
   let eAcc = eVals[Math.floor(Math.random() * eVals.length)];
-  const fVals = ["a", "c", "g", "-"];
+  const fVals = ["a", "c", "g"];
   let fAcc = fVals[Math.floor(Math.random() * fVals.length)];
-  const gVals = ["b", "d", "f", "-"];
+  const gVals = ["b", "d", "f"];
   let gAcc = gVals[Math.floor(Math.random() * gVals.length)];
-  const bVals = ["c", "d", "f", "-"];
+  const bVals = ["c", "d", "f"];
   let bAcc = bVals[Math.floor(Math.random() * bVals.length)];
 
   let acc3;
@@ -139,7 +138,7 @@ export function bassString3(arr) {
     if (arr[i] <= 0.25) {
       bass += "-";
     } else if (sum <= 1 || (sum > 2 && sum <= 3)) {
-      bass += Math.random() < 0.8 ? bass3 : "-";
+      bass += bass3;
     } else if ((sum > 1 && sum <= 2) || (sum > 3 && sum < 4)) {
       bass += Math.random() < 0.3 ? bass3 : acc3;
     } else {
@@ -155,17 +154,16 @@ export function bassString4(arr) {
   let bass = "";
   let sum = 0;
   const possibleBassValues = ["d", "e", "f", "g", "b"];
-  let bass4 =
-    possibleBassValues[Math.floor(Math.random() * possibleBassValues.length)];
-  const dVals = ["o", "e", "f", "a", "-"];
+  let bass4 = possibleBassValues[Math.floor(Math.random() * possibleBassValues.length)];
+  const dVals = ["o", "e", "f", "a"];
   let dAcc = dVals[Math.floor(Math.random() * dVals.length)];
-  const eVals = ["D", "f", "g", "b", "-"];
+  const eVals = ["D", "f", "g", "b"];
   let eAcc = eVals[Math.floor(Math.random() * eVals.length)];
-  const fVals = ["a", "c", "g", "-"];
+  const fVals = ["a", "c", "g"];
   let fAcc = fVals[Math.floor(Math.random() * fVals.length)];
-  const gVals = ["b", "d", "f", "-"];
+  const gVals = ["b", "d", "f"];
   let gAcc = gVals[Math.floor(Math.random() * gVals.length)];
-  const bVals = ["c", "d", "f", "-"];
+  const bVals = ["c", "d", "f"];
   let bAcc = bVals[Math.floor(Math.random() * bVals.length)];
 
   let acc4;
@@ -189,10 +187,10 @@ export function bassString4(arr) {
     } else {
       if (sum >= 0 && sum <= 1) {
         bass += bass4;
-      } else if (sum > 1 && sum <= 3) {
+      } else if (sum > 1 && sum <= 3.5) {
         bass += Math.random() < 0.6 ? bass4 : acc4;
-      } else if (sum > 3 && sum < 4) {
-        bass += Math.random() < 0.9 ? b_g : "-";
+      } else if (sum > 3.5 && sum < 4) {
+        bass += b_g;
       } else {
         bass += "-";
       }

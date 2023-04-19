@@ -39,11 +39,13 @@ const bassLine2V = bassString2(primaryBass, bassLine1V);
 const bassLine3V = bassString3(primaryBass2);
 const bassLine4V = bassString4(primaryBass);
 const bassV = bassLine1V.concat(bassLine2V + bassLine3V + bassLine4V);
+
 const melodyLine1V = melodyString(primaryMelody, primaryBass, bassLine1V);
 const melodyLine2V = melodyString(primaryMelody, primaryBass, bassLine2V);
 const melodyLine3V = melodyString(primaryMelody2, primaryBass2, bassLine3V);
 const melodyLine4V = melodyString(primaryMelody, primaryBass, bassLine4V);
 const melodyV = melodyLine1V.concat(melodyLine2V + melodyLine3V + melodyLine4V);
+
 const bassDrum1V = kickString(primaryDrums, primaryBass, bassLine1V);
 const bassDrum2V = kickString(drumTrips, primaryBass, bassLine2V);
 const bassDrum3V = kickString(primaryDrums2, primaryBass2, bassLine3V);
@@ -63,11 +65,13 @@ const bassLine2C = bassString2(primaryBass, bassLine1C);
 const bassLine3C = bassString3(primaryBass2);
 const bassLine4C = bassString4(primaryBass);
 const bassC = bassLine1C.concat(bassLine2C + bassLine3C + bassLine4C);
+
 const melodyLine1C = melodyString(primaryMelody, primaryBass, bassLine1C);
 const melodyLine2C = melodyString(primaryMelody, primaryBass, bassLine2C);
 const melodyLine3C = melodyString(primaryMelody2, primaryBass2, bassLine3C);
 const melodyLine4C = melodyString(primaryMelody, primaryBass, bassLine4C);
 const melodyC = melodyLine1C.concat(melodyLine2C + melodyLine3C + melodyLine4C);
+
 const bassDrum1C = kickString(primaryDrums, primaryBass, bassLine1C);
 const bassDrum2C = kickString(drumTrips, primaryBass, bassLine2C);
 const bassDrum3C = kickString(primaryDrums2, primaryBass2, bassLine3C);
@@ -87,11 +91,13 @@ const bassLine2B = bassString2(primaryBass, bassLine1B);
 const bassLine3B = bassString3(primaryBass2);
 const bassLine4B = bassString4(primaryBass);
 const bassB = bassLine1B.concat(bassLine2B + bassLine3B + bassLine4B);
+
 const melodyLine1B = melodyString(primaryMelody, primaryBass, bassLine1B);
 const melodyLine2B = melodyString(primaryMelody, primaryBass, bassLine2B);
 const melodyLine3B = melodyString(primaryMelody2, primaryBass2, bassLine3B);
 const melodyLine4B = melodyString(primaryMelody, primaryBass, bassLine4B);
 const melodyB = melodyLine1B.concat(melodyLine2B + melodyLine3B + melodyLine4B);
+
 const bassDrum1B = kickString(primaryDrums, primaryBass, bassLine1B);
 const bassDrum2B = kickString(drumTrips, primaryBass, bassLine2B);
 const bassDrum3B = kickString(primaryDrums2, primaryBass2, bassLine3B);
@@ -304,62 +310,62 @@ for (let i = 0; i < initMelody.length; i++) {
 
 console.log(`]|
 
-in_thread do
-  (pattern.length).times do |index|
-    chords = chordTones[pattern[index]]
-    melody = melodyNotes[pattern[index]]
-    if chords
-      velocity = rand(40..50)
-      release = rand(50..70)
-      chords.each do |tone|
+  in_thread do
+    (pattern.length).times do |index|
+      chords = chordTones[pattern[index]]
+      melody = melodyNotes[pattern[index]]
+      if chords
+        velocity = rand(40..50)
+        release = rand(50..70)
+        chords.each do |tone|
         midi_note_on tone, velocity: velocity, port: midi_ports[2]
-      end
-      sleep groove[index]
-      chords.each do |tone|
+        end
+        sleep groove[index]
+        chords.each do |tone|
         midi_note_off tone, release: release, port: midi_ports[2]
+        end
+      elsif melody
+        velocity = rand(40..50)
+        midi_note_on melody, velocity: velocity, port: midi_ports[2]
+        sleep groove[index]
+        midi_note_off melody, release: release, port: midi_ports[2]
+      elsif pattern[index] == '-'
+        sleep groove[index]
       end
-    elsif melody
-      velocity = rand(40..50)
-      midi_note_on melody, velocity: velocity, port: midi_ports[2]
-      sleep groove[index]
-      midi_note_off melody, release: release, port: midi_ports[2]
-    elsif pattern[index] == '-'
-      sleep groove[index]
     end
   end
-end
 end
 `);
 
 console.log(`v_kick = ("` + bassDrumV + `").gsub(/\\|/, '')`);
 console.log(`c_kick = ("` + bassDrumC + `").gsub(/\\|/, '')`);
-console.log(`b_kick = ("` + bassDrumB +`").gsub(/\\|/, '')`
-);
+console.log(`b_kick = ("` + bassDrumB +`").gsub(/\\|/, '')
+`);
 
 console.log(`v_snare = ("` + snareDrumV + `").gsub(/\\|/, '')`);
 console.log(`c_snare = ("` + snareDrumC + `").gsub(/\\|/, '')`);
-console.log(`b_snare = ("` + snareDrumB + `").gsub(/\\|/, '')`
-);
+console.log(`b_snare = ("` + snareDrumB + `").gsub(/\\|/, '')
+`);
 
 console.log(`v_hihat = ("` + hiHatV + `").gsub(/\\|/, '')`);
 console.log(`c_hihat = ("` + hiHatC + `").gsub(/\\|/, '')`);
-console.log(`b_hihat = ("` + hiHatB + `").gsub(/\\|/, '')`
-);
+console.log(`b_hihat = ("` + hiHatB + `").gsub(/\\|/, '')
+`);
 
 console.log(`v_flare = ("` + flareV + `").gsub(/\\|/, '')`);
 console.log(`c_flare = ("` + flareC + `").gsub(/\\|/, '')`);
-console.log(`b_flare = ("` + flareB + `").gsub(/\\|/, '')`
-);
+console.log(`b_flare = ("` + flareB + `").gsub(/\\|/, '')
+`);
 
 console.log(`v_bass = ("` + bassV + `").gsub(/\\|/, '')`);
 console.log(`c_bass = ("` + bassC + `").gsub(/\\|/, '')`);
-console.log(`b_bass = ("` + bassB + `").gsub(/\\|/, '')`
-);
+console.log(`b_bass = ("` + bassB + `").gsub(/\\|/, '')
+`);
 
 console.log(`v_melody = ("` + melodyV + `").gsub(/\\|/, '')`);
 console.log(`c_melody = ("` + melodyC + `").gsub(/\\|/, '')`);
-console.log(`b_melody = ("` + melodyB + `").gsub(/\\|/, '')`
-);
+console.log(`b_melody = ("` + melodyB + `").gsub(/\\|/, '')
+`);
 
 console.log(
   `define :verse do

@@ -3,8 +3,7 @@ export function createDrums(arr) {
   let randQH = Math.random() < 0.5 ? 0.25 : 0.5;
   let randSQ = Math.random() < 0.5 ? 0.125 : 0.25;
   const possibleLengths = [0.125, 0.25, 0.5, 1];
-  let beat1 =
-    possibleLengths[Math.floor(Math.random() * possibleLengths.length)];
+  let beat1 = possibleLengths[Math.floor(Math.random() * possibleLengths.length)];
 
   for (let i = 0; i < arr.length; i++)
     if (arr[i] === 1.5) {
@@ -40,8 +39,6 @@ export function kickString(arr1, arr2, bassString) {
       bassSum += arr2[arr2Index];
       if (kickSum === 0) {
         kick += "X";
-      } else if (note === "|") {
-        kick = "|";
       } else if (note === "-") {
         kick += Math.random() < 0.9 ? "-" : "x";
       } else if (note !== "|" && note !== "-") {
@@ -105,8 +102,7 @@ export function flareString(arr) {
   let sum = 0;
 
   const possibleTomValues = ["u", "U", "t", "T", "s", "S", "y", "Y"];
-  let tom =
-    possibleTomValues[Math.floor(Math.random() * possibleTomValues.length)];
+  let tom = possibleTomValues[Math.floor(Math.random() * possibleTomValues.length)];
 
   for (let i = 0; i < arr.length; i++) {
     if (sum === 0 || sum === 8) {
