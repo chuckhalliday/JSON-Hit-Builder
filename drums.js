@@ -97,36 +97,38 @@ export function hatString(arr) {
   return hihat;
 }
 
-export function flareString(arr) {
-  let flare = "";
+export function flairString(arr, snare, hihat) {
+  let flair = "";
   let sum = 0;
 
   const possibleTomValues = ["u", "U", "t", "T", "s", "S", "y", "Y"];
   let tom = possibleTomValues[Math.floor(Math.random() * possibleTomValues.length)];
 
   for (let i = 0; i < arr.length; i++) {
-    if (sum === 0 || sum === 8) {
-      flare += Math.random() < 0.4 ? "R" : "-";
-    } else if (sum === 4 || sum === 12) {
-      flare += Math.random() < 0.4 ? "r" : "-";
-    } else if (sum === 3.5 || sum === 11.5) {
-      flare += Math.random() < 0.2 ? "Q" : "-";
-    } else if (sum === 7.5 || sum === 15.5) {
-      flare += Math.random() < 0.2 ? "q" : "-";
-    } else if (sum === 3.825 || sum === 11.825) {
-      flare += Math.random() < 0.2 ? "z" : "-";
-    } else if (sum >= 15.825 || sum === 7.825) {
-      flare += Math.random() < 0.4 ? "Z" : "-";
-    } else if (arr[i] === 0.0833 || arr[i] === 0.0834 ||
-      arr[i] === 0.1667 || arr[i] === 0.1666) {
-      flare += Math.random() < 0.6 ? tom : "-";
-    } else {
-      flare += "-";
+    if (snare.charAt(arr[i] === '-') || hihat.charAt(arr[i] === '-')) {
+      if (sum === 0 || sum === 8) {
+        flair += Math.random() < 0.4 ? "R" : "-";
+      } else if (sum === 4 || sum === 12) {
+        flair += Math.random() < 0.4 ? "r" : "-";
+      } else if (sum === 3.5 || sum === 11.5) {
+        flair += Math.random() < 0.2 ? "Q" : "-";
+      } else if (sum === 7.5 || sum === 15.5) {
+        flair += Math.random() < 0.2 ? "q" : "-";
+      } else if (sum === 3.825 || sum === 11.825) {
+        flair += Math.random() < 0.2 ? "z" : "-";
+      } else if (sum >= 15.825 || sum === 7.825) {
+        flair += Math.random() < 0.4 ? "Z" : "-";
+      } else if (arr[i] === 0.0833 || arr[i] === 0.0834 ||
+        arr[i] === 0.1667 || arr[i] === 0.1666) {
+        flair += Math.random() < 0.6 ? tom : "-"; 
+      } else {
+        flair += "-";
+      }
     }
     sum += arr[i];
     if (sum === 4 || sum === 8 || sum === 12 || sum === 16) {
-      flare += "|";
+      flair += "|";
     }
   }
-  return flare;
+  return flair;
 }

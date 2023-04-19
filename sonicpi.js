@@ -1,5 +1,5 @@
 import { shuffleArray, subdivideArray } from "./groove.js";
-import { createDrums, kickString, snareString, hatString, flareString, } from "./drums.js";
+import { createDrums, kickString, snareString, hatString, flairString, } from "./drums.js";
 import { primaryGroove, bassString1, bassString2, bassString3, bassString4, } from "./bass.js";
 import { melodyGroove, melodyString } from "./melody.js";
 
@@ -56,7 +56,7 @@ const snareDrumV = snareString(initDrums);
 
 const hiHatV = hatString(initDrums);
 
-const flareV = flareString(initDrums);
+const flairV = flairString(initDrums, snareDrumV, hiHatV);
 
 //chorus
 
@@ -82,7 +82,7 @@ const snareDrumC = snareString(initDrums);
 
 const hiHatC = hatString(initDrums);
 
-const flareC = flareString(initDrums);
+const flairC = flairString(initDrums, snareDrumC, hiHatC);
 
 //bridge
 
@@ -108,7 +108,7 @@ const snareDrumB = snareString(initDrums);
 
 const hiHatB = hatString(initDrums);
 
-const flareB = flareString(initDrums);
+const flairB = flairString(initDrums, snareDrumB, hiHatB);
 
 const songtime = Math.round(Math.random() * (240 - 210) + 210);
 const bpm = Math.round(Math.random() * (140 - 60) + 60);
@@ -337,22 +337,22 @@ console.log(`]|
 end
 `);
 
-console.log(`v_flare = ("` + flareV + `").gsub(/\\|/, '')`);
+console.log(`v_flair = ("` + flairV + `").gsub(/\\|/, '')`);
 console.log(`v_hihat = ("` + hiHatV + `").gsub(/\\|/, '')`);
 console.log(`v_snare = ("` + snareDrumV + `").gsub(/\\|/, '')`);
-console.log(`v_kick = ("` + bassDrumV + `").gsub(/\\|/, '')
+console.log(`v_kick =  ("` + bassDrumV + `").gsub(/\\|/, '')
 `);
 
-console.log(`c_flare = ("` + flareC + `").gsub(/\\|/, '')`);
+console.log(`c_flair = ("` + flairC + `").gsub(/\\|/, '')`);
 console.log(`c_hihat = ("` + hiHatC + `").gsub(/\\|/, '')`);
 console.log(`c_snare = ("` + snareDrumC + `").gsub(/\\|/, '')`);
-console.log(`c_kick = ("` + bassDrumC + `").gsub(/\\|/, '')
+console.log(`c_kick =  ("` + bassDrumC + `").gsub(/\\|/, '')
 `);
 
-console.log(`b_flare = ("` + flareB + `").gsub(/\\|/, '')`);
+console.log(`b_flair = ("` + flairB + `").gsub(/\\|/, '')`);
 console.log(`b_hihat = ("` + hiHatB + `").gsub(/\\|/, '')`);
 console.log(`b_snare = ("` + snareDrumB + `").gsub(/\\|/, '')`);
-console.log(`b_kick = ("` + bassDrumB +`").gsub(/\\|/, '')
+console.log(`b_kick =  ("` + bassDrumB +`").gsub(/\\|/, '')
 `);
 
 console.log(`v_bass = ("` + bassV + `").gsub(/\\|/, '')
@@ -376,7 +376,7 @@ console.log(
       playBeat (ring v_kick).tick
       playBeat (ring v_snare).tick
       playBeat (ring v_hihat).tick
-      playBeat (ring v_flare).tick
+      playBeat (ring v_flair).tick
       playBass (ring v_bass).tick
       #playMelody (ring v_melody).tick
     end
@@ -390,7 +390,7 @@ define :chorus do
       playBeat (ring c_kick).tick
       playBeat (ring c_snare).tick
       playBeat (ring c_hihat).tick
-      playBeat (ring c_flare).tick
+      playBeat (ring c_flair).tick
       playBass (ring c_bass).tick
       #playMelody (ring c_melody).tick
     end
@@ -404,7 +404,7 @@ define :bridge do
       playBeat (ring b_kick).tick
       playBeat (ring b_snare).tick
       playBeat (ring b_hihat).tick
-      playBeat (b_flare.tick)
+      playBeat (b_flair.tick)
       playBass (ring b_bass).tick
       #playMelody (ring b_melody).tick
     end
