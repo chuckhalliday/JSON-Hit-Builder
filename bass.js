@@ -56,7 +56,7 @@ export function bassString1(arr) {
 export function bassString2(arr, string1) {
   let bass = '';
   let sum = 0
-  let possibleBassValues;
+  let possibleBassValues = ['d', 'e', 'f', 'g', 'b']
 
   if (string1.includes('c')) {
     possibleBassValues = ['f', 'g'];
@@ -72,8 +72,6 @@ export function bassString2(arr, string1) {
     let fAcc = fVals[Math.floor(Math.random() * fVals.length)]
     const gVals = ['b', 'd', 'f', '-']
     let gAcc = gVals[Math.floor(Math.random() * gVals.length)]
-    const bVals = ['c', 'd', 'f', '-']
-    let bAcc = bVals[Math.floor(Math.random() * bVals.length)]
 
     let acc2;
 

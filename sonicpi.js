@@ -16,15 +16,21 @@ function sumArray(array) {
 const primaryBass = primaryGroove()
 const primaryBass2 = primaryGroove()
 const initBass = primaryBass.concat(primaryBass, primaryBass, primaryBass)
+let bassCount = sumArray(initBass)
+console.log(bassCount)
 
 const primaryDrums = createDrums(primaryBass)
 const primaryDrums2 = createDrums(primaryBass2)
 const drumTrips = subdivideArray(primaryDrums)
 const initDrums = primaryDrums.concat(drumTrips, primaryDrums2, drumTrips)
+let drumCount = sumArray(initDrums)
+console.log(drumCount)
 
 const primaryMelody = melodyGroove(primaryBass)
 const primaryMelody2 = melodyGroove(primaryBass2)
 const initMelody = primaryMelody.concat(primaryMelody, primaryMelody2, primaryMelody)
+let melodyCount = sumArray(initMelody)
+console.log(melodyCount)
 
 //verse
 
@@ -112,18 +118,33 @@ let keyUpMax = 7;
 let keyAdjust = Math.floor(Math.random() * (keyUpMax - keyDownMin + 1)) + keyDownMin;
 
 function findKey(string) {
-  const keys = ['D', 'Eb', 'E', 'F', 'Gb', 'G', 'Ab', 'A', 'Bb', 'B', 'C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G'];
+  const keys = ['F', 'Gb', 'G', 'Ab', 'A', 'Bb', 'B', 'C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G'];
   let key;
-  let majmin;
+  let tonality;
 
   if (string.charAt(0) === 'c') {
-    key = keys[keyAdjust + 10] || 'C';
-    majmin = 'Major'
+    key = keys[keyAdjust + 7] || 'C';
+    tonality = 'Major'
   } else if (string.charAt(0) === 'a') {
-    key = keys[keyAdjust + 7] || 'A'
-    majmin = 'Minor'
+    key = keys[keyAdjust + 4] || 'A'
+    tonality = 'Minor'
+  } else if (string.charAt(0) === 'd') {
+    key = keys[keyAdjust + 9] || 'D'
+    tonality = 'Dorian'
+  } else if (string.charAt(0) === 'e') {
+    key = keys[keyAdjust + 11] || 'E'
+    tonality = 'Phrygian'
+  } else if (string.charAt(0) === 'f') {
+    key = keys[keyAdjust + 1] || 'F'
+    tonality = 'Lydian'
+  } else if (string.charAt(0) === 'g') {
+    key = keys[keyAdjust + 3] || 'G'
+    tonality = 'Mixolydian'
+  } else if (string.charAt(0) === 'b') {
+    key = keys[keyAdjust + 7] || 'B'
+    tonality = 'Locrian'
   }
-  return key + " " + majmin
+  return key + " " + tonality
 }
 
 let key = findKey(bassV)
