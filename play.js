@@ -17,21 +17,21 @@ function sumArray(array) {
 const primaryBass = primaryGroove();
 const primaryBass2 = primaryGroove();
 const initBass = primaryBass.concat(primaryBass, primaryBass, primaryBass);
-let bassCount = sumArray(initBass);
-console.log(bassCount);
+//let bassCount = sumArray(initBass);
+//console.log(bassCount);
 
 const primaryDrums = createDrums(primaryBass);
 const primaryDrums2 = createDrums(primaryBass2);
 const drumTrips = subdivideArray(primaryDrums);
 const initDrums = primaryDrums.concat(drumTrips, primaryDrums2, drumTrips);
-let drumCount = sumArray(initDrums);
-console.log(drumCount);
+//let drumCount = sumArray(initDrums);
+//console.log(drumCount);
 
 const primaryMelody = melodyGroove(primaryBass);
 const primaryMelody2 = melodyGroove(primaryBass2);
 const initMelody = primaryMelody.concat(primaryMelody, primaryMelody2, primaryMelody);
-let melodyCount = sumArray(initMelody);
-console.log(melodyCount);
+//let melodyCount = sumArray(initMelody);
+//console.log(melodyCount);
 
 //verse
 
@@ -163,7 +163,7 @@ function wait(time) {
   return new Promise(resolve => setTimeout(resolve, time * 1000));
 }
 
-const drumHits = {
+let drumHits = {
   'x': 36, 'X': 36,  // kick drum
   'y': 38, 'Y': 38,  // snare drum
   'v': 42, 'V': 42,  // closed hi-hat
@@ -176,7 +176,7 @@ const drumHits = {
   's': 43, 'S': 43   // low tom
 };
 
-const bassNotes = {
+let bassNotes = {
   'o': 29, 'O': 30,   // F
   'p': 31, 'P': 32,   // G
   'a': 33, 'A': 34,  // sharps are capital
@@ -187,6 +187,10 @@ const bassNotes = {
   'f': 41, 'F': 42,
   'g': 43, 'G': 44
 };
+
+for (let key in bassNotes) {
+  bassNotes[key] = bassNotes[key] + keyAdjust;
+}
 
 async function playBeat(pattern, groove) {
   const output = new midi.Output();
@@ -234,23 +238,70 @@ async function playBass(pattern, groove) {
 console.log(`Key: ` + key)
 console.log(`Tempo: ` + bpm)
 
-console.log(bassV)
+console.log('Verse:')
+console.log(`Bass: ` + bassV)
 
-console.log(flairV)
-console.log(hiHatV)
-console.log(snareDrumV)
-console.log(bassDrumV)
+console.log(`Misc: ` + flairV)
+console.log(`HiHat: ` + hiHatV)
+console.log(`Snare: ` + snareDrumV)
+console.log(`Kick: ` + bassDrumV)
+console.log('Chorus:')
+console.log(`Bass: ` + bassC)
+
+console.log(`Misc: ` + flairC)
+console.log(`HiHat: ` + hiHatC)
+console.log(`Snare: ` + snareDrumC)
+console.log(`Kick ` + bassDrumC)
+
+let line = "";
+let sum = 0;
+
+for (let i = 0; i < initDrums.length; i++) {
+  sum += initDrums[i];
+  line += initDrums[i] + ",";
+
+  if (sum >= 3.9 && sum <= 4.1) {
+    console.log(line);
+    line = "";
+    sum = 0;
+  }
+}
 
 
 async function verse() {
   for (let i = 0; i < 2; i++) {
-    const kickPromise = playBeat(bassDrumV, initDrums);
-    const snarePromise = playBeat(snareDrumV, initDrums)
-    const hihatPromise = playBeat(hiHatV, initDrums)
-    const flairPromise = playBeat(flairV, initDrums)
-    const bassPromise = playBass(bassV, initBass)
-    await Promise.all([kickPromise, snarePromise, hihatPromise, flairPromise, bassPromise])
+    await Promise.all([
+    playBeat(bassDrumV.replace(/\|/g, ''), initDrums),
+    playBeat(snareDrumV.replace(/\|/g, ''), initDrums),
+    playBeat(hiHatV.replace(/\|/g, ''), initDrums),
+    playBeat(flairV.replace(/\|/g, ''), initDrums),
+    playBass(bassV.replace(/\|/g, ''), initBass)
+  ])
   }
 }
 
-verse();
+async function chorus() {
+  for (let i = 0; i < 2; i++) {
+    await Promise.all([
+    playBeat(bassDrumC.replace(/\|/g, ''), initDrums),
+    playBeat(snareDrumC.replace(/\|/g, ''), initDrums),
+    playBeat(hiHatC.replace(/\|/g, ''), initDrums),
+    playBeat(flairC.replace(/\|/g, ''), initDrums),
+    playBass(bassC.replace(/\|/g, ''), initBass)
+  ])
+  }
+}
+
+async function playSong() {
+  for (let i = 0; i < 1; i++) {
+    await verse();
+  }
+  for (let i = 0; i < 1; i++) {
+    await chorus();
+  }
+  for (let i = 0; i < 2; i++) {
+    await verse();
+  }
+}
+
+playSong();

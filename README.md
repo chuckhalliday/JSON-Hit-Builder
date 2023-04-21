@@ -1,3 +1,5 @@
-Javascript app that prints randomized song structures according to customizable algorithm
+Javascript app that plays randomized song structures according to customizable algorithm
 
-Requires Sonic Pi (outputs Ruby code to cut/paste in application), IAC driver enabled, and DAW with mapped MIDI ports and instruments
+Requires IAC driver enabled and DAW with instruments mapped to MIDI ports
+
+Can also generate Ruby code to be pasted in Sonic Pi
