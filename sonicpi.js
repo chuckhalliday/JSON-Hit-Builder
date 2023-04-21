@@ -38,7 +38,7 @@ const bassLine1V = bassString1(primaryBass);
 const bassLine2V = bassString2(primaryBass, bassLine1V);
 const bassLine3V = bassString3(primaryBass2);
 const bassLine4V = bassString4(primaryBass);
-const bassV = bassLine1V.concat(bassLine2V + bassLine3V + bassLine4V);
+export const bassV = bassLine1V.concat(bassLine2V + bassLine3V + bassLine4V);
 
 const melodyLine1V = melodyString(primaryMelody, primaryBass, bassLine1V);
 const melodyLine2V = melodyString(primaryMelody, primaryBass, bassLine2V);
