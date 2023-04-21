@@ -236,22 +236,29 @@ async function playBass(pattern, groove) {
 }
 
 console.log(`Key: ` + key)
-console.log(`Tempo: ` + bpm)
+console.log(`Tempo: ` + bpm + `
+`)
 
-console.log('Verse:')
-console.log(`Bass: ` + bassV)
+console.log(`Verse:
+`)
+console.log(`Bass:  ` + bassV + `
+`)
 
-console.log(`Misc: ` + flairV)
+console.log(`Misc:  ` + flairV)
 console.log(`HiHat: ` + hiHatV)
 console.log(`Snare: ` + snareDrumV)
-console.log(`Kick: ` + bassDrumV)
-console.log('Chorus:')
-console.log(`Bass: ` + bassC)
+console.log(`Kick:  ` + bassDrumV + `
+`)
+console.log(`Chorus:
+`)
+console.log(`Bass:  ` + bassC + `
+`)
 
-console.log(`Misc: ` + flairC)
+console.log(`Misc:  ` + flairC)
 console.log(`HiHat: ` + hiHatC)
 console.log(`Snare: ` + snareDrumC)
-console.log(`Kick ` + bassDrumC)
+console.log(`Kick:  ` + bassDrumC + `
+`)
 
 let line = "";
 let sum = 0;
