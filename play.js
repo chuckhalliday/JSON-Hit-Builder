@@ -111,17 +111,10 @@ const hiHatB = hatString(initDrums);
 
 const flairB = flairString(initDrums, snareDrumB, hiHatB);
 
-const songtime = Math.round(Math.random() * (240 - 210) + 210);
-const bpm = Math.round(Math.random() * (140 - 60) + 60);
-const bps = bpm / 60;
-const beatstotal = bps * songtime;
-const measures = Math.round(beatstotal / 4 / 4) * 4;
-const partsLength = measures / 4;
 
 let keyDownMin = -7;
 let keyUpMax = 7;
-let keyAdjust =
-  Math.floor(Math.random() * (keyUpMax - keyDownMin + 1)) + keyDownMin;
+let keyAdjust = Math.floor(Math.random() * (keyUpMax - keyDownMin + 1)) + keyDownMin;
 
 function findKey(string) {
   const keys = [
@@ -157,6 +150,31 @@ function findKey(string) {
 }
 
 let key = findKey(bassV);
+
+const songtime = Math.round(Math.random() * (240 - 210) + 210);
+const bpm = Math.round(Math.random() * (140 - 60) + 60);
+const bps = bpm / 60;
+const beatstotal = bps * songtime;
+const measures = Math.round(beatstotal / 4 / 4) * 4;
+const partsLength = measures / 4;
+
+function generateSongStructure(partsLength) {
+  const partTypes = ['verse', 'chorus', 'bridge'];
+  const songStructure = [];
+  let remainingParts = partsLength;
+
+  while (remainingParts > 0) {
+    const randomPartType = partTypes[Math.floor(Math.random() * partTypes.length)];
+    const randomPartLength = Math.min(remainingParts, Math.floor(Math.random() * 4) + 1);
+
+    songStructure.push({ type: randomPartType, length: randomPartLength });
+    remainingParts -= randomPartLength;
+  }
+  console.log(songStructure)
+  return songStructure;
+}
+
+let songStructure = generateSongStructure(partsLength)
 
 const beatDuration = 60 / bpm // duration of one beat in seconds
 function wait(time) {
@@ -235,13 +253,20 @@ async function playBass(pattern, groove) {
   }
 }
 
+
 console.log(`Key: ` + key)
 console.log(`Tempo: ` + bpm + `
 `)
 
 console.log(`Verse:
 `)
-console.log(`Bass:  ` + bassV + `
+
+let spacedBassV = "";
+
+for (let i = 0; i < bassV.length; i++) {
+  spacedBassV += bassV[i] + " ";
+}
+console.log(`Bass:  ` + spacedBassV + `
 `)
 
 console.log(`Misc:  ` + flairV)
@@ -249,15 +274,37 @@ console.log(`HiHat: ` + hiHatV)
 console.log(`Snare: ` + snareDrumV)
 console.log(`Kick:  ` + bassDrumV + `
 `)
+
 console.log(`Chorus:
 `)
-console.log(`Bass:  ` + bassC + `
+let spacedBassC = "";
+
+for (let i = 0; i < bassC.length; i++) {
+  spacedBassC += bassC[i] + " ";
+}
+console.log(`Bass:  ` + spacedBassC + `
 `)
 
 console.log(`Misc:  ` + flairC)
 console.log(`HiHat: ` + hiHatC)
 console.log(`Snare: ` + snareDrumC)
 console.log(`Kick:  ` + bassDrumC + `
+`)
+
+console.log(`Bridge:
+`)
+let spacedBassB = "";
+
+for (let i = 0; i < bassB.length; i++) {
+  spacedBassB += bassB[i] + " ";
+}
+console.log(`Bass:  ` + spacedBassB + `
+`)
+
+console.log(`Misc:  ` + flairB)
+console.log(`HiHat: ` + hiHatB)
+console.log(`Snare: ` + snareDrumB)
+console.log(`Kick:  ` + bassDrumB + `
 `)
 
 let line = "";
@@ -299,16 +346,36 @@ async function chorus() {
   }
 }
 
-async function playSong() {
-  for (let i = 0; i < 1; i++) {
-    await verse();
-  }
-  for (let i = 0; i < 1; i++) {
-    await chorus();
-  }
+async function bridge() {
   for (let i = 0; i < 2; i++) {
-    await verse();
+    await Promise.all([
+    playBeat(bassDrumB.replace(/\|/g, ''), initDrums),
+    playBeat(snareDrumB.replace(/\|/g, ''), initDrums),
+    playBeat(hiHatB.replace(/\|/g, ''), initDrums),
+    playBeat(flairB.replace(/\|/g, ''), initDrums),
+    playBass(bassB.replace(/\|/g, ''), initBass)
+  ])
   }
 }
 
-playSong();
+async function playSong(songStructure) {
+  for (const part of songStructure) {
+    for (let i = 0; i < part.length; i++) {
+      switch (part.type) {
+        case 'verse':
+          await verse();
+          break;
+        case 'chorus':
+          await chorus();
+          break;
+        case 'bridge':
+          await bridge();
+          break;
+        default:
+          throw new Error(`Invalid part type: ${part.type}`);
+      }
+    }
+  }
+}
+
+playSong(songStructure);

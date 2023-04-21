@@ -12,7 +12,6 @@ export function primaryGroove() {
       initBass.push(random);
       beatSum += random;
     } else {
-      // skip adding the current random value
     }
     if (beatSum === 2) {
       beatSum = 0;

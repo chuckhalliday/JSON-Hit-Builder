@@ -69,7 +69,7 @@ export function snareString(arr) {
       snare += Math.random() < 0.9 ? "-" : "y";
     }
     sum += arr[i];
-    if (Number.isInteger(sum / 4)) {
+    if (Math.abs(sum / 4 - Math.round(sum / 4)) <= 0.005) {
       snare += "|";
     }
   }
@@ -90,7 +90,7 @@ export function hatString(arr) {
       hihat += "-";
     }
     sum += arr[i];
-    if (Number.isInteger(sum / 4)) {
+    if (Math.abs(sum / 4 - Math.round(sum / 4)) <= 0.005) {
       hihat += "|";
     }
   }
@@ -130,7 +130,7 @@ export function flairString(arr, snareString, hihatString) {
       flair += '-';
     }
     sum += arr[i];
-    if (sum === 4 || sum === 8 || sum === 12 || sum === 16) {
+    if (Math.abs(sum / 4 - Math.round(sum / 4)) <= 0.005) {
       flair += "|";
     }
   }
