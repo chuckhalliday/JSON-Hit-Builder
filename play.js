@@ -252,6 +252,14 @@ function adjustBassString(string) {
       adjustedString += keys[17 + keyAdjust]
     } else if (string.charAt(i) === "G") {
       adjustedString += keys[18 + keyAdjust]
+    } else if (string.charAt(i) === "o") {
+      adjustedString += keys[15 + keyAdjust]
+    } else if (string.charAt(i) === "O") {
+      adjustedString += keys[16 + keyAdjust]
+    } else if (string.charAt(i) === "p") {
+      adjustedString += keys[17 + keyAdjust]
+    } else if (string.charAt(i) === "P") {
+      adjustedString += keys[18 + keyAdjust]
     } else if (string.charAt(i) === "-") {
       adjustedString += "-"
     } else if (string.charAt(i) === "|") {
@@ -361,6 +369,7 @@ for (let i = 0; i < bassV.length; i++) {
   spacedBassV += bassV[i] + " ";
 }
 let bassVA = adjustBassString(spacedBassV)
+console.log(bassV)
 console.log(`Bass:  ` + bassVA + `
 `)
 
@@ -379,6 +388,7 @@ for (let i = 0; i < bassC.length; i++) {
   spacedBassC += bassC[i] + " ";
 }
 let bassCA = adjustBassString(spacedBassC)
+console.log(bassC)
 console.log(`Bass:  ` + bassCA + `
 `)
 
@@ -397,6 +407,7 @@ for (let i = 0; i < bassB.length; i++) {
   spacedBassB += bassB[i] + " ";
 }
 let bassBA = adjustBassString(spacedBassB)
+console.log(bassB)
 console.log(`Bass:  ` + bassBA + `
 `)
 
