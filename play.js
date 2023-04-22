@@ -1,7 +1,8 @@
 import midi from 'midi';
 import { shuffleArray, subdivideArray } from "./groove.js";
 import { createDrums, kickString, snareString, hatString, flairString, } from "./drums.js";
-import { primaryGroove, bassString1, bassString2, bassString3, bassString4, } from "./bass.js";
+import { primaryGroove, bassString1V, bassString2V, bassString3V, bassString4V,
+                        bassString1C, bassString2C, bassString3C, bassString4C } from "./bass.js";
 import { melodyGroove, melodyString } from "./melody.js";
 
 function sumArray(array) {
@@ -35,10 +36,10 @@ const initMelody = primaryMelody.concat(primaryMelody, primaryMelody2, primaryMe
 
 //verse
 
-const bassLine1V = bassString1(primaryBass);
-const bassLine2V = bassString2(primaryBass, bassLine1V);
-const bassLine3V = bassString3(primaryBass2, bassLine2V);
-const bassLine4V = bassString4(primaryBass, bassLine1V);
+const bassLine1V = bassString1V(primaryBass);
+const bassLine2V = bassString2V(primaryBass, bassLine1V);
+const bassLine3V = bassString3V(primaryBass2, bassLine2V);
+const bassLine4V = bassString4V(primaryBass, bassLine1V);
 const bassV = bassLine1V.concat(bassLine2V + bassLine3V + bassLine4V);
 
 const melodyLine1V = melodyString(primaryMelody, primaryBass, bassLine1V);
@@ -61,10 +62,10 @@ const flairV = flairString(initDrums, snareDrumV, hiHatV);
 
 //chorus
 
-const bassLine1C = bassString1(primaryBass);
-const bassLine2C = bassString2(primaryBass, bassLine1C);
-const bassLine3C = bassString3(primaryBass2, bassLine2C);
-const bassLine4C = bassString4(primaryBass, bassLine1C);
+const bassLine1C = bassString1C(primaryBass, bassLine1V);
+const bassLine2C = bassString2C(primaryBass, bassLine1C);
+const bassLine3C = bassString3C(primaryBass2, bassLine1V);
+const bassLine4C = bassString4C(primaryBass, bassLine1V);
 const bassC = bassLine1C.concat(bassLine2C + bassLine3C + bassLine4C);
 
 const melodyLine1C = melodyString(primaryMelody, primaryBass, bassLine1C);
@@ -87,10 +88,10 @@ const flairC = flairString(initDrums, snareDrumC, hiHatC);
 
 //bridge
 
-const bassLine1B = bassString1(primaryBass);
-const bassLine2B = bassString2(primaryBass, bassLine1B);
-const bassLine3B = bassString3(primaryBass2, bassLine2B);
-const bassLine4B = bassString4(primaryBass, bassLine1B);
+const bassLine1B = bassString1V(primaryBass);
+const bassLine2B = bassString2V(primaryBass, bassLine1B);
+const bassLine3B = bassString3V(primaryBass2, bassLine2B);
+const bassLine4B = bassString4V(primaryBass, bassLine1B);
 const bassB = bassLine1B.concat(bassLine2B + bassLine3B + bassLine4B);
 
 const melodyLine1B = melodyString(primaryMelody, primaryBass, bassLine1B);
