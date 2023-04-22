@@ -88,10 +88,10 @@ const flairC = flairString(initDrums, snareDrumC, hiHatC);
 
 //bridge
 
-const bassLine1B = bassString1V(primaryBass);
-const bassLine2B = bassString2V(primaryBass, bassLine1B);
-const bassLine3B = bassString3V(primaryBass2, bassLine2B);
-const bassLine4B = bassString4V(primaryBass, bassLine1B);
+const bassLine1B = bassString1C(primaryBass, bassLine1V);
+const bassLine2B = bassString2C(primaryBass, bassLine1B);
+const bassLine3B = bassString3C(primaryBass2, bassLine1V);
+const bassLine4B = bassString4C(primaryBass, bassLine1V);
 const bassB = bassLine1B.concat(bassLine2B + bassLine3B + bassLine4B);
 
 const melodyLine1B = melodyString(primaryMelody, primaryBass, bassLine1B);
@@ -159,7 +159,6 @@ const beatstotal = bps * songtime;
 const measures = Math.round(beatstotal / 4 / 4) * 4;
 const partsLength = measures / 4;
 
-console.log(`Key: ` + key)
 console.log(`Tempo: ` + bpm)
 console.log(`Runtime: ` + Math.floor(songtime / 60) + `:` + songtime % 60 + `
 `)
@@ -209,16 +208,60 @@ let drumHits = {
 };
 
 let bassNotes = {
-  'o': 29, 'O': 30,   // F
-  'p': 31, 'P': 32,   // G
-  'a': 33, 'A': 34,  // sharps are capital
+  'o': 29, 'O': 30,   // F, F#
+  'p': 31, 'P': 32,   // G, G#
+  'a': 33, 'A': 34,  // All capitals are sharp
   'b': 35,
   'c': 36, 'C': 37,
   'd': 38, 'D': 39,
   'e': 40,
   'f': 41, 'F': 42,
-  'g': 43, 'G': 44
+  'g': 43, 'G': 44,
 };
+
+function adjustBassString(string) {
+  let adjustedString = ""
+  for (let i = 0; i < string.length; i++) {
+    const keys = [
+      "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B", "C",
+      "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B", "C",
+      "C#", "D"
+    ];
+  
+    if (string.charAt(i) === "a") {
+      adjustedString += keys[7 + keyAdjust]
+    } else if (string.charAt(i) === "A") {
+      adjustedString += keys[8 + keyAdjust]
+    } else if (string.charAt(i) === "b") {
+      adjustedString += keys[9 + keyAdjust]
+    } else if (string.charAt(i) === "c") {
+      adjustedString += keys[10 + keyAdjust]
+    } else if (string.charAt(i) === "C") {
+      adjustedString += keys[11 + keyAdjust]
+    } else if (string.charAt(i) === "d") {
+      adjustedString += keys[12 + keyAdjust]
+    } else if (string.charAt(i) === "D") {
+      adjustedString += keys[13 + keyAdjust]
+    } else if (string.charAt(i) === "e") {
+      adjustedString += keys[14 + keyAdjust]
+    } else if (string.charAt(i) === "f") {
+      adjustedString += keys[15 + keyAdjust]
+    } else if (string.charAt(i) === "F") {
+      adjustedString += keys[16 + keyAdjust]
+    } else if (string.charAt(i) === "g") {
+      adjustedString += keys[17 + keyAdjust]
+    } else if (string.charAt(i) === "G") {
+      adjustedString += keys[18 + keyAdjust]
+    } else if (string.charAt(i) === "-") {
+      adjustedString += "-"
+    } else if (string.charAt(i) === "|") {
+      adjustedString += "|"
+    } else if (string.charAt(i) === " ") {
+      adjustedString += " "
+    }
+  }
+  return adjustedString;
+}
 
 for (let key in bassNotes) {
   bassNotes[key] = bassNotes[key] + keyAdjust;
@@ -269,19 +312,24 @@ async function playBass(pattern, groove) {
 
 let line = "";
 let sum = 0;
+let barCount = 0;
 
 console.log(`Bass Groove:`)
 
 for (let i = 0; i < initBass.length; i++) {
   sum += initBass[i];
   line += initBass[i] + ",";
-
+  if (Math.abs(sum / 2 - Math.round(sum / 2)) <= 0.005) {
+    line += " | ";
+  }
   if (sum >= 3.9 && sum <= 4.1) {
-    console.log(line);
+    barCount += 1
+    console.log(`Bar ` + barCount + `: ` + line);
     line = "";
     sum = 0;
   }
 }
+barCount = 0
 
 console.log(`
 Drum Groove:`)
@@ -289,14 +337,20 @@ Drum Groove:`)
 for (let i = 0; i < initDrums.length; i++) {
   sum += initDrums[i];
   line += initDrums[i] + ",";
-
+  if (Math.abs(sum / 2 - Math.round(sum / 2)) <= 0.005) {
+    line += " | ";
+  }
   if (sum >= 3.9 && sum <= 4.1) {
-    console.log(line);
+    barCount += 1
+    console.log(`Bar ` + barCount + `: ` + line);
     line = "";
     sum = 0;
   }
 }
+barCount = 0
 
+console.log(`
+Key: ` + key)
 
 console.log(`Verse:
 `)
@@ -306,7 +360,8 @@ let spacedBassV = "";
 for (let i = 0; i < bassV.length; i++) {
   spacedBassV += bassV[i] + " ";
 }
-console.log(`Bass:  ` + spacedBassV + `
+let bassVA = adjustBassString(spacedBassV)
+console.log(`Bass:  ` + bassVA + `
 `)
 
 console.log(`Misc:  ` + flairV)
@@ -317,12 +372,14 @@ console.log(`Kick:  ` + bassDrumV + `
 
 console.log(`Chorus:
 `)
+
 let spacedBassC = "";
 
 for (let i = 0; i < bassC.length; i++) {
   spacedBassC += bassC[i] + " ";
 }
-console.log(`Bass:  ` + spacedBassC + `
+let bassCA = adjustBassString(spacedBassC)
+console.log(`Bass:  ` + bassCA + `
 `)
 
 console.log(`Misc:  ` + flairC)
@@ -333,12 +390,14 @@ console.log(`Kick:  ` + bassDrumC + `
 
 console.log(`Bridge:
 `)
+
 let spacedBassB = "";
 
 for (let i = 0; i < bassB.length; i++) {
   spacedBassB += bassB[i] + " ";
 }
-console.log(`Bass:  ` + spacedBassB + `
+let bassBA = adjustBassString(spacedBassB)
+console.log(`Bass:  ` + bassBA + `
 `)
 
 console.log(`Misc:  ` + flairB)
