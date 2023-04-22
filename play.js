@@ -159,19 +159,32 @@ const beatstotal = bps * songtime;
 const measures = Math.round(beatstotal / 4 / 4) * 4;
 const partsLength = measures / 4;
 
+console.log(`Key: ` + key)
+console.log(`Tempo: ` + bpm)
+console.log(`Runtime: ` + Math.floor(songtime / 60) + `:` + songtime % 60 + `
+`)
+
 function generateSongStructure(partsLength) {
-  const partTypes = ['verse', 'chorus', 'bridge'];
+  const partTypes = ['Verse', 'Chorus', 'Bridge'];
   const songStructure = [];
   let remainingParts = partsLength;
+  let lastPartType = '';
 
   while (remainingParts > 0) {
-    const randomPartType = partTypes[Math.floor(Math.random() * partTypes.length)];
-    const randomPartLength = Math.min(remainingParts, Math.floor(Math.random() * 4) + 1);
+    let randomPartType = partTypes[Math.floor(Math.random() * partTypes.length)];
+    while (randomPartType === lastPartType) {
+      randomPartType = partTypes[Math.floor(Math.random() * partTypes.length)];
+    }
+    const randomPartLength = Math.min(remainingParts, Math.floor(Math.random() * 3) + 2);
 
     songStructure.push({ type: randomPartType, length: randomPartLength });
     remainingParts -= randomPartLength;
+    lastPartType = randomPartType;
   }
-  console.log(songStructure)
+  songStructure.forEach(part => {
+    console.log(`${part.type}: ${part.length}x
+    `);
+  });
   return songStructure;
 }
 
@@ -254,10 +267,36 @@ async function playBass(pattern, groove) {
   }
 }
 
+let line = "";
+let sum = 0;
 
-console.log(`Key: ` + key)
-console.log(`Tempo: ` + bpm + `
-`)
+console.log(`Bass Groove:`)
+
+for (let i = 0; i < initBass.length; i++) {
+  sum += initBass[i];
+  line += initBass[i] + ",";
+
+  if (sum >= 3.9 && sum <= 4.1) {
+    console.log(line);
+    line = "";
+    sum = 0;
+  }
+}
+
+console.log(`
+Drum Groove:`)
+
+for (let i = 0; i < initDrums.length; i++) {
+  sum += initDrums[i];
+  line += initDrums[i] + ",";
+
+  if (sum >= 3.9 && sum <= 4.1) {
+    console.log(line);
+    line = "";
+    sum = 0;
+  }
+}
+
 
 console.log(`Verse:
 `)
@@ -308,23 +347,9 @@ console.log(`Snare: ` + snareDrumB)
 console.log(`Kick:  ` + bassDrumB + `
 `)
 
-let line = "";
-let sum = 0;
-
-for (let i = 0; i < initDrums.length; i++) {
-  sum += initDrums[i];
-  line += initDrums[i] + ",";
-
-  if (sum >= 3.9 && sum <= 4.1) {
-    console.log(line);
-    line = "";
-    sum = 0;
-  }
-}
-
 
 async function verse() {
-  for (let i = 0; i < 2; i++) {
+  for (let i = 0; i < 1; i++) {
     await Promise.all([
     playBeat(bassDrumV.replace(/\|/g, ''), initDrums),
     playBeat(snareDrumV.replace(/\|/g, ''), initDrums),
@@ -336,7 +361,7 @@ async function verse() {
 }
 
 async function chorus() {
-  for (let i = 0; i < 2; i++) {
+  for (let i = 0; i < 1; i++) {
     await Promise.all([
     playBeat(bassDrumC.replace(/\|/g, ''), initDrums),
     playBeat(snareDrumC.replace(/\|/g, ''), initDrums),
@@ -348,7 +373,7 @@ async function chorus() {
 }
 
 async function bridge() {
-  for (let i = 0; i < 2; i++) {
+  for (let i = 0; i < 1; i++) {
     await Promise.all([
     playBeat(bassDrumB.replace(/\|/g, ''), initDrums),
     playBeat(snareDrumB.replace(/\|/g, ''), initDrums),
@@ -363,13 +388,13 @@ async function playSong(songStructure) {
   for (const part of songStructure) {
     for (let i = 0; i < part.length; i++) {
       switch (part.type) {
-        case 'verse':
+        case 'Verse':
           await verse();
           break;
-        case 'chorus':
+        case 'Chorus':
           await chorus();
           break;
-        case 'bridge':
+        case 'Bridge':
           await bridge();
           break;
         default:
