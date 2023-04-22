@@ -27,6 +27,7 @@ export function bassString1(arr) {
 
   let a_c = Math.random() < 0.5 ? "a" : "c";
   let acc1;
+  let acc2;
 
   if (a_c === "a") {
     acc1 = Math.random() < 0.6 ? "p" : "P";
@@ -57,20 +58,20 @@ export function bassString2(arr, string1) {
   let sum = 0;
   let possibleBassValues = ["d", "e", "f", "g", "b"];
 
-  if (string1.includes("c")) {
+  if (string1.charAt(0) === 'c') {
     possibleBassValues = ["f", "g"];
-  } else if (string1.includes("a")) {
+  } else if (string1.charAt(0) === "a") {
     possibleBassValues = ["d", "e"];
   }
   let bass2 = possibleBassValues[Math.floor(Math.random() * possibleBassValues.length)];
 
-  const dVals = ["o", "e", "f", "a"];
+  const dVals = ["o", "e", "p", "c", "a", "b"];
   let dAcc = dVals[Math.floor(Math.random() * dVals.length)];
-  const eVals = ["D", "f", "g", "b"];
+  const eVals = ["o", "p", "c", "d", "a", "b"];
   let eAcc = eVals[Math.floor(Math.random() * eVals.length)];
-  const fVals = ["a", "c", "g"];
+  const fVals = ["o", "p", "b", "a", "c", "g"];
   let fAcc = fVals[Math.floor(Math.random() * fVals.length)];
-  const gVals = ["b", "d", "f"];
+  const gVals = ["o", "p", "b", "a", "f"];
   let gAcc = gVals[Math.floor(Math.random() * gVals.length)];
 
   let acc2;
@@ -103,10 +104,17 @@ export function bassString2(arr, string1) {
   return bass;
 }
 
-export function bassString3(arr) {
+export function bassString3(arr, string2) {
   let bass = "";
   let sum = 0;
-  const possibleBassValues = ["d", "e", "f", "g", "b"];
+  let possibleBassValues = ["d", "e", "f", "g", "b"];
+
+  if (string2.includes("f") || string2.includes("g")) {
+    possibleBassValues = ["a", "d", "e"];
+  } else if (string2.includes("d") || string2.includes("e")) {
+    possibleBassValues = ["c", "f", "g"];
+  } 
+
   let bass3 = possibleBassValues[Math.floor(Math.random() * possibleBassValues.length)];
 
   const dVals = ["o", "e", "f", "a"];
@@ -117,8 +125,10 @@ export function bassString3(arr) {
   let fAcc = fVals[Math.floor(Math.random() * fVals.length)];
   const gVals = ["b", "d", "f"];
   let gAcc = gVals[Math.floor(Math.random() * gVals.length)];
-  const bVals = ["c", "d", "f"];
-  let bAcc = bVals[Math.floor(Math.random() * bVals.length)];
+  const cVals = ["e", "g", "a", "b"];
+  let cAcc = cVals[Math.floor(Math.random() * cVals.length)];
+  const aVals = ["c", "e", "f", "g"];
+  let aAcc = aVals[Math.floor(Math.random() * aVals.length)];
 
   let acc3;
   if (bass3 === "d") {
@@ -129,8 +139,10 @@ export function bassString3(arr) {
     acc3 = fAcc;
   } else if (bass3 === "g") {
     acc3 = gAcc;
-  } else if (bass3 === "b") {
-    acc3 = bAcc;
+  } else if (bass3 === "c") {
+    acc3 = cAcc;
+  } else if (bass3 === "a") {
+    acc3 = aAcc;
   }
 
   for (let i = 0; i < arr.length; i++) {
@@ -149,10 +161,16 @@ export function bassString3(arr) {
   return bass;
 }
 
-export function bassString4(arr) {
+export function bassString4(arr, string1) {
   let bass = "";
   let sum = 0;
-  const possibleBassValues = ["d", "e", "f", "g", "b"];
+  let possibleBassValues = ["d", "e", "f", "g", "b"];
+  if (string1.charAt(0) === "c") {
+    possibleBassValues = ["b", "g"];
+  } else if (string1.charAt(0) === "a") {
+    possibleBassValues = ["e", "g", "G"];
+  }
+
   let bass4 = possibleBassValues[Math.floor(Math.random() * possibleBassValues.length)];
   const dVals = ["o", "e", "f", "a"];
   let dAcc = dVals[Math.floor(Math.random() * dVals.length)];
@@ -162,6 +180,8 @@ export function bassString4(arr) {
   let fAcc = fVals[Math.floor(Math.random() * fVals.length)];
   const gVals = ["b", "d", "f"];
   let gAcc = gVals[Math.floor(Math.random() * gVals.length)];
+  const GVals = ["e", "d", "a"]
+  let GAcc = GVals[Math.floor(Math.random() * GVals.length)];
   const bVals = ["c", "d", "f"];
   let bAcc = bVals[Math.floor(Math.random() * bVals.length)];
 
@@ -174,6 +194,8 @@ export function bassString4(arr) {
     acc4 = fAcc;
   } else if (bass4 === "g") {
     acc4 = gAcc;
+  } else if (bass4 === "G") {
+    acc4 = GAcc;
   } else if (bass4 === "b") {
     acc4 = bAcc;
   }
@@ -189,7 +211,7 @@ export function bassString4(arr) {
       } else if (sum > 1 && sum <= 3.5) {
         bass += Math.random() < 0.6 ? bass4 : acc4;
       } else if (sum > 3.5 && sum < 4) {
-        bass += b_g;
+        bass += bass4
       } else {
         bass += "-";
       }

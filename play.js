@@ -37,8 +37,8 @@ const initMelody = primaryMelody.concat(primaryMelody, primaryMelody2, primaryMe
 
 const bassLine1V = bassString1(primaryBass);
 const bassLine2V = bassString2(primaryBass, bassLine1V);
-const bassLine3V = bassString3(primaryBass2);
-const bassLine4V = bassString4(primaryBass);
+const bassLine3V = bassString3(primaryBass2, bassLine2V);
+const bassLine4V = bassString4(primaryBass, bassLine1V);
 const bassV = bassLine1V.concat(bassLine2V + bassLine3V + bassLine4V);
 
 const melodyLine1V = melodyString(primaryMelody, primaryBass, bassLine1V);
@@ -63,8 +63,8 @@ const flairV = flairString(initDrums, snareDrumV, hiHatV);
 
 const bassLine1C = bassString1(primaryBass);
 const bassLine2C = bassString2(primaryBass, bassLine1C);
-const bassLine3C = bassString3(primaryBass2);
-const bassLine4C = bassString4(primaryBass);
+const bassLine3C = bassString3(primaryBass2, bassLine2C);
+const bassLine4C = bassString4(primaryBass, bassLine1C);
 const bassC = bassLine1C.concat(bassLine2C + bassLine3C + bassLine4C);
 
 const melodyLine1C = melodyString(primaryMelody, primaryBass, bassLine1C);
@@ -89,8 +89,8 @@ const flairC = flairString(initDrums, snareDrumC, hiHatC);
 
 const bassLine1B = bassString1(primaryBass);
 const bassLine2B = bassString2(primaryBass, bassLine1B);
-const bassLine3B = bassString3(primaryBass2);
-const bassLine4B = bassString4(primaryBass);
+const bassLine3B = bassString3(primaryBass2, bassLine2B);
+const bassLine4B = bassString4(primaryBass, bassLine1B);
 const bassB = bassLine1B.concat(bassLine2B + bassLine3B + bassLine4B);
 
 const melodyLine1B = melodyString(primaryMelody, primaryBass, bassLine1B);
