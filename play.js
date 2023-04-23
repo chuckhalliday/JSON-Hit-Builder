@@ -13,14 +13,12 @@ const primaryBass2 = primaryGroove();
 const initBass = primaryBass.concat(primaryBass, primaryBass, primaryBass);
 //let bassCount = sumArray(initBass);
 //console.log(bassCount);
-
 const primaryDrums = createDrums(primaryBass);
 const primaryDrums2 = createDrums(primaryBass2);
 const drumTrips = subdivideArray(primaryDrums);
 const initDrums = primaryDrums.concat(drumTrips, primaryDrums2, drumTrips);
 //let drumCount = sumArray(initDrums);
 //console.log(drumCount);
-
 const primaryMelody = melodyGroove(primaryBass);
 const primaryMelody2 = melodyGroove(primaryBass2);
 const initMelody = primaryMelody.concat(primaryMelody, primaryMelody2, primaryMelody);
@@ -111,6 +109,7 @@ let keyAdjust = setKey()
 let key = findKey(bassV, keyAdjust)
 adjustBassNotes(keyAdjust)
 
+//Begin console.logging
 console.log(`Tempo: ` + bpm)
 console.log(`Runtime: ` + Math.floor(songtime / 60) + `:` + songtime % 60 + `
 `)
@@ -226,7 +225,6 @@ console.log(`HiHat: ` + hiHatB)
 console.log(`Snare: ` + snareDrumB)
 console.log(`Kick:  ` + bassDrumB + `
 `)
-
 
 
 playSong(songStructure, bpm, initDrums, initBass, 
