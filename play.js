@@ -318,6 +318,8 @@ async function playBass(pattern, groove) {
   }
 }
 
+
+
 let line = "";
 let sum = 0;
 let barCount = 0;
@@ -369,7 +371,7 @@ for (let i = 0; i < bassV.length; i++) {
   spacedBassV += bassV[i] + " ";
 }
 let bassVA = adjustBassString(spacedBassV)
-console.log(bassV)
+
 console.log(`Bass:  ` + bassVA + `
 `)
 
@@ -388,7 +390,6 @@ for (let i = 0; i < bassC.length; i++) {
   spacedBassC += bassC[i] + " ";
 }
 let bassCA = adjustBassString(spacedBassC)
-console.log(bassC)
 console.log(`Bass:  ` + bassCA + `
 `)
 
@@ -407,7 +408,6 @@ for (let i = 0; i < bassB.length; i++) {
   spacedBassB += bassB[i] + " ";
 }
 let bassBA = adjustBassString(spacedBassB)
-console.log(bassB)
 console.log(`Bass:  ` + bassBA + `
 `)
 
@@ -419,6 +419,8 @@ console.log(`Kick:  ` + bassDrumB + `
 
 
 async function verse() {
+  const output = new midi.Output()
+  output.openPort(0)
   for (let i = 0; i < 1; i++) {
     await Promise.all([
     playBeat(bassDrumV.replace(/\|/g, ''), initDrums),
@@ -431,6 +433,8 @@ async function verse() {
 }
 
 async function chorus() {
+  const output = new midi.Output()
+  output.openPort(0)
   for (let i = 0; i < 1; i++) {
     await Promise.all([
     playBeat(bassDrumC.replace(/\|/g, ''), initDrums),
@@ -443,6 +447,7 @@ async function chorus() {
 }
 
 async function bridge() {
+  const output = new midi.Output()
   for (let i = 0; i < 1; i++) {
     await Promise.all([
     playBeat(bassDrumB.replace(/\|/g, ''), initDrums),
@@ -455,7 +460,11 @@ async function bridge() {
 }
 
 async function playSong(songStructure) {
+  const output = new midi.Output()
+  output.openPort(0)
+  output.sendMessage([144,16,1])
   for (const part of songStructure) {
+    output.sendMessage([144,17,1])
     for (let i = 0; i < part.length; i++) {
       switch (part.type) {
         case 'Verse':
@@ -472,6 +481,7 @@ async function playSong(songStructure) {
       }
     }
   }
+  output.sendMessage([144,16,1])
 }
 
 playSong(songStructure);
