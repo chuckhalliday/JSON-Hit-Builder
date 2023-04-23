@@ -43,7 +43,7 @@ export async function playBridge(initDrums, initBass, bassDrumB, snareDrumB, hiH
     }
   }
 
-export async function playSong(songStructure,initDrums, initBass, bassDrumV, snareDrumV, hiHatV, flairV, bassV, bassDrumC, snareDrumC, hiHatC, flairC, bassC, bassDrumB, snareDrumB, hiHatB, flairB, bassB, bpm) {
+export async function playSong(songStructure, bpm, initDrums, initBass, bassDrumV, snareDrumV, hiHatV, flairV, bassV, bassDrumC, snareDrumC, hiHatC, flairC, bassC, bassDrumB, snareDrumB, hiHatB, flairB, bassB) {
     const output = new midi.Output()
     output.openPort(0)
     output.sendMessage([144,16,1])

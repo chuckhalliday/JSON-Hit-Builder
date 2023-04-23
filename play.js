@@ -48,9 +48,7 @@ const bassDrum4V = kickString(drumTrips, primaryBass, bassLine4V);
 const bassDrumV = bassDrum1V.concat(bassDrum2V + bassDrum3V + bassDrum4V);
 
 const snareDrumV = snareString(initDrums);
-
 const hiHatV = hatString(initDrums);
-
 const flairV = flairString(initDrums, snareDrumV, hiHatV);
 
 //chorus
@@ -74,9 +72,7 @@ const bassDrum4C = kickString(drumTrips, primaryBass, bassLine4C);
 const bassDrumC = bassDrum1C.concat(bassDrum2C + bassDrum3C + bassDrum4C);
 
 const snareDrumC = snareString(initDrums);
-
 const hiHatC = hatString(initDrums);
-
 const flairC = flairString(initDrums, snareDrumC, hiHatC);
 
 //bridge
@@ -100,9 +96,7 @@ const bassDrum4B = kickString(drumTrips, primaryBass, bassLine4B);
 const bassDrumB = bassDrum1B.concat(bassDrum2B + bassDrum3B + bassDrum4B);
 
 const snareDrumB = snareString(initDrums);
-
 const hiHatB = hatString(initDrums);
-
 const flairB = flairString(initDrums, snareDrumB, hiHatB);
 
 const songtime = Math.round(Math.random() * (240 - 210) + 210);
@@ -117,16 +111,19 @@ let keyAdjust = setKey()
 let key = findKey(bassV, keyAdjust)
 adjustBassNotes(keyAdjust)
 
-
 console.log(`Tempo: ` + bpm)
 console.log(`Runtime: ` + Math.floor(songtime / 60) + `:` + songtime % 60 + `
 `)
 
+
+// Song parts
 songStructure.forEach(part => {
     console.log(`${part.type}: ${part.length}x
     `);
   });
 
+
+// Bass groove cleaned up for easy reading in console
 let line = "";
 let sum = 0;
 let barCount = 0;
@@ -148,6 +145,7 @@ for (let i = 0; i < initBass.length; i++) {
 }
 barCount = 0
 
+// Drum groove cleaned up for easy reading in console
 console.log(`
 Drum Groove:`)
 
@@ -166,9 +164,12 @@ for (let i = 0; i < initDrums.length; i++) {
 }
 barCount = 0
 
+
+// Key
 console.log(`
 Key: ` + key)
 
+// Verse
 console.log(`Verse:
 `)
 
@@ -188,6 +189,7 @@ console.log(`Snare: ` + snareDrumV)
 console.log(`Kick:  ` + bassDrumV + `
 `)
 
+//Chorus
 console.log(`Chorus:
 `)
 
@@ -206,6 +208,7 @@ console.log(`Snare: ` + snareDrumC)
 console.log(`Kick:  ` + bassDrumC + `
 `)
 
+//Bridge
 console.log(`Bridge:
 `)
 
@@ -224,4 +227,9 @@ console.log(`Snare: ` + snareDrumB)
 console.log(`Kick:  ` + bassDrumB + `
 `)
 
-playSong(songStructure, initDrums, initBass, bassDrumV, snareDrumV, hiHatV, flairV, bassV, bassDrumC, snareDrumC, hiHatC, flairC, bassC, bassDrumB, snareDrumB, hiHatB, flairB, bassB, bpm);
+
+
+playSong(songStructure, bpm, initDrums, initBass, 
+  bassDrumV, snareDrumV, hiHatV, flairV, bassV, 
+  bassDrumC, snareDrumC, hiHatC, flairC, bassC, 
+  bassDrumB, snareDrumB, hiHatB, flairB, bassB);
