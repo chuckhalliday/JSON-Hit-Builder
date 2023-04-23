@@ -103,7 +103,7 @@ const bps = bpm / 60;
 const beatstotal = bps * songtime;
 const measures = Math.round(beatstotal / 4 / 4) * 4;
 const partsLength = measures / 4;
-let songStructure = generateSongStructure(partsLength)
+const songStructure = generateSongStructure(partsLength)
 
 let keyAdjust = setKey()
 let key = findKey(bassV, keyAdjust)
@@ -114,13 +114,11 @@ console.log(`Tempo: ` + bpm)
 console.log(`Runtime: ` + Math.floor(songtime / 60) + `:` + songtime % 60 + `
 `)
 
-
 // Song parts
 songStructure.forEach(part => {
     console.log(`${part.type}: ${part.length}x
     `);
   });
-
 
 // Bass groove cleaned up for easy reading in console
 let line = "";
@@ -163,7 +161,6 @@ for (let i = 0; i < initDrums.length; i++) {
 }
 barCount = 0
 
-
 // Key
 console.log(`
 Key: ` + key)
@@ -173,12 +170,10 @@ console.log(`Verse:
 `)
 
 let spacedBassV = "";
-
 for (let i = 0; i < bassV.length; i++) {
   spacedBassV += bassV[i] + " ";
 }
 let bassVA = adjustBassString(spacedBassV, keyAdjust)
-
 console.log(`Bass:  ` + bassVA + `
 `)
 
@@ -193,7 +188,6 @@ console.log(`Chorus:
 `)
 
 let spacedBassC = "";
-
 for (let i = 0; i < bassC.length; i++) {
   spacedBassC += bassC[i] + " ";
 }
@@ -212,7 +206,6 @@ console.log(`Bridge:
 `)
 
 let spacedBassB = "";
-
 for (let i = 0; i < bassB.length; i++) {
   spacedBassB += bassB[i] + " ";
 }
