@@ -1,3 +1,11 @@
+export function sumArray(array) {
+  let sum = 0;
+  for (let i = 0; i < array.length; i++) {
+    sum += array[i];
+  }
+  return sum;
+}
+
 export function shuffleArray(array) {
   // Fisher-Yates Shuffle algorithm 
   // First element (0.5) left in place to avoid rest on beat one

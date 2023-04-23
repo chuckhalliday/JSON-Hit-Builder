@@ -403,3 +403,55 @@ export function bassString4C(arr, string1) {
   bass += "|";
   return bass;
 }
+
+export function adjustBassString(string, keyAdjust) {
+  let adjustedString = ""
+  for (let i = 0; i < string.length; i++) {
+    const keys = [
+      "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B", "C",
+      "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B", "C",
+      "C#", "D"
+    ];
+  
+    if (string.charAt(i) === "a") {
+      adjustedString += keys[7 + keyAdjust]
+    } else if (string.charAt(i) === "A") {
+      adjustedString += keys[8 + keyAdjust]
+    } else if (string.charAt(i) === "b") {
+      adjustedString += keys[9 + keyAdjust]
+    } else if (string.charAt(i) === "c") {
+      adjustedString += keys[10 + keyAdjust]
+    } else if (string.charAt(i) === "C") {
+      adjustedString += keys[11 + keyAdjust]
+    } else if (string.charAt(i) === "d") {
+      adjustedString += keys[12 + keyAdjust]
+    } else if (string.charAt(i) === "D") {
+      adjustedString += keys[13 + keyAdjust]
+    } else if (string.charAt(i) === "e") {
+      adjustedString += keys[14 + keyAdjust]
+    } else if (string.charAt(i) === "f") {
+      adjustedString += keys[15 + keyAdjust]
+    } else if (string.charAt(i) === "F") {
+      adjustedString += keys[16 + keyAdjust]
+    } else if (string.charAt(i) === "g") {
+      adjustedString += keys[17 + keyAdjust]
+    } else if (string.charAt(i) === "G") {
+      adjustedString += keys[18 + keyAdjust]
+    } else if (string.charAt(i) === "o") {
+      adjustedString += keys[15 + keyAdjust]
+    } else if (string.charAt(i) === "O") {
+      adjustedString += keys[16 + keyAdjust]
+    } else if (string.charAt(i) === "p") {
+      adjustedString += keys[17 + keyAdjust]
+    } else if (string.charAt(i) === "P") {
+      adjustedString += keys[18 + keyAdjust]
+    } else if (string.charAt(i) === "-") {
+      adjustedString += "-"
+    } else if (string.charAt(i) === "|") {
+      adjustedString += "|"
+    } else if (string.charAt(i) === " ") {
+      adjustedString += " "
+    }
+  }
+  return adjustedString;
+}
