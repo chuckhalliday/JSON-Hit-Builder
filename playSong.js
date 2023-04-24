@@ -1,6 +1,14 @@
 import midi from 'midi'
 import { playBeat, playBass } from './playParts.js'
 
+export async function countIn(bpm, initDrums, 
+  hiHatV) {
+  for (let i = 0; i < 1; i++) {
+    await Promise.all([
+    playBeat(hiHatV.replace(/\|/g, ''), initDrums, bpm),
+  ])
+  }
+}
 
 export async function playVerse(bpm, initDrums, initBass, 
     bassDrumV, snareDrumV, hiHatV, flairV, bassV) {
@@ -46,9 +54,10 @@ export async function playSong(songStructure, bpm, initDrums, initBass,
     bassDrumC, snareDrumC, hiHatC, flairC, bassC, 
     bassDrumB, snareDrumB, hiHatB, flairB, bassB) {
     const output = new midi.Output()
-    output.openPort(0)
+    output.openPort(3)
     //Start recording
     output.sendMessage([144,16,1])
+    await countIn(bpm, initDrums, hiHatV)
     for (const part of songStructure) {
       //Drop locators
       output.sendMessage([144,17,1])
