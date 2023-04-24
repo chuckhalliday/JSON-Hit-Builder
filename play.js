@@ -1,7 +1,7 @@
 import { sumArray, shuffleArray, subdivideArray } from "./groove.js";
 import { createDrums, kickString, snareString, hatString, flairString, } from "./drums.js";
 import { primaryGroove, bassString1V, bassString2V, bassString3V, bassString4V,
-      adjustBassString, bassString1C, bassString2C, bassString3C, bassString4C} from "./bass.js";
+adjustBassString, bassString1B, bassString1C, bassString2C, bassString3C, bassString4C} from "./bass.js";
 import { melodyGroove, melodyString } from "./melody.js";
 import { setKey, findKey } from './key.js';
 import { adjustBassNotes } from './playParts.js';
@@ -75,7 +75,7 @@ const flairC = flairString(initDrums, snareDrumC, hiHatC);
 
 //bridge
 
-const bassLine1B = bassString1C(primaryBass, bassLine1V);
+const bassLine1B = bassString1B(primaryBass, bassLine1C);
 const bassLine2B = bassString2C(primaryBass, bassLine1B);
 const bassLine3B = bassString3C(primaryBass2, bassLine1V);
 const bassLine4B = bassString4C(primaryBass, bassLine1V);
