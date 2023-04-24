@@ -26,16 +26,15 @@ export function bassString1V(arr) {
   let sum = 0;
 
   let a_c = Math.random() < 0.5 ? "a" : "c";
-  let acc1;
-  let acc2;
-
-  if (a_c === "a") {
-    acc1 = Math.random() < 0.6 ? "p" : "P";
-    acc2 = Math.random() < 0.8 ? "c" : "e";
-  } else if (a_c === "c") {
-    acc1 = Math.random() < 0.2 ? "A" : "b";
-    acc2 = Math.random() < 0.8 ? "e" : "g";
+  let possibleBassValues;
+  if (a_c === "c") {
+    possibleBassValues = ["c", "e", "b", "g", "A"];
+  } else if (a_c === "a") {
+    possibleBassValues = ["a", "c", "e", "g", "G"];
   }
+
+  let acc1 = possibleBassValues[Math.floor(Math.random() * possibleBassValues.length)];
+  let acc2 = possibleBassValues[Math.floor(Math.random() * possibleBassValues.length)];
 
   for (let i = 0; i < arr.length; i++) {
     if (arr[i] <= 0.25) {
@@ -58,7 +57,7 @@ export function bassString1V(arr) {
 export function bassString2V(arr, string1) {
   let bass = "";
   let sum = 0;
-  let possibleBassValues = ["d", "e", "f", "g", "b"];
+  let possibleBassValues;
 
   if (string1.charAt(0) === 'c') {
     possibleBassValues = ["f", "g"];
@@ -117,13 +116,13 @@ export function bassString3V(arr, string2) {
 
   let bass3 = possibleBassValues[Math.floor(Math.random() * possibleBassValues.length)];
 
-  const dVals = ["o", "e", "f", "a"];
+  const dVals = ["o", "e", "p", "c", "a", "b"];
   let dAcc = dVals[Math.floor(Math.random() * dVals.length)];
-  const eVals = ["D", "f", "g", "b"];
+  const eVals = ["o", "p", "c", "d", "a", "b"];
   let eAcc = eVals[Math.floor(Math.random() * eVals.length)];
-  const fVals = ["a", "c", "g"];
+  const fVals = ["o", "p", "b", "a", "c", "g"];
   let fAcc = fVals[Math.floor(Math.random() * fVals.length)];
-  const gVals = ["b", "d", "f"];
+  const gVals = ["o", "p", "b", "a", "f"];
   let gAcc = gVals[Math.floor(Math.random() * gVals.length)];
   const cVals = ["e", "g", "a", "b"];
   let cAcc = cVals[Math.floor(Math.random() * cVals.length)];
@@ -274,13 +273,13 @@ export function bassString2C(arr, string1C) {
 
   let bass3 = possibleBassValues[Math.floor(Math.random() * possibleBassValues.length)];
 
-  const dVals = ["o", "e", "f", "a"];
+  const dVals = ["o", "e", "p", "c", "a", "b"];
   let dAcc = dVals[Math.floor(Math.random() * dVals.length)];
-  const eVals = ["D", "f", "g", "b"];
+  const eVals = ["o", "p", "c", "d", "a", "b"];
   let eAcc = eVals[Math.floor(Math.random() * eVals.length)];
-  const fVals = ["a", "c", "g"];
+  const fVals = ["o", "p", "b", "a", "c", "g"];
   let fAcc = fVals[Math.floor(Math.random() * fVals.length)];
-  const gVals = ["b", "d", "f"];
+  const gVals = ["o", "p", "b", "a", "f"];
   let gAcc = gVals[Math.floor(Math.random() * gVals.length)];
   const cVals = ["e", "g", "a", "b"];
   let cAcc = cVals[Math.floor(Math.random() * cVals.length)];
@@ -322,17 +321,16 @@ export function bassString3C(arr, string1) {
   let bass = "";
   let sum = 0;
 
-  let a_c = string1.charAt(0)
-  let acc1;
-  let acc2;
-
-  if (a_c === "a") {
-    acc1 = Math.random() < 0.6 ? "p" : "P";
-    acc2 = Math.random() < 0.8 ? "c" : "e";
-  } else if (a_c === "c") {
-    acc1 = Math.random() < 0.2 ? "A" : "b";
-    acc2 = Math.random() < 0.8 ? "e" : "g";
+  let possibleBassValues;
+  if (string1.charAt(0) === "c") {
+    possibleBassValues = ["c", "e", "b", "g", "A"];
+  } else if (string1.charAt(0) === "a") {
+    possibleBassValues = ["a", "c", "e", "g", "G"];
   }
+
+  let a_c = string1.charAt(0)
+  let acc1 = possibleBassValues[Math.floor(Math.random() * possibleBassValues.length)];
+  let acc2 = possibleBassValues[Math.floor(Math.random() * possibleBassValues.length)];
 
   for (let i = 0; i < arr.length; i++) {
     if (arr[i] <= 0.25) {
@@ -460,43 +458,43 @@ export function adjustBassString(string, keyAdjust) {
   let adjustedString = ""
   for (let i = 0; i < string.length; i++) {
     const keys = [
-      "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B", "C",
-      "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B", "C",
-      "C#", "D"
+      "A", "A#", "B", "C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", 
+      "A", "A#", "B", "C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", 
+      "A", "A#", "B", "C", "C#", "D"
     ];
   
     if (string.charAt(i) === "a") {
-      adjustedString += keys[7 + keyAdjust]
-    } else if (string.charAt(i) === "A") {
-      adjustedString += keys[8 + keyAdjust]
-    } else if (string.charAt(i) === "b") {
-      adjustedString += keys[9 + keyAdjust]
-    } else if (string.charAt(i) === "c") {
-      adjustedString += keys[10 + keyAdjust]
-    } else if (string.charAt(i) === "C") {
-      adjustedString += keys[11 + keyAdjust]
-    } else if (string.charAt(i) === "d") {
       adjustedString += keys[12 + keyAdjust]
-    } else if (string.charAt(i) === "D") {
+    } else if (string.charAt(i) === "A") {
       adjustedString += keys[13 + keyAdjust]
-    } else if (string.charAt(i) === "e") {
+    } else if (string.charAt(i) === "b") {
       adjustedString += keys[14 + keyAdjust]
+    } else if (string.charAt(i) === "c") {
+      adjustedString += keys[15 + keyAdjust]
+    } else if (string.charAt(i) === "C") {
+      adjustedString += keys[16 + keyAdjust]
+    } else if (string.charAt(i) === "d") {
+      adjustedString += keys[17 + keyAdjust]
+    } else if (string.charAt(i) === "D") {
+      adjustedString += keys[18 + keyAdjust]
+    } else if (string.charAt(i) === "e") {
+      adjustedString += keys[19 + keyAdjust]
     } else if (string.charAt(i) === "f") {
-      adjustedString += keys[15 + keyAdjust]
+      adjustedString += keys[20 + keyAdjust]
     } else if (string.charAt(i) === "F") {
-      adjustedString += keys[16 + keyAdjust]
+      adjustedString += keys[21 + keyAdjust]
     } else if (string.charAt(i) === "g") {
-      adjustedString += keys[17 + keyAdjust]
+      adjustedString += keys[22 + keyAdjust]
     } else if (string.charAt(i) === "G") {
-      adjustedString += keys[18 + keyAdjust]
+      adjustedString += keys[23 + keyAdjust]
     } else if (string.charAt(i) === "o") {
-      adjustedString += keys[15 + keyAdjust]
+      adjustedString += keys[20 + keyAdjust]
     } else if (string.charAt(i) === "O") {
-      adjustedString += keys[16 + keyAdjust]
+      adjustedString += keys[21 + keyAdjust]
     } else if (string.charAt(i) === "p") {
-      adjustedString += keys[17 + keyAdjust]
+      adjustedString += keys[22 + keyAdjust]
     } else if (string.charAt(i) === "P") {
-      adjustedString += keys[18 + keyAdjust]
+      adjustedString += keys[23 + keyAdjust]
     } else if (string.charAt(i) === "-") {
       adjustedString += "-"
     } else if (string.charAt(i) === "|") {

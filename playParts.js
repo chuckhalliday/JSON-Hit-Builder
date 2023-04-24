@@ -14,15 +14,15 @@ let drumHits = {
 };
   
 let bassNotes = {
-    'o': 29, 'O': 30,   // F, F#
-    'p': 31, 'P': 32,   // G, G#
-    'a': 33, 'A': 34,  // All capitals are sharp
-    'b': 35,
-    'c': 36, 'C': 37,
-    'd': 38, 'D': 39,
-    'e': 40,
-    'f': 41, 'F': 42,
-    'g': 43, 'G': 44,
+    'o': 41, 'O': 42,   // F, F#
+    'p': 43, 'P': 44,   // G, G#
+    'a': 45, 'A': 46,  // All capitals are sharp
+    'b': 47,
+    'c': 48, 'C': 49,
+    'd': 50, 'D': 51,
+    'e': 52,
+    'f': 53, 'F': 54,
+    'g': 55, 'G': 56,
 };
 
 export function adjustBassNotes(keyAdjust) {

@@ -122,7 +122,7 @@ export function flairString(arr, snareString, hihatString) {
         flair += Math.random() < 0.4 ? "Z" : "-";
       } else if (arr[i] === 0.0833 || arr[i] === 0.0834 ||
         arr[i] === 0.1667 || arr[i] === 0.1666) {
-        flair += Math.random() < 0.6 ? tom : "-";
+        flair += Math.random() < 0.3 ? tom : "-";
       } else {
         flair += "-";
       }

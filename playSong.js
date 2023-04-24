@@ -50,6 +50,7 @@ export async function playBridge(bpm, initDrums, initBass,
   }
 
 export async function playSong(songStructure, bpm, initDrums, initBass, 
+    chorusDrums, chorusBass, bridgeDrums, bridgeBass, 
     bassDrumV, snareDrumV, hiHatV, flairV, bassV, 
     bassDrumC, snareDrumC, hiHatC, flairC, bassC, 
     bassDrumB, snareDrumB, hiHatB, flairB, bassB) {
@@ -58,9 +59,11 @@ export async function playSong(songStructure, bpm, initDrums, initBass,
     //Start recording
     output.sendMessage([144,16,1])
     await countIn(bpm, initDrums, hiHatV)
+    let sum = 18
     for (const part of songStructure) {
       //Drop locators
       output.sendMessage([144,17,1])
+      output.sendMessage([144,sum,1])
       for (let i = 0; i < part.length; i++) {
         switch (part.type) {
           case 'Verse':
@@ -68,17 +71,18 @@ export async function playSong(songStructure, bpm, initDrums, initBass,
                 bassDrumV, snareDrumV, hiHatV, flairV, bassV);
             break;
           case 'Chorus':
-            await playChorus(bpm, initDrums, initBass, 
+            await playChorus(bpm, chorusDrums, chorusBass, 
                 bassDrumC, snareDrumC, hiHatC, flairC, bassC);
             break;
           case 'Bridge':
-            await playBridge(bpm, initDrums, initBass, 
+            await playBridge(bpm, bridgeDrums, bridgeBass, 
                 bassDrumB, snareDrumB, hiHatB, flairB, bassB);
             break;
           default:
             throw new Error(`Invalid part type: ${part.type}`);
         }
       }
+      sum += 1
     }
     //Stop recording
     output.sendMessage([144,16,1])

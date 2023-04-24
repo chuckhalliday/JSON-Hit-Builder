@@ -10,13 +10,17 @@ import { playSong } from './playSong.js'
 
 const primaryBass = primaryGroove();
 const primaryBass2 = primaryGroove();
-const initBass = primaryBass.concat(primaryBass, primaryBass, primaryBass);
+const initBass = primaryBass.concat(primaryBass, primaryBass2, primaryBass);
+const chorusBass = primaryBass2.concat(primaryBass2, primaryBass, primaryBass)
+const bridgeBass = primaryBass2.concat(primaryBass, primaryBass2, primaryBass)
 //let bassCount = sumArray(initBass);
 //console.log(bassCount);
 const primaryDrums = createDrums(primaryBass);
 const primaryDrums2 = createDrums(primaryBass2);
 const drumTrips = subdivideArray(primaryDrums);
 const initDrums = primaryDrums.concat(drumTrips, primaryDrums2, drumTrips);
+const chorusDrums = primaryDrums2.concat(primaryDrums2, primaryDrums, drumTrips)
+const bridgeDrums = primaryDrums2.concat(drumTrips, primaryDrums2, drumTrips)
 //let drumCount = sumArray(initDrums);
 //console.log(drumCount);
 const primaryMelody = melodyGroove(primaryBass);
@@ -51,9 +55,9 @@ const flairV = flairString(initDrums, snareDrumV, hiHatV);
 
 //chorus
 
-const bassLine1C = bassString1C(primaryBass, bassLine1V);
-const bassLine2C = bassString2C(primaryBass, bassLine1C);
-const bassLine3C = bassString3C(primaryBass2, bassLine1V);
+const bassLine1C = bassString1C(primaryBass2, bassLine1V);
+const bassLine2C = bassString2C(primaryBass2, bassLine1C);
+const bassLine3C = bassString3C(primaryBass, bassLine1V);
 const bassLine4C = bassString4C(primaryBass, bassLine1V);
 const bassC = bassLine1C.concat(bassLine2C + bassLine3C + bassLine4C);
 
@@ -63,19 +67,19 @@ const melodyLine3C = melodyString(primaryMelody2, primaryBass2, bassLine3C);
 const melodyLine4C = melodyString(primaryMelody, primaryBass, bassLine4C);
 const melodyC = melodyLine1C.concat(melodyLine2C + melodyLine3C + melodyLine4C);
 
-const bassDrum1C = kickString(primaryDrums, primaryBass, bassLine1C);
-const bassDrum2C = kickString(drumTrips, primaryBass, bassLine2C);
-const bassDrum3C = kickString(primaryDrums2, primaryBass2, bassLine3C);
+const bassDrum1C = kickString(primaryDrums2, primaryBass, bassLine1C);
+const bassDrum2C = kickString(primaryDrums2, primaryBass, bassLine2C);
+const bassDrum3C = kickString(primaryDrums, primaryBass2, bassLine3C);
 const bassDrum4C = kickString(drumTrips, primaryBass, bassLine4C);
 const bassDrumC = bassDrum1C.concat(bassDrum2C + bassDrum3C + bassDrum4C);
 
-const snareDrumC = snareString(initDrums);
-const hiHatC = hatString(initDrums);
-const flairC = flairString(initDrums, snareDrumC, hiHatC);
+const snareDrumC = snareString(chorusDrums);
+const hiHatC = hatString(chorusDrums);
+const flairC = flairString(chorusDrums, snareDrumC, hiHatC);
 
 //bridge
 
-const bassLine1B = bassString1B(primaryBass, bassLine1C);
+const bassLine1B = bassString1B(primaryBass2, bassLine1C);
 const bassLine2B = bassString2C(primaryBass, bassLine1B);
 const bassLine3B = bassString3C(primaryBass2, bassLine1V);
 const bassLine4B = bassString4C(primaryBass, bassLine1V);
@@ -87,7 +91,7 @@ const melodyLine3B = melodyString(primaryMelody2, primaryBass2, bassLine3B);
 const melodyLine4B = melodyString(primaryMelody, primaryBass, bassLine4B);
 const melodyB = melodyLine1B.concat(melodyLine2B + melodyLine3B + melodyLine4B);
 
-const bassDrum1B = kickString(primaryDrums, primaryBass, bassLine1B);
+const bassDrum1B = kickString(primaryDrums2, primaryBass, bassLine1B);
 const bassDrum2B = kickString(drumTrips, primaryBass, bassLine2B);
 const bassDrum3B = kickString(primaryDrums2, primaryBass2, bassLine3B);
 const bassDrum4B = kickString(drumTrips, primaryBass, bassLine4B);
@@ -106,6 +110,7 @@ const partsLength = measures / 4;
 const songStructure = generateSongStructure(partsLength)
 
 let keyAdjust = setKey()
+console.log(keyAdjust)
 let key = findKey(bassV, keyAdjust)
 adjustBassNotes(keyAdjust)
 
@@ -221,6 +226,7 @@ console.log(`Kick:  ` + bassDrumB + `
 
 
 playSong(songStructure, bpm, initDrums, initBass, 
+  chorusDrums, chorusBass, bridgeDrums, bridgeBass, 
   bassDrumV, snareDrumV, hiHatV, flairV, bassV, 
   bassDrumC, snareDrumC, hiHatC, flairC, bassC, 
   bassDrumB, snareDrumB, hiHatB, flairB, bassB);
