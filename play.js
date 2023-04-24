@@ -101,27 +101,61 @@ const snareDrumB = snareString(initDrums);
 const hiHatB = hatString(initDrums);
 const flairB = flairString(initDrums, snareDrumB, hiHatB);
 
+let keyAdjust = setKey()
+console.log(keyAdjust)
+let key = findKey(bassV, keyAdjust)
+adjustBassNotes(keyAdjust)
+
+//Transpose bass strings and format for reading
+
+let spacedBassV = "";
+for (let i = 0; i < bassV.length; i++) {
+  spacedBassV += bassV[i] + " ";
+}
+let bassVA = adjustBassString(spacedBassV, keyAdjust)
+
+let spacedBassC = "";
+for (let i = 0; i < bassC.length; i++) {
+  spacedBassC += bassC[i] + " ";
+}
+let bassCA = adjustBassString(spacedBassC, keyAdjust)
+
+let spacedBassB = "";
+for (let i = 0; i < bassB.length; i++) {
+  spacedBassB += bassB[i] + " ";
+}
+let bassBA = adjustBassString(spacedBassB, keyAdjust)
+
+
 const songtime = Math.round(Math.random() * (240 - 210) + 210);
 const bpm = Math.round(Math.random() * (140 - 60) + 60);
 const bps = bpm / 60;
 const beatstotal = bps * songtime;
 const measures = Math.round(beatstotal / 4 / 4) * 4;
 const partsLength = measures / 4;
-const songStructure = generateSongStructure(partsLength)
+const songStructure = generateSongStructure(partsLength, bassVA, bassCA, bassBA, 
+  flairV, hiHatV, snareDrumV, bassDrumV,
+  flairC, hiHatC, snareDrumC, bassDrumC,
+  flairB, hiHatB, snareDrumB, bassDrumB)
 
-let keyAdjust = setKey()
-console.log(keyAdjust)
-let key = findKey(bassV, keyAdjust)
-adjustBassNotes(keyAdjust)
 
-//Begin console.logging
 console.log(`Tempo: ` + bpm)
 console.log(`Runtime: ` + Math.floor(songtime / 60) + `:` + songtime % 60 + `
 `)
+console.log(`
+Key: ` + key + `
+`)
+
 
 // Song parts
 songStructure.forEach(part => {
     console.log(`${part.type}: ${part.length}x
+
+    Bass:  ${part.bass}
+    Misc:  ${part.flair}
+    HiHat: ${part.hiHat}
+    Snare: ${part.snare}
+    Kick:  ${part.kick}
     `);
   });
 
@@ -165,64 +199,6 @@ for (let i = 0; i < initDrums.length; i++) {
   }
 }
 barCount = 0
-
-// Key
-console.log(`
-Key: ` + key)
-
-// Verse
-console.log(`Verse:
-`)
-
-let spacedBassV = "";
-for (let i = 0; i < bassV.length; i++) {
-  spacedBassV += bassV[i] + " ";
-}
-let bassVA = adjustBassString(spacedBassV, keyAdjust)
-console.log(`Bass:  ` + bassVA + `
-`)
-
-console.log(`Misc:  ` + flairV)
-console.log(`HiHat: ` + hiHatV)
-console.log(`Snare: ` + snareDrumV)
-console.log(`Kick:  ` + bassDrumV + `
-`)
-
-//Chorus
-console.log(`Chorus:
-`)
-
-let spacedBassC = "";
-for (let i = 0; i < bassC.length; i++) {
-  spacedBassC += bassC[i] + " ";
-}
-let bassCA = adjustBassString(spacedBassC, keyAdjust)
-console.log(`Bass:  ` + bassCA + `
-`)
-
-console.log(`Misc:  ` + flairC)
-console.log(`HiHat: ` + hiHatC)
-console.log(`Snare: ` + snareDrumC)
-console.log(`Kick:  ` + bassDrumC + `
-`)
-
-//Bridge
-console.log(`Bridge:
-`)
-
-let spacedBassB = "";
-for (let i = 0; i < bassB.length; i++) {
-  spacedBassB += bassB[i] + " ";
-}
-let bassBA = adjustBassString(spacedBassB, keyAdjust)
-console.log(`Bass:  ` + bassBA + `
-`)
-
-console.log(`Misc:  ` + flairB)
-console.log(`HiHat: ` + hiHatB)
-console.log(`Snare: ` + snareDrumB)
-console.log(`Kick:  ` + bassDrumB + `
-`)
 
 
 playSong(songStructure, bpm, initDrums, initBass, 
