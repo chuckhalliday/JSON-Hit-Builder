@@ -52,7 +52,7 @@ export function kickString(arr1, arr2, bassString) {
     }
     kickSum += arr1[i];
   }
-  if (Number.isInteger(kickSum / 4)) {
+  if (Number.isInteger(kickSum / 8)) {
     kick += "|";
   }
   return kick;
@@ -69,7 +69,7 @@ export function snareString(arr) {
       snare += Math.random() < 0.9 ? "-" : "y";
     }
     sum += arr[i];
-    if (Math.abs(sum / 4 - Math.round(sum / 4)) <= 0.005) {
+    if (Math.abs(sum / 8 - Math.round(sum / 8)) <= 0.005) {
       snare += "|";
     }
   }
@@ -90,7 +90,7 @@ export function hatString(arr) {
       hihat += "-";
     }
     sum += arr[i];
-    if (Math.abs(sum / 4 - Math.round(sum / 4)) <= 0.005) {
+    if (Math.abs(sum / 8 - Math.round(sum / 8)) <= 0.005) {
       hihat += "|";
     }
   }
@@ -108,17 +108,17 @@ export function flairString(arr, snareString, hihatString) {
 
   for (let i = 0; i < arr.length; i++) {
     if (snare.charAt(i) === '-' || hihat.charAt(i) === '-') {
-      if (sum === 0 || sum === 8) {
+      if (sum === 0 || sum === 16) {
         flair += Math.random() < 0.4 ? "R" : "-";
-      } else if (sum === 4 || sum === 12) {
+      } else if (sum === 8 || sum === 24) {
         flair += Math.random() < 0.4 ? "r" : "-";
-      } else if (sum === 3.5 || sum === 11.5) {
+      } else if (sum === 7.5 || sum === 23.5) {
         flair += Math.random() < 0.2 ? "Q" : "-";
-      } else if (sum === 7.5 || sum === 15.5) {
+      } else if (sum === 15 || sum === 31) {
         flair += Math.random() < 0.2 ? "q" : "-";
-      } else if (sum === 3.825 || sum === 11.825) {
+      } else if (sum === 7.825 || sum === 23.825) {
         flair += Math.random() < 0.2 ? "z" : "-";
-      } else if (sum >= 15.825 || sum === 7.825) {
+      } else if (sum >= 31.825 || sum === 15.825) {
         flair += Math.random() < 0.4 ? "Z" : "-";
       } else if (arr[i] === 0.0833 || arr[i] === 0.0834 ||
         arr[i] === 0.1667 || arr[i] === 0.1666) {
@@ -130,7 +130,7 @@ export function flairString(arr, snareString, hihatString) {
       flair += '-';
     }
     sum += arr[i];
-    if (Math.abs(sum / 4 - Math.round(sum / 4)) <= 0.005) {
+    if (Math.abs(sum / 8 - Math.round(sum / 8)) <= 0.005) {
       flair += "|";
     }
   }
