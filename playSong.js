@@ -57,13 +57,15 @@ export async function playSong(songStructure, bpm, initDrums, initBass,
     const output = new midi.Output()
     output.openPort(3)
     //Start recording
+    let tempo = bpm - 60
+    output.sendMessage([176,50,tempo]);
     output.sendMessage([144,16,1])
     await countIn(bpm, initDrums, hiHatV)
     let sum = 18
     for (const part of songStructure) {
       //Drop locators
       output.sendMessage([144,17,1])
-      output.sendMessage([144,sum,1])
+      output.sendMessage([176,sum,1])
       for (let i = 0; i < part.length; i++) {
         switch (part.type) {
           case 'Verse':
