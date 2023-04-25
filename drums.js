@@ -84,7 +84,7 @@ export function hatString(arr) {
     if (arr[i] === 0.0833 || arr[i] === 0.0834 ||
       arr[i] === 0.1667 || arr[i] === 0.1666) {
       hihat += Math.random() < 0.5 ? "V" : "w";
-    } else if (sum % 0.25 === 0) {
+    } else if (Math.abs(sum % 0.25 - Math.round(sum % 0.25)) <= 0.01) {
       hihat += "v";
     } else {
       hihat += "-";

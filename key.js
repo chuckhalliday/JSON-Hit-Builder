@@ -1,6 +1,6 @@
 export function setKey() {
-  let keyDownMin = -10;
-  let keyUpMax = 2;
+  let keyDownMin = -8;
+  let keyUpMax = 4;
   let keyAdjust = Math.floor(Math.random() * (keyUpMax - keyDownMin + 1)) + keyDownMin;
 
   return keyAdjust

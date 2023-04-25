@@ -201,7 +201,9 @@ Key: ` + key + `
 songStructure.forEach(part => {
     console.log(`${part.type}: ${part.length}x
     Chords: ${part.chords}
+
     Bass:   ${part.bass}
+    
     Misc:   ${part.flair}
     HiHat:  ${part.hiHat}
     Snare:  ${part.snare}
