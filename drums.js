@@ -1,29 +1,21 @@
 export function createDrums(arr) {
+  const possibleLengths = [0.25, 0.5, 1];
   let drumArr = [];
-  let randQH = Math.random() < 0.5 ? 0.25 : 0.5;
-  let randSQ = Math.random() < 0.5 ? 0.125 : 0.25;
-  const possibleLengths = [0.125, 0.25, 0.5, 1];
-  let beat1 = possibleLengths[Math.floor(Math.random() * possibleLengths.length)];
+  let subdivision = 1;
 
-  for (let i = 0; i < arr.length; i++)
-    if (arr[i] === 1.5) {
-      drumArr.push(beat1);
-      drumArr.push(arr[i] - beat1);
-    } else if (arr[i] === 1.25) {
-      drumArr.push(beat1);
-      drumArr.push(arr[i] - beat1);
-    } else if (arr[i] === 1) {
-      drumArr.push(randQH);
-      drumArr.push(arr[i] - randQH);
-    } else if (arr[i] === 0.75) {
-      drumArr.push(randQH);
-      drumArr.push(arr[i] - randQH);
-    } else if (arr[i] === 0.5) {
-      drumArr.push(randSQ);
-      drumArr.push(arr[i] - randSQ);
-    } else if (arr[i] === 0.25) {
-      drumArr.push(0.125, 0.125);
+  for (let i = 0; i < arr.length; i++) {
+    let beat = arr[i];
+    while (beat > 0) {
+      let length = possibleLengths[possibleLengths.length - subdivision];
+      if (beat >= length) {
+        drumArr.push(length);
+        beat -= length;
+      } else {
+        subdivision++;
+      }
     }
+  }
+
   return drumArr;
 }
 
@@ -35,7 +27,7 @@ export function kickString(arr1, arr2, bassString) {
 
   for (let i = 0; i < arr1.length; i++) {
     const note = bassString.charAt(arr2Index);
-    if (kickSum === bassSum) {
+    if (kickSum.toFixed(1) === bassSum.toFixed(1)) {
       bassSum += arr2[arr2Index];
       if (kickSum === 0) {
         kick += "X";
@@ -81,10 +73,10 @@ export function hatString(arr) {
   let sum = 0;
 
   for (let i = 0; i < arr.length; i++) {
-    if (arr[i] === 0.0833 || arr[i] === 0.0834 ||
-      arr[i] === 0.1667 || arr[i] === 0.1666) {
+    if (arr[i] === 0.08 || arr[i] === 0.09 ||
+      arr[i] === 0.16 || arr[i] === 0.17) {
       hihat += Math.random() < 0.5 ? "V" : "w";
-    } else if (Math.abs(sum % 0.25 - Math.round(sum % 0.25)) <= 0.01) {
+    } else if (Math.abs(sum % 0.5 - Math.round(sum % 0.5)) <= 0.1) {
       hihat += "v";
     } else {
       hihat += "-";
