@@ -3,7 +3,7 @@ export function primaryGroove() {
   let measureSum = 0.5;
   let beatSum = 0.5;
 
-  const randomValues = [0.25, 0.75, 1, 1.25, 1.5];
+  const randomValues = [0.25, 0.5, 0.75, 1, 1.25, 1.5];
 
   while (measureSum < 8) {
     const random =

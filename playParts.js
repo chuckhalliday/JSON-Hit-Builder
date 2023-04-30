@@ -32,52 +32,65 @@ export function adjustBassNotes(keyAdjust) {
 }
 
 export async function playBeat(pattern, groove, bpm) {
-    const beatDuration = 60 / bpm // duration of one beat in seconds
-    function wait(time) {
-      return new Promise(resolve => setTimeout(resolve, time * 1000));
-    }
-    const output = new midi.Output();
-    output.openPort(0)
-    for (let index = 0; index < pattern.length; index++) {
-      const drum = drumHits[pattern[index]];
-      const release = Math.floor(Math.random() * (70 - 50 + 1) + 50);
-      const duration = groove[index] * beatDuration
-      if (drum) {
-        let velocity = Math.floor(Math.random() * (70 - 50 + 1) + 50);
-        if (pattern[index] === pattern[index].toUpperCase()) {
-          velocity = 90;
-          if (Math.random() < 0.17) {  // 1 in 6 chance
-            velocity = Math.floor(Math.random() * (120 - 100 + 1) + 100);
-          }
+  const beatDuration = 60 / bpm // duration of one beat in seconds
+  const swingRatio = 5/6; // adjust as needed
+
+  function wait(time) {
+    return new Promise(resolve => setTimeout(resolve, time * 1000));
+  }
+  const output = new midi.Output();
+  output.openPort(0)
+
+  for (let index = 0; index < pattern.length; index++) {
+    const drum = drumHits[pattern[index]];
+    const release = Math.floor(Math.random() * (70 - 50 + 1) + 50);
+    const isEvenSixteenth = index % 4 === 0 || index % 4 === 2;
+    const duration = isEvenSixteenth
+      ? groove[index] * beatDuration * swingRatio
+      : groove[index] * beatDuration;
+    if (drum) {
+      let velocity = Math.floor(Math.random() * (70 - 50 + 1) + 50);
+      if (pattern[index] === pattern[index].toUpperCase()) {
+        velocity = 90;
+        if (Math.random() < 0.17) {  // 1 in 6 chance
+          velocity = Math.floor(Math.random() * (120 - 100 + 1) + 100);
         }
-        output.sendMessage([144, drum, velocity])
-        await wait(duration)
-        output.sendMessage([128, drum, release])
-      } else if (pattern[index] === '-') {
-        await wait(duration);
       }
+      output.sendMessage([144, drum, velocity])
+      await wait(duration)
+      output.sendMessage([128, drum, release])
+    } else if (pattern[index] === '-') {
+      await wait(duration);
     }
   }
+}
   
 export async function playBass(pattern, groove, bpm) {
-    const beatDuration = 60 / bpm // duration of one beat in seconds
-    function wait(time) {
-      return new Promise(resolve => setTimeout(resolve, time * 1000));
-    }
-    const output = new midi.Output();
-    output.openPort(1)
-    for (let index = 0; index < pattern.length; index++) {
-      const bass = bassNotes[pattern[index]];
-      const duration = groove[index] * beatDuration
-      if (bass) {
-        let velocity = Math.floor(Math.random() * (75 - 60 + 1) + 60);
-        let release = Math.floor(Math.random() * (70 - 50 + 1) + 50);
-  
-        output.sendMessage([144, bass, velocity])
-        await wait(duration)
-        output.sendMessage([128, bass, release])
-      } else if (pattern[index] === '-') {
-        await wait(duration);
-      }
+  const beatDuration = 60 / bpm // duration of one beat in seconds
+  const swingRatio = 5/6; // adjust as needed
+
+  function wait(time) {
+    return new Promise(resolve => setTimeout(resolve, time * 1000));
+  }
+  const output = new midi.Output();
+  output.openPort(1)
+
+  for (let index = 0; index < pattern.length; index++) {
+    const bass = bassNotes[pattern[index]];
+    const isEvenEighth = index % 2 === 0;
+    const duration = isEvenEighth
+      ? groove[index/2] * beatDuration * swingRatio
+      : groove[Math.floor(index/2)] * beatDuration;
+
+    if (bass) {
+      let velocity = Math.floor(Math.random() * (75 - 60 + 1) + 60);
+      let release = Math.floor(Math.random() * (70 - 50 + 1) + 50);
+
+      output.sendMessage([144, bass, velocity])
+      await wait(duration)
+      output.sendMessage([128, bass, release])
+    } else if (pattern[index] === '-') {
+      await wait(duration);
     }
   }
+}
