@@ -5,7 +5,7 @@ adjustBassString, bassString1B, bassString1C, bassString2C, bassString3C, bassSt
 import { chordString, adjustChordString } from "./chords.js";
 import { melodyGroove, melodyString } from "./melody.js";
 import { setKey, findKey } from './key.js';
-import { adjustBassNotes } from './playParts.js';
+import { adjustBassNotes, adjustChordNotes } from './playParts.js';
 import { generateSongStructure } from './songStructure.js';
 import { playSong } from './playSong.js'
 
@@ -112,6 +112,7 @@ let keyAdjust = setKey()
 console.log(keyAdjust)
 let key = findKey(bassV, keyAdjust)
 adjustBassNotes(keyAdjust)
+adjustChordNotes(keyAdjust)
 
 //Transpose bass strings and format for reading
 
@@ -213,6 +214,6 @@ songStructure.forEach(part => {
 
 playSong(songStructure, bpm, initDrums, initBass, 
   chorusDrums, chorusBass, bridgeDrums, bridgeBass, 
-  bassDrumV, snareDrumV, hiHatV, flairV, bassV, 
-  bassDrumC, snareDrumC, hiHatC, flairC, bassC, 
-  bassDrumB, snareDrumB, hiHatB, flairB, bassB);
+  bassDrumV, snareDrumV, hiHatV, flairV, bassV, chordsV, 
+  bassDrumC, snareDrumC, hiHatC, flairC, bassC, chordsC, 
+  bassDrumB, snareDrumB, hiHatB, flairB, bassB, chordsB);

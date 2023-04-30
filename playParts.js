@@ -25,10 +25,29 @@ let bassNotes = {
     'g': 55, 'G': 56,
 };
 
+let chordTones = {
+  '6': [45, 48, 52],       // Am
+  '7': [46, 50, 53],      // Bb
+  '1': [48, 52, 55, 60],  // C
+  '2': [50, 53, 57],     // Dm
+  '3': [52, 55, 59],      // Em
+  '4': [53, 57, 60],      // F
+  '5': [55, 59, 62],      // G 
+  '8': [52, 56, 59],      // E
+  '9': [48, 52, 58, 62],  // C9
+  '0': [53, 56, 60]       // Fm
+}
+
 export function adjustBassNotes(keyAdjust) {
     for (let key in bassNotes) {
         bassNotes[key] = bassNotes[key] + keyAdjust;
     }
+}
+
+export function adjustChordNotes(keyAdjust) {
+  for (let [key, value] of Object.entries(chordTones)) {
+    chordTones[key] = value.map(note => note + keyAdjust);
+  }
 }
 
 export async function playBeat(pattern, groove, bpm) {
@@ -94,3 +113,41 @@ export async function playBass(pattern, groove, bpm) {
     }
   }
 }
+
+export async function playChords(pattern, groove, bpm) {
+  const beatDuration = 60 / bpm // duration of one beat in seconds
+  const swingRatio = 5/6; // adjust as needed
+
+  function wait(time) {
+    return new Promise(resolve => setTimeout(resolve, time * 1000));
+  }
+  const output = new midi.Output();
+  output.openPort(2)
+
+  for (let index = 0; index < pattern.length; index++) {
+    const chord = chordTones[pattern[index]];
+    const isEvenEighth = index % 2 === 0;
+    const duration = isEvenEighth
+      ? groove[index/2] * beatDuration * swingRatio
+      : groove[Math.floor(index/2)] * beatDuration;
+      
+    if (chord) {
+      for (let i = 0; i < chord.length; i++) {
+        let velocity = Math.floor(Math.random() * (75 - 60 + 1) + 60);
+        output.sendMessage([144, chord[i], velocity]);
+      }
+      await wait(duration);
+      for (let i = 0; i < chord.length; i++) {
+        let release = Math.floor(Math.random() * (70 - 50 + 1) + 50);
+        output.sendMessage([128, chord[i], release]);
+      }
+    } else if (pattern[index] === '-') {
+      await wait(duration);
+    }
+  }
+} 
+
+
+
+
+

@@ -1,5 +1,5 @@
 import midi from 'midi'
-import { playBeat, playBass } from './playParts.js'
+import { playBeat, playBass, playChords } from './playParts.js'
 
 export async function countIn(bpm, initDrums, 
   hiHatV) {
@@ -11,49 +11,52 @@ export async function countIn(bpm, initDrums,
 }
 
 export async function playVerse(bpm, initDrums, initBass, 
-    bassDrumV, snareDrumV, hiHatV, flairV, bassV) {
+    bassDrumV, snareDrumV, hiHatV, flairV, bassV, chordsV) {
     for (let i = 0; i < 1; i++) {
       await Promise.all([
       playBeat(bassDrumV.replace(/\|/g, ''), initDrums, bpm),
       playBeat(snareDrumV.replace(/\|/g, ''), initDrums, bpm),
       playBeat(hiHatV.replace(/\|/g, ''), initDrums, bpm),
       playBeat(flairV.replace(/\|/g, ''), initDrums, bpm),
-      playBass(bassV.replace(/\|/g, ''), initBass, bpm)
+      playBass(bassV.replace(/\|/g, ''), initBass, bpm),
+      playChords(chordsV.replace(/\|/g, ''), initBass, bpm)
     ])
     }
   }
   
-export async function playChorus(bpm, initDrums, initBass, 
-    bassDrumC, snareDrumC, hiHatC, flairC, bassC) {
+export async function playChorus(bpm, chorusDrums, chorusBass, 
+    bassDrumC, snareDrumC, hiHatC, flairC, bassC, chordsC) {
     for (let i = 0; i < 1; i++) {
       await Promise.all([
-      playBeat(bassDrumC.replace(/\|/g, ''), initDrums, bpm),
-      playBeat(snareDrumC.replace(/\|/g, ''), initDrums, bpm),
-      playBeat(hiHatC.replace(/\|/g, ''), initDrums, bpm),
-      playBeat(flairC.replace(/\|/g, ''), initDrums, bpm),
-      playBass(bassC.replace(/\|/g, ''), initBass, bpm)
+      playBeat(bassDrumC.replace(/\|/g, ''), chorusDrums, bpm),
+      playBeat(snareDrumC.replace(/\|/g, ''), chorusDrums, bpm),
+      playBeat(hiHatC.replace(/\|/g, ''), chorusDrums, bpm),
+      playBeat(flairC.replace(/\|/g, ''), chorusDrums, bpm),
+      playBass(bassC.replace(/\|/g, ''), chorusBass, bpm),
+      playChords(chordsC.replace(/\|/g, ''), chorusBass, bpm)
     ])
     }
   }
   
-export async function playBridge(bpm, initDrums, initBass, 
-    bassDrumB, snareDrumB, hiHatB, flairB, bassB) {
+export async function playBridge(bpm, bridgeDrums, bridgeBass, 
+    bassDrumB, snareDrumB, hiHatB, flairB, bassB, chordsB) {
     for (let i = 0; i < 1; i++) {
       await Promise.all([
-      playBeat(bassDrumB.replace(/\|/g, ''), initDrums, bpm),
-      playBeat(snareDrumB.replace(/\|/g, ''), initDrums, bpm),
-      playBeat(hiHatB.replace(/\|/g, ''), initDrums, bpm),
-      playBeat(flairB.replace(/\|/g, ''), initDrums, bpm),
-      playBass(bassB.replace(/\|/g, ''), initBass, bpm)
+      playBeat(bassDrumB.replace(/\|/g, ''), bridgeDrums, bpm),
+      playBeat(snareDrumB.replace(/\|/g, ''), bridgeDrums, bpm),
+      playBeat(hiHatB.replace(/\|/g, ''), bridgeDrums, bpm),
+      playBeat(flairB.replace(/\|/g, ''), bridgeDrums, bpm),
+      playBass(bassB.replace(/\|/g, ''), bridgeBass, bpm),
+      playChords(chordsB.replace(/\|/g, ''), bridgeBass, bpm)
     ])
     }
   }
 
 export async function playSong(songStructure, bpm, initDrums, initBass, 
     chorusDrums, chorusBass, bridgeDrums, bridgeBass, 
-    bassDrumV, snareDrumV, hiHatV, flairV, bassV, 
-    bassDrumC, snareDrumC, hiHatC, flairC, bassC, 
-    bassDrumB, snareDrumB, hiHatB, flairB, bassB) {
+    bassDrumV, snareDrumV, hiHatV, flairV, bassV, chordsV, 
+    bassDrumC, snareDrumC, hiHatC, flairC, bassC, chordsC, 
+    bassDrumB, snareDrumB, hiHatB, flairB, bassB, chordsB) {
     const output = new midi.Output()
     output.openPort(3)
     //Start recording
@@ -70,15 +73,15 @@ export async function playSong(songStructure, bpm, initDrums, initBass,
         switch (part.type) {
           case 'Verse':
             await playVerse(bpm, initDrums, initBass, 
-                bassDrumV, snareDrumV, hiHatV, flairV, bassV);
+                bassDrumV, snareDrumV, hiHatV, flairV, bassV, chordsV);
             break;
           case 'Chorus':
             await playChorus(bpm, chorusDrums, chorusBass, 
-                bassDrumC, snareDrumC, hiHatC, flairC, bassC);
+                bassDrumC, snareDrumC, hiHatC, flairC, bassC, chordsC);
             break;
           case 'Bridge':
             await playBridge(bpm, bridgeDrums, bridgeBass, 
-                bassDrumB, snareDrumB, hiHatB, flairB, bassB);
+                bassDrumB, snareDrumB, hiHatB, flairB, bassB, chordsB);
             break;
           default:
             throw new Error(`Invalid part type: ${part.type}`);
