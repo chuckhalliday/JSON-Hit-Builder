@@ -30,6 +30,8 @@ const initMelody = primaryMelody.concat(primaryMelody, primaryMelody2, primaryMe
 //let melodyCount = sumArray(initMelody);
 //console.log(melodyCount);
 
+const initChords = [3.5, 0.5, 3.5, 0.5, 3.5, 0.5, 3.5, 0.5, 3.5, 0.5, 3.5, 0.5, 3.5, 0.5, 3.5, 0.5]
+
 //verse
 
 const bassLine1V = bassString1V(primaryBass);
@@ -212,7 +214,7 @@ songStructure.forEach(part => {
     `);
   });
 
-playSong(songStructure, bpm, initDrums, initBass, 
+playSong(songStructure, bpm, initDrums, initBass, initChords, 
   chorusDrums, chorusBass, bridgeDrums, bridgeBass, 
   bassDrumV, snareDrumV, hiHatV, flairV, bassV, chordsV, 
   bassDrumC, snareDrumC, hiHatC, flairC, bassC, chordsC, 

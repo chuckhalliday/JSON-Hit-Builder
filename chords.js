@@ -1,10 +1,10 @@
 export function chordString(bassGroove, bassString) {
   
-const dminC9 = Math.random() < 0.9 ? "2" : "9";
-const eminEmaj = Math.random() < 0.9 ? "3" : "8";
-const fmajFmin = Math.random() < 0.9 ? "4" : "0";
-const gmajG7 = Math.random() < 0.7 ? "5" : "7";
-const aminCmaj = Math.random() < 0.8 ? "6" : "1";
+const dminC9 = Math.random() < 0.9 ? "2-" : "9-";
+const eminEmaj = Math.random() < 0.9 ? "3-" : "8-";
+const fmajFmin = Math.random() < 0.9 ? "4-" : "0-";
+const gmajG7 = Math.random() < 0.7 ? "5-" : "7-";
+const aminCmaj = Math.random() < 0.8 ? "6-" : "1-";
 
 let chords = ""
 let sum = 0;
@@ -15,9 +15,9 @@ for (let i = 0; i < bassGroove.length; i++) {
   
     const note = bass.charAt(i);
   
-      if (Number.isInteger(sum / 8)) {
+      if (Number.isInteger(sum / 8) || Number.isInteger(sum / 4)) {
         if (note === "c") {
-          chords += "1";
+          chords += "1-";
         } else if (note === "d") {
           chords += dminC9;
         } else if (note === "e") {
@@ -37,18 +37,19 @@ for (let i = 0; i < bassGroove.length; i++) {
         } else if (note === "|") {
           chords = chords;
         } else if (note === "-") {
-          chords += "-"
+          chords += "--"
         } else {
-          chords += "-"
+          chords += "--"
         }
       } else {
-        chords += "-";
+        chords = chords
       }
       sum += bassGroove[i];
       if (Number.isInteger(sum / 8)) {
         chords += "|";
       }
     }
+    console.log(chords)
     return chords;
 }
 

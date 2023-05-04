@@ -52,7 +52,7 @@ export function adjustChordNotes(keyAdjust) {
 
 export async function playBeat(pattern, groove, bpm) {
   const beatDuration = 60 / bpm // duration of one beat in seconds
-  const swingRatio = 5/6; // adjust as needed
+  const swingRatio = 6/6; // adjust as needed
 
   function wait(time) {
     return new Promise(resolve => setTimeout(resolve, time * 1000));
@@ -86,7 +86,7 @@ export async function playBeat(pattern, groove, bpm) {
   
 export async function playBass(pattern, groove, bpm) {
   const beatDuration = 60 / bpm // duration of one beat in seconds
-  const swingRatio = 5/6; // adjust as needed
+  const swingRatio = 6/6; // adjust as needed
 
   function wait(time) {
     return new Promise(resolve => setTimeout(resolve, time * 1000));
@@ -116,7 +116,7 @@ export async function playBass(pattern, groove, bpm) {
 
 export async function playChords(pattern, groove, bpm) {
   const beatDuration = 60 / bpm // duration of one beat in seconds
-  const swingRatio = 5/6; // adjust as needed
+  const swingRatio = 6/6; // adjust as needed
 
   function wait(time) {
     return new Promise(resolve => setTimeout(resolve, time * 1000));
@@ -126,10 +126,7 @@ export async function playChords(pattern, groove, bpm) {
 
   for (let index = 0; index < pattern.length; index++) {
     const chord = chordTones[pattern[index]];
-    const isEvenEighth = index % 2 === 0;
-    const duration = isEvenEighth
-      ? groove[index/2] * beatDuration * swingRatio
-      : groove[Math.floor(index/2)] * beatDuration;
+    const duration = groove[index] * beatDuration
       
     if (chord) {
       for (let i = 0; i < chord.length; i++) {
