@@ -70,11 +70,11 @@ for (let i = 0; i < bassGroove.length; i++) {
       } else {
         chords += "-"
       }
-      if (Number.isInteger(bassSum / 8)) {
-        chords += "|";
-      }
     }
     bassSum += bassGroove[i];
+    if (Number.isInteger(bassSum / 8)) {
+      chords += "|";
+    }
   }
     console.log(chords)
     return chords;
