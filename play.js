@@ -2,7 +2,7 @@ import { sumArray, shuffleArray, subdivideArray } from "./groove.js";
 import { createDrums, kickString, snareString, hatString, flairString, } from "./drums.js";
 import { primaryGroove, bassString1V, bassString2V, bassString3V, bassString4V,
 adjustBassString, bassString1B, bassString1C, bassString2C, bassString3C, bassString4C} from "./bass.js";
-import { chordString, adjustChordString } from "./chords.js";
+import { createChords, chordString, adjustChordString } from "./chords.js";
 import { melodyGroove, melodyString } from "./melody.js";
 import { setKey, findKey } from './key.js';
 import { adjustBassNotes, adjustChordNotes } from './playParts.js';
@@ -30,7 +30,9 @@ const initMelody = primaryMelody.concat(primaryMelody, primaryMelody2, primaryMe
 //let melodyCount = sumArray(initMelody);
 //console.log(melodyCount);
 
-const initChords = [3.5, 0.5, 3.5, 0.5, 3.5, 0.5, 3.5, 0.5, 3.5, 0.5, 3.5, 0.5, 3.5, 0.5, 3.5, 0.5]
+const initChords = createChords(initBass)
+const chorusChords = createChords(chorusBass)
+const bridgeChords = createChords(bridgeBass)
 
 //verse
 
@@ -40,7 +42,7 @@ const bassLine3V = bassString3V(primaryBass2, bassLine2V);
 const bassLine4V = bassString4V(primaryBass, bassLine1V);
 const bassV = bassLine1V.concat(bassLine2V + bassLine3V + bassLine4V);
 
-const chordsV = chordString(initBass, bassV)
+const chordsV = chordString(initChords, initBass, bassV)
 
 const melodyLine1V = melodyString(primaryMelody, primaryBass, bassLine1V);
 const melodyLine2V = melodyString(primaryMelody, primaryBass, bassLine2V);
@@ -66,7 +68,7 @@ const bassLine3C = bassString3C(primaryBass, bassLine1V);
 const bassLine4C = bassString4C(primaryBass, bassLine1V);
 const bassC = bassLine1C.concat(bassLine2C + bassLine3C + bassLine4C);
 
-const chordsC = chordString(chorusBass, bassC)
+const chordsC = chordString(chorusChords, chorusBass, bassC)
 
 const melodyLine1C = melodyString(primaryMelody, primaryBass, bassLine1C);
 const melodyLine2C = melodyString(primaryMelody, primaryBass, bassLine2C);
@@ -92,7 +94,7 @@ const bassLine3B = bassString3C(primaryBass2, bassLine1V);
 const bassLine4B = bassString4C(primaryBass, bassLine1V);
 const bassB = bassLine1B.concat(bassLine2B + bassLine3B + bassLine4B);
 
-const chordsB = chordString(bridgeBass, bassB)
+const chordsB = chordString(bridgeChords, bridgeBass, bassB)
 
 const melodyLine1B = melodyString(primaryMelody, primaryBass, bassLine1B);
 const melodyLine2B = melodyString(primaryMelody, primaryBass, bassLine2B);
@@ -215,7 +217,7 @@ songStructure.forEach(part => {
   });
 
 playSong(songStructure, bpm, initDrums, initBass, initChords, 
-  chorusDrums, chorusBass, bridgeDrums, bridgeBass, 
+  chorusDrums, chorusBass, chorusChords, bridgeDrums, bridgeBass, bridgeChords, 
   bassDrumV, snareDrumV, hiHatV, flairV, bassV, chordsV, 
   bassDrumC, snareDrumC, hiHatC, flairC, bassC, chordsC, 
   bassDrumB, snareDrumB, hiHatB, flairB, bassB, chordsB);

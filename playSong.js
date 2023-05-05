@@ -24,7 +24,7 @@ export async function playVerse(bpm, initDrums, initBass, initChords,
     }
   }
   
-export async function playChorus(bpm, chorusDrums, chorusBass, initChords,
+export async function playChorus(bpm, chorusDrums, chorusBass, chorusChords,
     bassDrumC, snareDrumC, hiHatC, flairC, bassC, chordsC) {
     for (let i = 0; i < 1; i++) {
       await Promise.all([
@@ -33,12 +33,12 @@ export async function playChorus(bpm, chorusDrums, chorusBass, initChords,
       playBeat(hiHatC.replace(/\|/g, ''), chorusDrums, bpm),
       playBeat(flairC.replace(/\|/g, ''), chorusDrums, bpm),
       playBass(bassC.replace(/\|/g, ''), chorusBass, bpm),
-      playChords(chordsC.replace(/\|/g, ''), initChords, bpm)
+      playChords(chordsC.replace(/\|/g, ''), chorusChords, bpm)
     ])
     }
   }
   
-export async function playBridge(bpm, bridgeDrums, bridgeBass, initChords,
+export async function playBridge(bpm, bridgeDrums, bridgeBass, bridgeChords,
     bassDrumB, snareDrumB, hiHatB, flairB, bassB, chordsB) {
     for (let i = 0; i < 1; i++) {
       await Promise.all([
@@ -47,13 +47,13 @@ export async function playBridge(bpm, bridgeDrums, bridgeBass, initChords,
       playBeat(hiHatB.replace(/\|/g, ''), bridgeDrums, bpm),
       playBeat(flairB.replace(/\|/g, ''), bridgeDrums, bpm),
       playBass(bassB.replace(/\|/g, ''), bridgeBass, bpm),
-      playChords(chordsB.replace(/\|/g, ''), initChords, bpm)
+      playChords(chordsB.replace(/\|/g, ''), bridgeChords, bpm)
     ])
     }
   }
 
 export async function playSong(songStructure, bpm, initDrums, initBass, initChords,
-    chorusDrums, chorusBass, bridgeDrums, bridgeBass, 
+    chorusDrums, chorusBass, chorusChords, bridgeDrums, bridgeBass, bridgeChords,
     bassDrumV, snareDrumV, hiHatV, flairV, bassV, chordsV, 
     bassDrumC, snareDrumC, hiHatC, flairC, bassC, chordsC, 
     bassDrumB, snareDrumB, hiHatB, flairB, bassB, chordsB) {
@@ -76,11 +76,11 @@ export async function playSong(songStructure, bpm, initDrums, initBass, initChor
                 bassDrumV, snareDrumV, hiHatV, flairV, bassV, chordsV);
             break;
           case 'Chorus':
-            await playChorus(bpm, chorusDrums, chorusBass, initChords, 
+            await playChorus(bpm, chorusDrums, chorusBass, chorusChords, 
                 bassDrumC, snareDrumC, hiHatC, flairC, bassC, chordsC);
             break;
           case 'Bridge':
-            await playBridge(bpm, bridgeDrums, bridgeBass, initChords,
+            await playBridge(bpm, bridgeDrums, bridgeBass, bridgeChords,
                 bassDrumB, snareDrumB, hiHatB, flairB, bassB, chordsB);
             break;
           default:

@@ -1,23 +1,49 @@
-export function chordString(bassGroove, bassString) {
+export function createChords(arr) {
+  let chordArray = []
+  let sum = arr[0]
+  for (let i = 1; i < arr.length; i++) {
+    let roll = Math.random()
+    sum += arr[i]
+    if (sum >= 3) {
+      chordArray.push(sum)
+      sum = 0
+    } else if (sum > 1 && roll < 0.5) {
+      chordArray.push(sum)
+      sum = 0
+    }
+  }
+  if (sum > 0) {
+    chordArray.push(sum)
+  }
+  console.log(chordArray)
+  return chordArray
+}
+
+export function chordString(chordsGroove, bassGroove, bassString) {
   
-const dminC9 = Math.random() < 0.9 ? "2-" : "9-";
-const eminEmaj = Math.random() < 0.9 ? "3-" : "8-";
-const fmajFmin = Math.random() < 0.9 ? "4-" : "0-";
-const gmajG7 = Math.random() < 0.7 ? "5-" : "7-";
-const aminCmaj = Math.random() < 0.8 ? "6-" : "1-";
+const dminC9 = Math.random() < 0.9 ? "2" : "9";
+const eminEmaj = Math.random() < 0.9 ? "3" : "8";
+const fmajFmin = Math.random() < 0.9 ? "4" : "0";
+const gmajG7 = Math.random() < 0.7 ? "5" : "7";
+const aminCmaj = Math.random() < 0.8 ? "6" : "1";
 
 let chords = ""
-let sum = 0;
+let chordSum = 0;
+let bassSum = 0;
+let arr1Index = 0;
 
 let bass = bassString.replace(/\|/g, '');
 
 for (let i = 0; i < bassGroove.length; i++) {
   
-    const note = bass.charAt(i);
+  const note = bass.charAt(i);
   
-      if (Number.isInteger(sum / 8) || Number.isInteger(sum / 4)) {
+    if (bassSum === chordSum) {
+      chordSum += chordsGroove[arr1Index]
+      arr1Index ++
+      if (Number.isInteger(bassSum / 2)) {
         if (note === "c") {
-          chords += "1-";
+          chords += "1";
         } else if (note === "d") {
           chords += dminC9;
         } else if (note === "e") {
@@ -37,18 +63,19 @@ for (let i = 0; i < bassGroove.length; i++) {
         } else if (note === "|") {
           chords = chords;
         } else if (note === "-") {
-          chords += "--"
+          chords += "-"
         } else {
-          chords += "--"
+          chords += "-"
         }
       } else {
-        chords = chords
+        chords += "-"
       }
-      sum += bassGroove[i];
-      if (Number.isInteger(sum / 8)) {
+      if (Number.isInteger(bassSum / 8)) {
         chords += "|";
       }
     }
+    bassSum += bassGroove[i];
+  }
     console.log(chords)
     return chords;
 }

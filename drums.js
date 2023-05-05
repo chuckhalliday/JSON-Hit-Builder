@@ -32,9 +32,9 @@ export function kickString(arr1, arr2, bassString) {
       if (kickSum === 0) {
         kick += "X";
       } else if (note === "-") {
-        kick += Math.random() < 0.9 ? "-" : "x";
+        kick += Math.random() < 0.85 ? "-" : "x";
       } else if (note !== "|" && note !== "-") {
-        kick += Math.random() < 0.9 ? "x" : "-";
+        kick += Math.random() < 0.85 ? "x" : "-";
       }
       if (kickSum < 4) {
         arr2Index++;
@@ -56,9 +56,9 @@ export function snareString(arr) {
 
   for (let i = 0; i < arr.length; i++) {
     if (Number.isInteger(sum + 0.5)) {
-      snare += "y";
+      snare += Math.random() < 0.85 ? "y" : "-";
     } else {
-      snare += Math.random() < 0.9 ? "-" : "y";
+      snare += Math.random() < 0.85 ? "-" : "y";
     }
     sum += arr[i];
     if (Math.abs(sum / 8 - Math.round(sum / 8)) <= 0.005) {
@@ -105,15 +105,15 @@ export function flairString(arr, snareString, hihatString) {
       } else if (sum === 8 || sum === 24) {
         flair += Math.random() < 0.4 ? "r" : "-";
       } else if (sum === 7.5 || sum === 23.5) {
-        flair += Math.random() < 0.2 ? "Q" : "-";
+        flair += Math.random() < 0.3 ? "Q" : "-";
       } else if (sum === 15 || sum === 31) {
-        flair += Math.random() < 0.2 ? "q" : "-";
-      } else if (sum === 7.825 || sum === 23.825) {
-        flair += Math.random() < 0.2 ? "z" : "-";
-      } else if (sum >= 31.825 || sum === 15.825) {
-        flair += Math.random() < 0.4 ? "Z" : "-";
-      } else if (arr[i] === 0.0833 || arr[i] === 0.0834 ||
-        arr[i] === 0.1667 || arr[i] === 0.1666) {
+        flair += Math.random() < 0.3 ? "q" : "-";
+      } else if (sum === 7.75 || sum === 23.75) {
+        flair += Math.random() < 0.3 ? "z" : "-";
+      } else if (sum >= 31.75 || sum === 15.75) {
+        flair += Math.random() < 0.6 ? "Z" : "-";
+      } else if (arr[i] === 0.33 || arr[i] === 0.34 ||
+        arr[i] === 0.17 || arr[i] === 0.16) {
         flair += Math.random() < 0.3 ? tom : "-";
       } else {
         flair += "-";
