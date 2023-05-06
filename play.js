@@ -158,15 +158,49 @@ let line = "";
 let sum = 0;
 let barCount = 0;
 
-console.log(`Bass Groove:`)
+console.log(`Chord Groove:`)
+
+for (let i = 0; i < initChords.length; i++) {
+  sum += initChords[i];
+  line += initChords[i] + ", ";
+  if (Math.abs(sum / 2 - Math.round(sum / 2)) <= 0.005) {
+    line += "| ";
+  }
+  if (sum >= 7.9 && sum <= 8.1) {
+    barCount += 1
+    console.log(`Bar ` + barCount + `: ` + line);
+    line = "";
+    sum = 0;
+  } else if (sum >= 7.4) {
+    barCount += 1
+    console.log(`Bar ` + barCount + `: ` + line);
+    line = "";
+    sum = 0;
+  } else if (sum >= 6.9) {
+    barCount += 1
+    console.log(`Bar ` + barCount + `: ` + line);
+    line = "";
+    sum = 0;
+  }
+}
+if (sum > 0) {
+  barCount += 1
+  console.log(`Bar (` + barCount + `): ` + line);
+  line = "";
+  sum = 0;
+}
+barCount = 0
+
+console.log(`
+Bass Groove:`)
 
 for (let i = 0; i < initBass.length; i++) {
   sum += initBass[i];
-  line += initBass[i] + ",";
+  line += initBass[i] + ", ";
   if (Math.abs(sum / 2 - Math.round(sum / 2)) <= 0.005) {
-    line += " | ";
+    line += "| ";
   }
-  if (sum >= 3.9 && sum <= 4.1) {
+  if (sum >= 7.9 && sum <= 8.1) {
     barCount += 1
     console.log(`Bar ` + barCount + `: ` + line);
     line = "";
@@ -176,16 +210,17 @@ for (let i = 0; i < initBass.length; i++) {
 barCount = 0
 
 // Drum groove cleaned up for easy reading in console
+
 console.log(`
 Drum Groove:`)
 
 for (let i = 0; i < initDrums.length; i++) {
   sum += initDrums[i];
-  line += initDrums[i] + ",";
+  line += initDrums[i] + ", ";
   if (Math.abs(sum / 2 - Math.round(sum / 2)) <= 0.005) {
-    line += " | ";
+    line += "| ";
   }
-  if (sum >= 3.9 && sum <= 4.1) {
+  if (sum >= 7.9 && sum <= 8.1) {
     barCount += 1
     console.log(`Bar ` + barCount + `: ` + line);
     line = "";
@@ -193,6 +228,8 @@ for (let i = 0; i < initDrums.length; i++) {
   }
 }
 barCount = 0
+
+
 
 console.log(`
 Tempo: ` + bpm)

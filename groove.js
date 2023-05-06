@@ -21,7 +21,7 @@ export function subdivideArray(arr) {
   let newArr = [];
 
   for (let i = 0; i < arr.length; i++) {
-    if ((arr[i] === 0.5 || arr[i] === 0.25) && Math.random() < 0.9) {
+    if ((arr[i] === 0.5 || arr[i] === 0.25) && Math.random() < 0.2) {
       // randomly subdivide element
       let val = arr[i] / 3;
       let trip = parseFloat(val.toFixed(2));

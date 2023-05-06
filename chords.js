@@ -3,19 +3,21 @@ export function createChords(arr) {
   let sum = arr[0]
   for (let i = 1; i < arr.length; i++) {
     let roll = Math.random()
-    sum += arr[i]
-    if (sum >= 3) {
+    if (sum >= 2) {
       chordArray.push(sum)
       sum = 0
-    } else if (sum > 1 && roll < 0.5) {
+      sum += arr[i]
+    } else if (sum >= 1 && roll < 0.5) {
       chordArray.push(sum)
       sum = 0
+      sum += arr[i]
+    } else {
+      sum += arr[i]
     }
   }
   if (sum > 0) {
     chordArray.push(sum)
   }
-  console.log(chordArray)
   return chordArray
 }
 
@@ -76,7 +78,6 @@ for (let i = 0; i < bassGroove.length; i++) {
       chords += "|";
     }
   }
-    console.log(chords)
     return chords;
 }
 
