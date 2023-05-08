@@ -380,12 +380,23 @@ export function bassString1B(bassGroove, bassLine1C) {
 
 export function adjustBassString(bassString, keyAdjust) {
   let transpose = "";
+  let keys = []
   for (let i = 0; i < bassString.length; i++) {
-    const keys = [
+    const sharpKeys = [-10, -8, -6, -5, -3, -1, 0, 2, 4, 6, 7, 9, 11];
+    const flatKeys = [-12, -11, -9, -7, -4, -2, 1, 3, 5, 8, 10, 12]
+    if (sharpKeys.includes(keyAdjust)) {
+    keys = [
       "A", "A#", "B", "C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", 
       "A", "A#", "B", "C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", 
       "A", "A#", "B", "C", "C#", "D"
     ];
+  } else if (flatKeys.includes(keyAdjust)) {
+    keys = [
+      "A", "Bb", "B", "C", "Db", "D", "Eb", "E", "F", "Gb", "G", "Ab", 
+      "A", "Bb", "B", "C", "Db", "D", "Eb", "E", "F", "Gb", "G", "Ab", 
+      "A", "Bb", "B", "C", "Db", "D"
+    ];
+  }
 
     switch (bassString.charAt(i)) {
       case "a":

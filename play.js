@@ -125,21 +125,33 @@ for (let i = 0; i < bassV.length; i++) {
   spacedBassV += bassV[i] + " ";
 }
 let bassVA = adjustBassString(spacedBassV, keyAdjust)
-let chordsVA = adjustChordString(chordsV, keyAdjust)
+let spacedChordsV = "";
+for (let i = 0; i < chordsV.length; i++) {
+  spacedChordsV += chordsV[i] + "  ";
+}
+let chordsVA = adjustChordString(spacedChordsV, keyAdjust)
 
 let spacedBassC = "";
 for (let i = 0; i < bassC.length; i++) {
   spacedBassC += bassC[i] + " ";
 }
 let bassCA = adjustBassString(spacedBassC, keyAdjust)
-let chordsCA = adjustChordString(chordsC, keyAdjust)
+let spacedChordsC = "";
+for (let i = 0; i < chordsC.length; i++) {
+  spacedChordsC += chordsC[i] + "  ";
+}
+let chordsCA = adjustChordString(spacedChordsC, keyAdjust)
 
 let spacedBassB = "";
 for (let i = 0; i < bassB.length; i++) {
   spacedBassB += bassB[i] + " ";
 }
 let bassBA = adjustBassString(spacedBassB, keyAdjust)
-let chordsBA = adjustChordString(chordsB, keyAdjust)
+let spacedChordsB = "";
+for (let i = 0; i < chordsB.length; i++) {
+  spacedChordsB += chordsB[i] + "  ";
+}
+let chordsBA = adjustChordString(spacedChordsB, keyAdjust)
 
 const songtime = Math.round(Math.random() * (240 - 210) + 210);
 const bpm = Math.round(Math.random() * (140 - 100) + 100);
