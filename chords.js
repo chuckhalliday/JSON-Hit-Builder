@@ -22,11 +22,12 @@ export function createChords(arr) {
 }
 
 export function chordString(chordsGroove, bassGroove, bassString) {
-  
-const dminC9 = Math.random() < 0.9 ? "2" : "9";
-const eminEmaj = Math.random() < 0.9 ? "3" : "8";
-const fmajFmin = Math.random() < 0.9 ? "4" : "0";
-const gmajG7 = Math.random() < 0.7 ? "5" : "7";
+
+const cmajCmaj7 = Math.random() < 0.9 ? "1" : "!";
+const dmin7C9 = Math.random() < 0.8 ? "@" : "9";
+const emin7Emaj = Math.random() < 0.8 ? "#" : "8";
+const f7Fmin = Math.random() < 0.5 ? "$" : "0";
+const g7Bdim = Math.random() < 0.7 ? "%" : "7";
 const aminCmaj = Math.random() < 0.8 ? "6" : "1";
 
 let chords = ""
@@ -45,23 +46,23 @@ for (let i = 0; i < bassGroove.length; i++) {
       arr1Index ++
       if (Number.isInteger(bassSum / 2)) {
         if (note === "c") {
-          chords += "1";
+          chords += cmajCmaj7;
         } else if (note === "d") {
-          chords += dminC9;
+          chords += Math.random() < 0.8 ? "2" : dmin7C9;
         } else if (note === "e") {
-          chords += eminEmaj;
+          chords += Math.random() < 0.8 ? "3" : emin7Emaj;
         } else if (note === "f") {
-          chords += fmajFmin;
+          chords += Math.random() < 0.8 ? "4" : f7Fmin;
         } else if (note === "g") {
-          chords += gmajG7;
+          chords += Math.random() < 0.8 ? "5" : g7Bdim;
         } else if (note === "a") {
           chords += aminCmaj;
         } else if (note === "b") {
-          chords += gmajG7;
+          chords += g7Bdim;
         } else if (note === "o") {
-          chords += fmajFmin;
+          chords += Math.random() < 0.8 ? "4" : f7Fmin;
         } else if (note === "p") {
-          chords += gmajG7;
+          chords += Math.random() < 0.8 ? "5" : g7Bdim;
         } else if (note === "|") {
           chords = chords;
         } else if (note === "-") {
@@ -106,22 +107,37 @@ export function adjustChordString(chordString, keyAdjust) {
           transpose += keys[12 + keyAdjust] + `m`;
           break;
         case "7":
-          transpose += keys[22 + keyAdjust] + `7`;
+          transpose += keys[14 + keyAdjust] + `dim`;
           break;
         case "1":
           transpose += keys[15 + keyAdjust];
           break;
+        case "!":
+          transpose += keys[15 + keyAdjust]  + `maj7`;
+          break;
         case "2":
           transpose += keys[17 + keyAdjust] + `m`;
+          break;
+        case "@":
+          transpose += keys[17 + keyAdjust] + `m7`;
           break;
         case "3":
           transpose += keys[19 + keyAdjust] + `m`;
           break;
+        case "#":
+          transpose += keys[19 + keyAdjust] + `m7`;
+          break;
         case "4":
           transpose += keys[20 + keyAdjust];
           break;
+        case "$":
+          transpose += keys[20 + keyAdjust]  + `7`;
+          break;
         case "5":
           transpose += keys[22 + keyAdjust];
+          break;
+        case "%":
+          transpose += keys[22 + keyAdjust]  + `7`;
           break;
         case "8":
           transpose += keys[19 + keyAdjust];

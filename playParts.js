@@ -2,7 +2,7 @@ import midi from 'midi';
 
 let drumHits = {
     'x': 36, 'X': 36,  // kick drum
-    'y': 38, 'Y': 38,  // snare drum
+    'y': 40, 'Y': 40,  // snare drum
     'v': 42, 'V': 42,  // closed hi-hat
     'w': 46, 'W': 46,  // open hi-hat
     'r': 51, 'R': 51,  // ride cymbal
@@ -27,7 +27,7 @@ let bassNotes = {
 
 let chordTones = {
   '6': [45, 48, 52],       // Am
-  '7': [46, 50, 53],      // Bb
+  '7': [47, 50, 53],      // Bdim
   '1': [48, 52, 55, 60],  // C
   '2': [50, 53, 57],     // Dm
   '3': [52, 55, 59],      // Em
@@ -35,7 +35,12 @@ let chordTones = {
   '5': [55, 59, 62],      // G 
   '8': [52, 56, 59],      // E
   '9': [48, 52, 58, 62],  // C9
-  '0': [53, 56, 60]       // Fm
+  '0': [53, 56, 60],       // Fm
+  '!': [48, 52, 55, 59],   //Cmaj7
+  '@': [50, 53, 57, 60],   // Dm7
+  '#': [52, 55, 59, 62],   // Em7
+  '$': [50, 53, 57, 60],   //F7
+  '%': [52, 55, 59, 62],   //G7
 }
 
 export function adjustBassNotes(keyAdjust) {
@@ -126,7 +131,7 @@ export async function playChords(pattern, groove, bpm) {
 
   for (let index = 0; index < pattern.length; index++) {
     const chord = chordTones[pattern[index]];
-    
+
     const duration = groove[index] * beatDuration
 
     if (chord) {

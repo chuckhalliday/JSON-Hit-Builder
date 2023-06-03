@@ -19,7 +19,7 @@ export function generateSongStructure(partsLength, bassVA, bassCA, bassBA,
     while (randomPartType === lastPartType) {
       randomPartType = partTypes[Math.floor(Math.random() * partTypes.length)];
     }
-    const randomPartLength = Math.min(remainingParts, Math.floor(Math.random() * 2) + 1);
+    const randomPartLength = Math.min(remainingParts, Math.floor(Math.random() * 3) + 1);
     if (randomPartType === 'Verse') {
       partChords = chordsVA
       partBass = bassVA
