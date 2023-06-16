@@ -11,17 +11,26 @@ import { playSong } from './playSong.js'
 
 const primaryBass = primaryGroove();
 const primaryBass2 = primaryGroove();
-const initBass = primaryBass.concat(primaryBass, primaryBass2, primaryBass);
-const chorusBass = primaryBass2.concat(primaryBass2, primaryBass, primaryBass)
-const bridgeBass = primaryBass2.concat(primaryBass, primaryBass2, primaryBass)
+const bassPart1 = Math.random() < 0.5 ? primaryBass : primaryBass2;
+const bassPart2 = Math.random() < 0.5 ? primaryBass : primaryBass2;
+const bassPart3 = Math.random() < 0.5 ? primaryBass : primaryBass2;
+const bassPart4 = Math.random() < 0.5 ? primaryBass : primaryBass2;
+const initBass = bassPart1.concat(bassPart2, bassPart3, bassPart4);
+const chorusBass = bassPart2.concat(bassPart1, bassPart4, bassPart3)
+const bridgeBass = bassPart4.concat(bassPart3, bassPart2, bassPart1)
 //let bassCount = sumArray(initBass);
 //console.log(bassCount);
 const primaryDrums = createDrums(primaryBass);
 const primaryDrums2 = createDrums(primaryBass2);
-const drumTrips = subdivideArray(primaryDrums);
-const initDrums = primaryDrums.concat(drumTrips, primaryDrums2, drumTrips);
-const chorusDrums = primaryDrums2.concat(primaryDrums2, primaryDrums, drumTrips)
-const bridgeDrums = primaryDrums2.concat(drumTrips, primaryDrums2, drumTrips)
+const drumTrips1 = subdivideArray(primaryDrums);
+const drumTrips2 = subdivideArray(primaryDrums2);
+const drumPart1 = bassPart1 === primaryBass ? (Math.random() < 0.5 ? primaryDrums : drumTrips1) : (Math.random() < 0.5 ? primaryDrums2 : drumTrips2);
+const drumPart2 = bassPart2 === primaryBass ? (Math.random() < 0.5 ? primaryDrums : drumTrips1) : (Math.random() < 0.5 ? primaryDrums2 : drumTrips2);
+const drumPart3 = bassPart3 === primaryBass ? (Math.random() < 0.5 ? primaryDrums : drumTrips1) : (Math.random() < 0.5 ? primaryDrums2 : drumTrips2);
+const drumPart4 = bassPart4 === primaryBass ? (Math.random() < 0.5 ? primaryDrums : drumTrips1) : (Math.random() < 0.5 ? primaryDrums2 : drumTrips2);
+const initDrums = drumPart1.concat(drumPart2, drumPart3, drumPart4);
+const chorusDrums = drumPart2.concat(drumPart1, drumPart4, drumPart3)
+const bridgeDrums = drumPart4.concat(drumPart3, drumPart2, drumPart1)
 //let drumCount = sumArray(initDrums);
 //console.log(drumCount);
 const primaryMelody = melodyGroove(primaryBass);
@@ -36,24 +45,24 @@ const bridgeChords = createChords(bridgeBass)
 
 //verse
 
-const bassLine1V = bassString1V(primaryBass);
-const bassLine2V = bassString2V(primaryBass, bassLine1V);
-const bassLine3V = bassString3V(primaryBass2, bassLine2V);
-const bassLine4V = bassString4V(primaryBass, bassLine1V);
+const bassLine1V = bassString1V(bassPart1);
+const bassLine2V = bassString2V(bassPart2, bassLine1V);
+const bassLine3V = bassString3V(bassPart3, bassLine2V);
+const bassLine4V = bassString4V(bassPart4, bassLine1V);
 const bassV = bassLine1V.concat(bassLine2V + bassLine3V + bassLine4V);
 
 const chordsV = chordString(initChords, initBass, bassV)
 
-const melodyLine1V = melodyString(primaryMelody, primaryBass, bassLine1V);
-const melodyLine2V = melodyString(primaryMelody, primaryBass, bassLine2V);
-const melodyLine3V = melodyString(primaryMelody2, primaryBass2, bassLine3V);
-const melodyLine4V = melodyString(primaryMelody, primaryBass, bassLine4V);
+const melodyLine1V = melodyString(primaryMelody, bassPart1, bassLine1V);
+const melodyLine2V = melodyString(primaryMelody, bassPart2, bassLine2V);
+const melodyLine3V = melodyString(primaryMelody2, bassPart3, bassLine3V);
+const melodyLine4V = melodyString(primaryMelody, bassPart4, bassLine4V);
 const melodyV = melodyLine1V.concat(melodyLine2V + melodyLine3V + melodyLine4V);
 
-const bassDrum1V = kickString(primaryDrums, primaryBass, bassLine1V);
-const bassDrum2V = kickString(drumTrips, primaryBass, bassLine2V);
-const bassDrum3V = kickString(primaryDrums2, primaryBass2, bassLine3V);
-const bassDrum4V = kickString(drumTrips, primaryBass, bassLine4V);
+const bassDrum1V = kickString(drumPart1, bassPart1, bassLine1V);
+const bassDrum2V = kickString(drumPart2, bassPart2, bassLine2V);
+const bassDrum3V = kickString(drumPart3, bassPart3, bassLine3V);
+const bassDrum4V = kickString(drumPart4, bassPart4, bassLine4V);
 const bassDrumV = bassDrum1V.concat(bassDrum2V + bassDrum3V + bassDrum4V);
 
 const snareDrumV = snareString(initDrums);
@@ -62,10 +71,10 @@ const flairV = flairString(initDrums, snareDrumV, hiHatV);
 
 //chorus
 
-const bassLine1C = bassString1C(primaryBass2, bassLine1V);
-const bassLine2C = bassString2C(primaryBass2, bassLine1C);
-const bassLine3C = bassString3C(primaryBass, bassLine1V);
-const bassLine4C = bassString4C(primaryBass, bassLine1V);
+const bassLine1C = bassString1C(bassPart2, bassLine1V);
+const bassLine2C = bassString2C(bassPart1, bassLine1C);
+const bassLine3C = bassString3C(bassPart4, bassLine1V);
+const bassLine4C = bassString4C(bassPart3, bassLine1V);
 const bassC = bassLine1C.concat(bassLine2C + bassLine3C + bassLine4C);
 
 const chordsC = chordString(chorusChords, chorusBass, bassC)
@@ -76,10 +85,10 @@ const melodyLine3C = melodyString(primaryMelody2, primaryBass2, bassLine3C);
 const melodyLine4C = melodyString(primaryMelody, primaryBass, bassLine4C);
 const melodyC = melodyLine1C.concat(melodyLine2C + melodyLine3C + melodyLine4C);
 
-const bassDrum1C = kickString(primaryDrums2, primaryBass, bassLine1C);
-const bassDrum2C = kickString(primaryDrums2, primaryBass, bassLine2C);
-const bassDrum3C = kickString(primaryDrums, primaryBass2, bassLine3C);
-const bassDrum4C = kickString(drumTrips, primaryBass, bassLine4C);
+const bassDrum1C = kickString(drumPart2, bassPart2, bassLine1C);
+const bassDrum2C = kickString(drumPart1, bassPart1, bassLine2C);
+const bassDrum3C = kickString(drumPart4, bassPart4, bassLine3C);
+const bassDrum4C = kickString(drumPart3, bassPart3, bassLine4C);
 const bassDrumC = bassDrum1C.concat(bassDrum2C + bassDrum3C + bassDrum4C);
 
 const snareDrumC = snareString(chorusDrums);
@@ -88,10 +97,10 @@ const flairC = flairString(chorusDrums, snareDrumC, hiHatC);
 
 //bridge
 
-const bassLine1B = bassString1B(primaryBass2, bassLine1C);
-const bassLine2B = bassString2C(primaryBass, bassLine1B);
-const bassLine3B = bassString3C(primaryBass2, bassLine1V);
-const bassLine4B = bassString4C(primaryBass, bassLine1V);
+const bassLine1B = bassString1B(bassPart4, bassLine1C);
+const bassLine2B = bassString2C(bassPart3, bassLine1B);
+const bassLine3B = bassString3C(bassPart2, bassLine1V);
+const bassLine4B = bassString4C(bassPart1, bassLine1V);
 const bassB = bassLine1B.concat(bassLine2B + bassLine3B + bassLine4B);
 
 const chordsB = chordString(bridgeChords, bridgeBass, bassB)
@@ -102,10 +111,10 @@ const melodyLine3B = melodyString(primaryMelody2, primaryBass2, bassLine3B);
 const melodyLine4B = melodyString(primaryMelody, primaryBass, bassLine4B);
 const melodyB = melodyLine1B.concat(melodyLine2B + melodyLine3B + melodyLine4B);
 
-const bassDrum1B = kickString(primaryDrums2, primaryBass, bassLine1B);
-const bassDrum2B = kickString(drumTrips, primaryBass, bassLine2B);
-const bassDrum3B = kickString(primaryDrums2, primaryBass2, bassLine3B);
-const bassDrum4B = kickString(drumTrips, primaryBass, bassLine4B);
+const bassDrum1B = kickString(drumPart4, bassPart4, bassLine1B);
+const bassDrum2B = kickString(drumPart3, bassPart3, bassLine2B);
+const bassDrum3B = kickString(drumPart2, bassPart2, bassLine3B);
+const bassDrum4B = kickString(drumPart1, bassPart1, bassLine4B);
 const bassDrumB = bassDrum1B.concat(bassDrum2B + bassDrum3B + bassDrum4B);
 
 const snareDrumB = snareString(initDrums);
@@ -203,12 +212,104 @@ if (sum > 0) {
 }
 barCount = 0
 
+for (let i = 0; i < chorusChords.length; i++) {
+  sum += chorusChords[i];
+  line += chorusChords[i] + ", ";
+  if (Math.abs(sum / 2 - Math.round(sum / 2)) <= 0.005) {
+    line += "| ";
+  }
+  if (sum >= 7.9 && sum <= 8.1) {
+    barCount += 1
+    console.log(`Bar ` + barCount + `: ` + line);
+    line = "";
+    sum = 0;
+  } else if (sum >= 7.4) {
+    barCount += 1
+    console.log(`Bar ` + barCount + `: ` + line);
+    line = "";
+    sum = 0;
+  } else if (sum >= 6.9) {
+    barCount += 1
+    console.log(`Bar ` + barCount + `: ` + line);
+    line = "";
+    sum = 0;
+  }
+}
+if (sum > 0) {
+  barCount += 1
+  console.log(`Bar (` + barCount + `): ` + line);
+  line = "";
+  sum = 0;
+}
+barCount = 0
+
+for (let i = 0; i < bridgeChords.length; i++) {
+  sum += bridgeChords[i];
+  line += bridgeChords[i] + ", ";
+  if (Math.abs(sum / 2 - Math.round(sum / 2)) <= 0.005) {
+    line += "| ";
+  }
+  if (sum >= 7.9 && sum <= 8.1) {
+    barCount += 1
+    console.log(`Bar ` + barCount + `: ` + line);
+    line = "";
+    sum = 0;
+  } else if (sum >= 7.4) {
+    barCount += 1
+    console.log(`Bar ` + barCount + `: ` + line);
+    line = "";
+    sum = 0;
+  } else if (sum >= 6.9) {
+    barCount += 1
+    console.log(`Bar ` + barCount + `: ` + line);
+    line = "";
+    sum = 0;
+  }
+}
+if (sum > 0) {
+  barCount += 1
+  console.log(`Bar (` + barCount + `): ` + line);
+  line = "";
+  sum = 0;
+}
+barCount = 0
+
 console.log(`
 Bass Groove:`)
 
 for (let i = 0; i < initBass.length; i++) {
   sum += initBass[i];
   line += initBass[i] + ", ";
+  if (Math.abs(sum / 2 - Math.round(sum / 2)) <= 0.005) {
+    line += "| ";
+  }
+  if (sum >= 7.9 && sum <= 8.1) {
+    barCount += 1
+    console.log(`Bar ` + barCount + `: ` + line);
+    line = "";
+    sum = 0;
+  }
+}
+barCount = 0
+
+for (let i = 0; i < chorusBass.length; i++) {
+  sum += chorusBass[i];
+  line += chorusBass[i] + ", ";
+  if (Math.abs(sum / 2 - Math.round(sum / 2)) <= 0.005) {
+    line += "| ";
+  }
+  if (sum >= 7.9 && sum <= 8.1) {
+    barCount += 1
+    console.log(`Bar ` + barCount + `: ` + line);
+    line = "";
+    sum = 0;
+  }
+}
+barCount = 0
+
+for (let i = 0; i < initBass.length; i++) {
+  sum += bridgeBass[i];
+  line += bridgeBass[i] + ", ";
   if (Math.abs(sum / 2 - Math.round(sum / 2)) <= 0.005) {
     line += "| ";
   }
@@ -229,6 +330,36 @@ Drum Groove:`)
 for (let i = 0; i < initDrums.length; i++) {
   sum += initDrums[i];
   line += initDrums[i] + ", ";
+  if (Math.abs(sum / 2 - Math.round(sum / 2)) <= 0.005) {
+    line += "| ";
+  }
+  if (sum >= 7.9 && sum <= 8.1) {
+    barCount += 1
+    console.log(`Bar ` + barCount + `: ` + line);
+    line = "";
+    sum = 0;
+  }
+}
+barCount = 0
+
+for (let i = 0; i < chorusDrums.length; i++) {
+  sum += chorusDrums[i];
+  line += chorusDrums[i] + ", ";
+  if (Math.abs(sum / 2 - Math.round(sum / 2)) <= 0.005) {
+    line += "| ";
+  }
+  if (sum >= 7.9 && sum <= 8.1) {
+    barCount += 1
+    console.log(`Bar ` + barCount + `: ` + line);
+    line = "";
+    sum = 0;
+  }
+}
+barCount = 0
+
+for (let i = 0; i < bridgeDrums.length; i++) {
+  sum += bridgeDrums[i];
+  line += bridgeDrums[i] + ", ";
   if (Math.abs(sum / 2 - Math.round(sum / 2)) <= 0.005) {
     line += "| ";
   }
