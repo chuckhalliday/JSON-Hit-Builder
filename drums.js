@@ -19,16 +19,16 @@ export function createDrums(arr) {
   return drumArr;
 }
 
-export function kickString(arr1, arr2, bassString) {
+export function kickString(drumBeat, bassBeat, bassString) {
   let kick = "";
   let kickSum = 0;
   let bassSum = 0;
-  let arr2Index = 0;
+  let bassBeatIndex = 0;
 
-  for (let i = 0; i < arr1.length; i++) {
-    const note = bassString.charAt(arr2Index);
+  for (let i = 0; i < drumBeat.length; i++) {
+    const note = bassString.charAt(bassBeatIndex);
     if (kickSum.toFixed(1) === bassSum.toFixed(1)) {
-      bassSum += arr2[arr2Index];
+      bassSum += bassBeat[bassBeatIndex];
       if (kickSum === 0) {
         kick += "X";
       } else if (note === "-") {
@@ -37,12 +37,12 @@ export function kickString(arr1, arr2, bassString) {
         kick += Math.random() < 0.85 ? "x" : "-";
       }
       if (kickSum < 4) {
-        arr2Index++;
+        bassBeatIndex++;
       }
     } else {
       kick += "-";
     }
-    kickSum += arr1[i];
+    kickSum += drumBeat[i];
   }
   if (Number.isInteger(kickSum / 8)) {
     kick += "|";
