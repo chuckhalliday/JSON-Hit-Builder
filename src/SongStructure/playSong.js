@@ -63,7 +63,7 @@ export async function playSong(songStructure, bpm, initDrums, initBass, initChor
     let tempo = bpm - 60
     //output.sendMessage([144,16,1])
     await countIn(bpm, initDrums, hiHatV)
-    output.sendMessage([176,50,tempo]);
+    //output.sendMessage([176,50,tempo]);
     let sum = 18
     for (const part of songStructure) {
       //Drop locators
