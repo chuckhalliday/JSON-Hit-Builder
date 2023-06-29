@@ -1,6 +1,6 @@
 import DrumMachine from "./DrumMachine";
 
-import { songVariables } from "./NodeComposer/play"
+import { songVariables } from "./SongStructure/play"
 
 function App() {
   return (
