@@ -1,33 +1,33 @@
-export function melodyGroove(arr) {
+export function melodyGroove(bassGroove: number[]) {
   let melodyArr = [];
   let randQH = Math.random() < 0.5 ? 0.25 : 0.5;
   let randSQ = Math.random() < 0.5 ? 0.125 : 0.25;
   const possibleLengths = [0.25, 0.5, 0.75, 1];
   let beat1 = possibleLengths[Math.floor(Math.random() * possibleLengths.length)];
 
-  for (let i = 0; i < arr.length; i++)
-    if (arr[i] === 1.5) {
+  for (let i = 0; i < bassGroove.length; i++)
+    if (bassGroove[i] === 1.5) {
       melodyArr.push(beat1);
-      melodyArr.push(arr[i] - beat1);
-    } else if (arr[i] === 1.25) {
+      melodyArr.push(bassGroove[i] - beat1);
+    } else if (bassGroove[i] === 1.25) {
       melodyArr.push(beat1);
-      melodyArr.push(arr[i] - beat1);
-    } else if (arr[i] === 1) {
+      melodyArr.push(bassGroove[i] - beat1);
+    } else if (bassGroove[i] === 1) {
       melodyArr.push(randQH);
-      melodyArr.push(arr[i] - randQH);
-    } else if (arr[i] === 0.75) {
+      melodyArr.push(bassGroove[i] - randQH);
+    } else if (bassGroove[i] === 0.75) {
       melodyArr.push(randQH);
-      melodyArr.push(arr[i] - randQH);
-    } else if (arr[i] === 0.5) {
+      melodyArr.push(bassGroove[i] - randQH);
+    } else if (bassGroove[i] === 0.5) {
       melodyArr.push(randSQ);
-      melodyArr.push(arr[i] - randSQ);
-    } else if (arr[i] === 0.25) {
+      melodyArr.push(bassGroove[i] - randSQ);
+    } else if (bassGroove[i] === 0.25) {
       melodyArr.push(0.25);
     }
   return melodyArr;
 }
 
-export function melodyString(arr1, arr2, bassString) {
+export function melodyString(melodyGroove: number[], bassGroove: number[], bassString: string) {
   const cMelody = ["j", "l", "n", "-", "-"];
   const dMelody = ["k", "m", "h", "j", "-", "-"];
   const eMelody = ["l", "n", "i", "-", "-"];
@@ -45,9 +45,9 @@ export function melodyString(arr1, arr2, bassString) {
   let melody = "";
   let melodySum = 0;
   let bassSum = 0;
-  let arr2Index = 0;
+  let bassGrooveIndex = 0;
 
-  for (let i = 0; i < arr1.length; i++) {
+  for (let i = 0; i < melodyGroove.length; i++) {
     let cRand = cMelody[Math.floor(Math.random() * cMelody.length)];
     let dRand = dMelody[Math.floor(Math.random() * dMelody.length)];
     let eRand = eMelody[Math.floor(Math.random() * eMelody.length)];
@@ -56,10 +56,10 @@ export function melodyString(arr1, arr2, bassString) {
     let aRand = aMelody[Math.floor(Math.random() * aMelody.length)];
     let bRand = bMelody[Math.floor(Math.random() * bMelody.length)];
 
-    const note = bassString.charAt(arr2Index);
+    const note = bassString.charAt(bassGrooveIndex);
 
     if (melodySum === bassSum) {
-      bassSum += arr2[arr2Index];
+      bassSum += bassGroove[bassGrooveIndex];
       if (note === "c") {
         melody += "1";
       } else if (note === "d") {
@@ -83,11 +83,11 @@ export function melodyString(arr1, arr2, bassString) {
       } else {
         melody += "-";
       }
-      arr2Index++;
+      bassGrooveIndex++;
     } else if (melodySum !== bassSum) {
       if (
-        arr1[i] >= 0.25 &&
-        arr1[i] < 1 &&
+        melodyGroove[i] >= 0.25 &&
+        melodyGroove[i] < 1 &&
         Number.isInteger(melodySum / 0.25)
       ) {
         if (note === "c" || note === "-") {
@@ -113,7 +113,7 @@ export function melodyString(arr1, arr2, bassString) {
         } else {
           melody += "-";
         }
-      } else if (arr1[i] >= 1 && Number.isInteger(melodySum / 0.25)) {
+      } else if (melodyGroove[i] >= 1 && Number.isInteger(melodySum / 0.25)) {
         if (note === "c") {
           melody += Math.random() < 0.8 ? "1" : "-";
         } else if (note === "d") {
@@ -141,7 +141,7 @@ export function melodyString(arr1, arr2, bassString) {
         }
       }
     }
-    melodySum += arr1[i];
+    melodySum += melodyGroove[i];
     if (Number.isInteger(melodySum / 4)) {
       melody += "|";
     }

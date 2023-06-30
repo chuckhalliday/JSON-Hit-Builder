@@ -6,8 +6,8 @@ export function setKey() {
   return keyAdjust
 }
 
-export function findKey(string, keyAdjust) {
-  let keys = []
+export function findKey(string: string, keyAdjust: number) {
+  let keys: string[] = []
   const sharpKeys = [-10, -8, -6, -5, -3, -1, 0, 2, 4, 6, 7, 9, 11];
   const flatKeys = [-12, -11, -9, -7, -4, -2, 1, 3, 5, 8, 10, 12]
   if (sharpKeys.includes(keyAdjust)) {

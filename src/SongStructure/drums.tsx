@@ -1,10 +1,10 @@
-export function createDrums(arr) {
+export function createDrums(bassGroove: number[]) {
   const possibleLengths = [0.25, 0.5, 1];
-  let drumArr = [];
+  let drumArr: number[] = [];
   let subdivision = 1;
 
-  for (let i = 0; i < arr.length; i++) {
-    let beat = arr[i];
+  for (let i = 0; i < bassGroove.length; i++) {
+    let beat = bassGroove[i];
     while (beat > 0) {
       let length = possibleLengths[possibleLengths.length - subdivision];
       if (beat >= length) {
@@ -19,7 +19,7 @@ export function createDrums(arr) {
   return drumArr;
 }
 
-export function kickString(drumBeat, bassBeat, bassString) {
+export function kickString(drumBeat: number[], bassBeat: number[], bassString: string) {
   let kick = "";
   let kickSum = 0;
   let bassSum = 0;
@@ -50,17 +50,17 @@ export function kickString(drumBeat, bassBeat, bassString) {
   return kick;
 }
 
-export function snareString(arr) {
+export function snareString(drumBeat: number[]) {
   let snare = "";
   let sum = 0;
 
-  for (let i = 0; i < arr.length; i++) {
+  for (let i = 0; i < drumBeat.length; i++) {
     if (Number.isInteger(sum + 0.5)) {
       snare += Math.random() < 0.85 ? "y" : "-";
     } else {
       snare += Math.random() < 0.85 ? "-" : "y";
     }
-    sum += arr[i];
+    sum += drumBeat[i];
     if (Math.abs(sum / 8 - Math.round(sum / 8)) <= 0.005) {
       snare += "|";
     }
@@ -68,20 +68,20 @@ export function snareString(arr) {
   return snare;
 }
 
-export function hatString(arr) {
+export function hatString(drumBeat: number[]) {
   let hihat = "";
   let sum = 0;
 
-  for (let i = 0; i < arr.length; i++) {
-    if (arr[i] === 0.08 || arr[i] === 0.09 ||
-      arr[i] === 0.16 || arr[i] === 0.17) {
+  for (let i = 0; i < drumBeat.length; i++) {
+    if (drumBeat[i] === 0.08 || drumBeat[i] === 0.09 ||
+      drumBeat[i] === 0.16 || drumBeat[i] === 0.17) {
       hihat += Math.random() < 0.5 ? "V" : "w";
     } else if (Math.abs(sum % 0.5 - Math.round(sum % 0.5)) <= 0.1) {
       hihat += "v";
     } else {
       hihat += "-";
     }
-    sum += arr[i];
+    sum += drumBeat[i];
     if (Math.abs(sum / 8 - Math.round(sum / 8)) <= 0.005) {
       hihat += "|";
     }
@@ -89,7 +89,7 @@ export function hatString(arr) {
   return hihat;
 }
 
-export function flairString(arr, snareString, hihatString) {
+export function flairString(drumBeat: number[], snareString: string, hihatString: string) {
   let flair = "";
   let sum = 0;
   let snare = snareString.replace(/\|/g, '');
@@ -98,7 +98,7 @@ export function flairString(arr, snareString, hihatString) {
   const possibleTomValues = ["u", "U", "t", "T", "s", "S", "y", "Y"];
   let tom = possibleTomValues[Math.floor(Math.random() * possibleTomValues.length)];
 
-  for (let i = 0; i < arr.length; i++) {
+  for (let i = 0; i < drumBeat.length; i++) {
     if (snare.charAt(i) === '-' || hihat.charAt(i) === '-') {
       if (sum === 0 || sum === 16) {
         flair += Math.random() < 0.4 ? "R" : "-";
@@ -112,8 +112,8 @@ export function flairString(arr, snareString, hihatString) {
         flair += Math.random() < 0.3 ? "z" : "-";
       } else if (sum >= 31.75 || sum === 15.75) {
         flair += Math.random() < 0.6 ? "Z" : "-";
-      } else if (arr[i] === 0.33 || arr[i] === 0.34 ||
-        arr[i] === 0.17 || arr[i] === 0.16) {
+      } else if (drumBeat[i] === 0.33 || drumBeat[i] === 0.34 ||
+        drumBeat[i] === 0.17 || drumBeat[i] === 0.16) {
         flair += Math.random() < 0.3 ? tom : "-";
       } else {
         flair += "-";
@@ -121,7 +121,7 @@ export function flairString(arr, snareString, hihatString) {
     } else {
       flair += '-';
     }
-    sum += arr[i];
+    sum += drumBeat[i];
     if (Math.abs(sum / 8 - Math.round(sum / 8)) <= 0.005) {
       flair += "|";
     }

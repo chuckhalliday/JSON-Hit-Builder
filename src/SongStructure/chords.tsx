@@ -1,18 +1,18 @@
-export function createChords(arr) {
+export function createChords(bassGroove: number[]) {
   let chordArray = []
-  let sum = arr[0]
-  for (let i = 1; i < arr.length; i++) {
+  let sum = bassGroove[0]
+  for (let i = 1; i < bassGroove.length; i++) {
     let roll = Math.random()
     if (sum >= 2) {
       chordArray.push(sum)
       sum = 0
-      sum += arr[i]
+      sum += bassGroove[i]
     } else if (sum >= 1 && roll < 0.5) {
       chordArray.push(sum)
       sum = 0
-      sum += arr[i]
+      sum += bassGroove[i]
     } else {
-      sum += arr[i]
+      sum += bassGroove[i]
     }
   }
   if (sum > 0) {
@@ -21,7 +21,7 @@ export function createChords(arr) {
   return chordArray
 }
 
-export function chordString(chordsGroove, bassGroove, bassString) {
+export function chordString(chordsGroove: number[], bassGroove: number[], bassString: string) {
 
 const cmajCmaj7 = Math.random() < 0.9 ? "1" : "!";
 const dmin7C9 = Math.random() < 0.8 ? "@" : "9";
@@ -83,9 +83,9 @@ for (let i = 0; i < bassGroove.length; i++) {
 }
 
 
-export function adjustChordString(chordString, keyAdjust) {
+export function adjustChordString(chordString: string, keyAdjust: number) {
     let transpose = "";
-    let keys = []
+    let keys: string[] = []
     for (let i = 0; i < chordString.length; i++) {
       const sharpKeys = [-10, -8, -6, -5, -3, -1, 0, 2, 4, 6, 7, 9, 11];
       const flatKeys = [-12, -11, -9, -7, -4, -2, 1, 3, 5, 8, 10, 12]

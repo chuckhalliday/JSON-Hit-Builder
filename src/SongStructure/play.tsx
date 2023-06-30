@@ -9,121 +9,121 @@ import { adjustBassNotes, adjustChordNotes } from './playParts.js';
 import { generateSongStructure } from './songStructure.js';
 import { playSong } from './playSong.js'
 
-export const primaryBass = primaryGroove();
-const primaryBass2 = primaryGroove();
-const bassPart1 = Math.random() < 0.5 ? primaryBass : primaryBass2;
-const bassPart2 = Math.random() < 0.5 ? primaryBass : primaryBass2;
-const bassPart3 = Math.random() < 0.5 ? primaryBass : primaryBass2;
-const bassPart4 = Math.random() < 0.5 ? primaryBass : primaryBass2;
-const initBass = bassPart1.concat(bassPart2, bassPart3, bassPart4);
-const chorusBass = bassPart2.concat(bassPart1, bassPart4, bassPart3)
-const bridgeBass = bassPart4.concat(bassPart3, bassPart2, bassPart1)
+export const primaryBass: number[] = primaryGroove();
+const primaryBass2: number[] = primaryGroove();
+const bassPart1: number[] = Math.random() < 0.5 ? primaryBass : primaryBass2;
+const bassPart2: number[] = Math.random() < 0.5 ? primaryBass : primaryBass2;
+const bassPart3: number[] = Math.random() < 0.5 ? primaryBass : primaryBass2;
+const bassPart4: number[] = Math.random() < 0.5 ? primaryBass : primaryBass2;
+const initBass: number[] = bassPart1.concat(bassPart2, bassPart3, bassPart4);
+const chorusBass: number[] = bassPart2.concat(bassPart1, bassPart4, bassPart3)
+const bridgeBass: number[] = bassPart4.concat(bassPart3, bassPart2, bassPart1)
 //let bassCount = sumArray(initBass);
 //console.log(bassCount);
-const primaryDrums = createDrums(primaryBass);
-const primaryDrums2 = createDrums(primaryBass2);
-const drumTrips1 = subdivideArray(primaryDrums);
-const drumTrips2 = subdivideArray(primaryDrums2);
-const drumPart1 = bassPart1 === primaryBass ? (Math.random() < 0.5 ? primaryDrums : drumTrips1) : (Math.random() < 0.5 ? primaryDrums2 : drumTrips2);
-const drumPart2 = bassPart2 === primaryBass ? (Math.random() < 0.5 ? primaryDrums : drumTrips1) : (Math.random() < 0.5 ? primaryDrums2 : drumTrips2);
-const drumPart3 = bassPart3 === primaryBass ? (Math.random() < 0.5 ? primaryDrums : drumTrips1) : (Math.random() < 0.5 ? primaryDrums2 : drumTrips2);
-const drumPart4 = bassPart4 === primaryBass ? (Math.random() < 0.5 ? primaryDrums : drumTrips1) : (Math.random() < 0.5 ? primaryDrums2 : drumTrips2);
-const initDrums = drumPart1.concat(drumPart2, drumPart3, drumPart4);
-const chorusDrums = drumPart2.concat(drumPart1, drumPart4, drumPart3)
-const bridgeDrums = drumPart4.concat(drumPart3, drumPart2, drumPart1)
+const primaryDrums: number[] = createDrums(primaryBass);
+const primaryDrums2: number[] = createDrums(primaryBass2);
+const drumTrips1: number[] = subdivideArray(primaryDrums);
+const drumTrips2: number[] = subdivideArray(primaryDrums2);
+const drumPart1: number[] = bassPart1 === primaryBass ? (Math.random() < 0.5 ? primaryDrums : drumTrips1) : (Math.random() < 0.5 ? primaryDrums2 : drumTrips2);
+const drumPart2: number[] = bassPart2 === primaryBass ? (Math.random() < 0.5 ? primaryDrums : drumTrips1) : (Math.random() < 0.5 ? primaryDrums2 : drumTrips2);
+const drumPart3: number[] = bassPart3 === primaryBass ? (Math.random() < 0.5 ? primaryDrums : drumTrips1) : (Math.random() < 0.5 ? primaryDrums2 : drumTrips2);
+const drumPart4: number[] = bassPart4 === primaryBass ? (Math.random() < 0.5 ? primaryDrums : drumTrips1) : (Math.random() < 0.5 ? primaryDrums2 : drumTrips2);
+const initDrums: number[] = drumPart1.concat(drumPart2, drumPart3, drumPart4);
+const chorusDrums: number[] = drumPart2.concat(drumPart1, drumPart4, drumPart3)
+const bridgeDrums: number[] = drumPart4.concat(drumPart3, drumPart2, drumPart1)
 //let drumCount = sumArray(initDrums);
 //console.log(drumCount);
-const primaryMelody = melodyGroove(primaryBass);
-const primaryMelody2 = melodyGroove(primaryBass2);
-const initMelody = primaryMelody.concat(primaryMelody, primaryMelody2, primaryMelody);
+const primaryMelody: number[] = melodyGroove(primaryBass);
+const primaryMelody2: number[] = melodyGroove(primaryBass2);
+const initMelody: number[] = primaryMelody.concat(primaryMelody, primaryMelody2, primaryMelody);
 //let melodyCount = sumArray(initMelody);
 //console.log(melodyCount);
 
-const initChords = createChords(initBass)
-const chorusChords = createChords(chorusBass)
-const bridgeChords = createChords(bridgeBass)
+const initChords: number[] = createChords(initBass)
+const chorusChords: number[] = createChords(chorusBass)
+const bridgeChords: number[] = createChords(bridgeBass)
 
 //verse
 
-const bassLine1V = bassString1V(bassPart1);
-const bassLine2V = bassString2V(bassPart2, bassLine1V);
-const bassLine3V = bassString3V(bassPart3, bassLine2V);
-const bassLine4V = bassString4V(bassPart4, bassLine1V);
-const bassV = bassLine1V.concat(bassLine2V + bassLine3V + bassLine4V);
+const bassLine1V: string = bassString1V(bassPart1);
+const bassLine2V: string = bassString2V(bassPart2, bassLine1V);
+const bassLine3V: string = bassString3V(bassPart3, bassLine2V);
+const bassLine4V: string = bassString4V(bassPart4, bassLine1V);
+const bassV: string = bassLine1V.concat(bassLine2V + bassLine3V + bassLine4V);
 
-const chordsV = chordString(initChords, initBass, bassV)
+const chordsV: string = chordString(initChords, initBass, bassV)
 
-const melodyLine1V = melodyString(primaryMelody, bassPart1, bassLine1V);
-const melodyLine2V = melodyString(primaryMelody, bassPart2, bassLine2V);
-const melodyLine3V = melodyString(primaryMelody2, bassPart3, bassLine3V);
-const melodyLine4V = melodyString(primaryMelody, bassPart4, bassLine4V);
-const melodyV = melodyLine1V.concat(melodyLine2V + melodyLine3V + melodyLine4V);
+const melodyLine1V: string = melodyString(primaryMelody, bassPart1, bassLine1V);
+const melodyLine2V: string = melodyString(primaryMelody, bassPart2, bassLine2V);
+const melodyLine3V: string = melodyString(primaryMelody2, bassPart3, bassLine3V);
+const melodyLine4V: string = melodyString(primaryMelody, bassPart4, bassLine4V);
+const melodyV: string = melodyLine1V.concat(melodyLine2V + melodyLine3V + melodyLine4V);
 
-const bassDrum1V = kickString(drumPart1, bassPart1, bassLine1V);
-const bassDrum2V = kickString(drumPart2, bassPart2, bassLine2V);
-const bassDrum3V = kickString(drumPart3, bassPart3, bassLine3V);
-const bassDrum4V = kickString(drumPart4, bassPart4, bassLine4V);
-const bassDrumV = bassDrum1V.concat(bassDrum2V + bassDrum3V + bassDrum4V);
+const bassDrum1V: string = kickString(drumPart1, bassPart1, bassLine1V);
+const bassDrum2V: string = kickString(drumPart2, bassPart2, bassLine2V);
+const bassDrum3V: string = kickString(drumPart3, bassPart3, bassLine3V);
+const bassDrum4V: string = kickString(drumPart4, bassPart4, bassLine4V);
+const bassDrumV: string = bassDrum1V.concat(bassDrum2V + bassDrum3V + bassDrum4V);
 
-const snareDrumV = snareString(initDrums);
-const hiHatV = hatString(initDrums);
-const flairV = flairString(initDrums, snareDrumV, hiHatV);
+const snareDrumV: string = snareString(initDrums);
+const hiHatV: string = hatString(initDrums);
+const flairV: string = flairString(initDrums, snareDrumV, hiHatV);
 
 //chorus
 
-const bassLine1C = bassString1C(bassPart2, bassLine1V);
-const bassLine2C = bassString2C(bassPart1, bassLine1C);
-const bassLine3C = bassString3C(bassPart4, bassLine1V);
-const bassLine4C = bassString4C(bassPart3, bassLine1V);
-const bassC = bassLine1C.concat(bassLine2C + bassLine3C + bassLine4C);
+const bassLine1C: string = bassString1C(bassPart2, bassLine1V);
+const bassLine2C: string = bassString2C(bassPart1, bassLine1C);
+const bassLine3C: string = bassString3C(bassPart4, bassLine1V);
+const bassLine4C: string = bassString4C(bassPart3, bassLine1V);
+const bassC: string = bassLine1C.concat(bassLine2C + bassLine3C + bassLine4C);
 
-const chordsC = chordString(chorusChords, chorusBass, bassC)
+const chordsC: string = chordString(chorusChords, chorusBass, bassC)
 
-const melodyLine1C = melodyString(primaryMelody, primaryBass, bassLine1C);
-const melodyLine2C = melodyString(primaryMelody, primaryBass, bassLine2C);
-const melodyLine3C = melodyString(primaryMelody2, primaryBass2, bassLine3C);
-const melodyLine4C = melodyString(primaryMelody, primaryBass, bassLine4C);
-const melodyC = melodyLine1C.concat(melodyLine2C + melodyLine3C + melodyLine4C);
+const melodyLine1C: string = melodyString(primaryMelody, primaryBass, bassLine1C);
+const melodyLine2C: string = melodyString(primaryMelody, primaryBass, bassLine2C);
+const melodyLine3C: string = melodyString(primaryMelody2, primaryBass2, bassLine3C);
+const melodyLine4C: string = melodyString(primaryMelody, primaryBass, bassLine4C);
+const melodyC: string = melodyLine1C.concat(melodyLine2C + melodyLine3C + melodyLine4C);
 
-const bassDrum1C = kickString(drumPart2, bassPart2, bassLine1C);
-const bassDrum2C = kickString(drumPart1, bassPart1, bassLine2C);
-const bassDrum3C = kickString(drumPart4, bassPart4, bassLine3C);
-const bassDrum4C = kickString(drumPart3, bassPart3, bassLine4C);
-const bassDrumC = bassDrum1C.concat(bassDrum2C + bassDrum3C + bassDrum4C);
+const bassDrum1C: string = kickString(drumPart2, bassPart2, bassLine1C);
+const bassDrum2C: string = kickString(drumPart1, bassPart1, bassLine2C);
+const bassDrum3C: string = kickString(drumPart4, bassPart4, bassLine3C);
+const bassDrum4C: string = kickString(drumPart3, bassPart3, bassLine4C);
+const bassDrumC: string = bassDrum1C.concat(bassDrum2C + bassDrum3C + bassDrum4C);
 
-const snareDrumC = snareString(chorusDrums);
-const hiHatC = hatString(chorusDrums);
-const flairC = flairString(chorusDrums, snareDrumC, hiHatC);
+const snareDrumC: string = snareString(chorusDrums);
+const hiHatC: string = hatString(chorusDrums);
+const flairC: string = flairString(chorusDrums, snareDrumC, hiHatC);
 
 //bridge
 
-const bassLine1B = bassString1B(bassPart4, bassLine1C);
-const bassLine2B = bassString2C(bassPart3, bassLine1B);
-const bassLine3B = bassString3C(bassPart2, bassLine1V);
-const bassLine4B = bassString4C(bassPart1, bassLine1V);
-const bassB = bassLine1B.concat(bassLine2B + bassLine3B + bassLine4B);
+const bassLine1B: string = bassString1B(bassPart4, bassLine1C);
+const bassLine2B: string = bassString2C(bassPart3, bassLine1B);
+const bassLine3B: string = bassString3C(bassPart2, bassLine1V);
+const bassLine4B: string = bassString4C(bassPart1, bassLine1V);
+const bassB: string = bassLine1B.concat(bassLine2B + bassLine3B + bassLine4B);
 
-const chordsB = chordString(bridgeChords, bridgeBass, bassB)
+const chordsB: string = chordString(bridgeChords, bridgeBass, bassB)
 
-const melodyLine1B = melodyString(primaryMelody, primaryBass, bassLine1B);
-const melodyLine2B = melodyString(primaryMelody, primaryBass, bassLine2B);
-const melodyLine3B = melodyString(primaryMelody2, primaryBass2, bassLine3B);
-const melodyLine4B = melodyString(primaryMelody, primaryBass, bassLine4B);
-const melodyB = melodyLine1B.concat(melodyLine2B + melodyLine3B + melodyLine4B);
+const melodyLine1B: string = melodyString(primaryMelody, primaryBass, bassLine1B);
+const melodyLine2B: string = melodyString(primaryMelody, primaryBass, bassLine2B);
+const melodyLine3B: string = melodyString(primaryMelody2, primaryBass2, bassLine3B);
+const melodyLine4B: string = melodyString(primaryMelody, primaryBass, bassLine4B);
+const melodyB: string = melodyLine1B.concat(melodyLine2B + melodyLine3B + melodyLine4B);
 
-const bassDrum1B = kickString(drumPart4, bassPart4, bassLine1B);
-const bassDrum2B = kickString(drumPart3, bassPart3, bassLine2B);
-const bassDrum3B = kickString(drumPart2, bassPart2, bassLine3B);
-const bassDrum4B = kickString(drumPart1, bassPart1, bassLine4B);
-const bassDrumB = bassDrum1B.concat(bassDrum2B + bassDrum3B + bassDrum4B);
+const bassDrum1B: string = kickString(drumPart4, bassPart4, bassLine1B);
+const bassDrum2B: string = kickString(drumPart3, bassPart3, bassLine2B);
+const bassDrum3B: string = kickString(drumPart2, bassPart2, bassLine3B);
+const bassDrum4B: string = kickString(drumPart1, bassPart1, bassLine4B);
+const bassDrumB: string = bassDrum1B.concat(bassDrum2B + bassDrum3B + bassDrum4B);
 
-const snareDrumB = snareString(initDrums);
-const hiHatB = hatString(initDrums);
-const flairB = flairString(initDrums, snareDrumB, hiHatB);
+const snareDrumB: string = snareString(initDrums);
+const hiHatB: string = hatString(initDrums);
+const flairB: string = flairString(initDrums, snareDrumB, hiHatB);
 
-let keyAdjust = setKey()
+let keyAdjust: number = setKey()
 console.log(keyAdjust)
-let key = findKey(bassV, keyAdjust)
+let key: string = findKey(bassV, keyAdjust)
 adjustBassNotes(keyAdjust)
 adjustChordNotes(keyAdjust)
 
@@ -162,12 +162,12 @@ for (let i = 0; i < chordsB.length; i++) {
 }
 let chordsBA = adjustChordString(spacedChordsB, keyAdjust)
 
-const songtime = Math.round(Math.random() * (240 - 210) + 210);
-const bpm = Math.round(Math.random() * (140 - 100) + 100);
-const bps = bpm / 60;
-const beatstotal = bps * songtime;
-const measures = Math.round(beatstotal / 4 / 4) * 4;
-const partsLength = measures / 8;
+const songtime: number = Math.round(Math.random() * (240 - 210) + 210);
+const bpm: number = Math.round(Math.random() * (140 - 100) + 100);
+const bps: number = bpm / 60;
+const beatstotal: number = bps * songtime;
+const measures: number = Math.round(beatstotal / 4 / 4) * 4;
+const partsLength: number = measures / 8;
 const songStructure = generateSongStructure(partsLength, bassVA, bassCA, bassBA, 
   flairV, hiHatV, snareDrumV, bassDrumV,
   flairC, hiHatC, snareDrumC, bassDrumC,

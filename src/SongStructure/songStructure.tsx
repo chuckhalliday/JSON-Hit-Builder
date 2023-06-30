@@ -1,8 +1,8 @@
-export function generateSongStructure(partsLength, bassVA, bassCA, bassBA, 
-  flairV, hiHatV, snareDrumV, bassDrumV,
-  flairC, hiHatC, snareDrumC, bassDrumC,
-  flairB, hiHatB, snareDrumB, bassDrumB,
-  chordsVA, chordsCA, chordsBA) {
+export function generateSongStructure(partsLength: number, bassVA: string, bassCA: string, bassBA: string, 
+  flairV: string, hiHatV: string, snareDrumV: string, bassDrumV: string,
+  flairC: string, hiHatC: string, snareDrumC: string, bassDrumC: string,
+  flairB: string, hiHatB: string, snareDrumB: string, bassDrumB: string,
+  chordsVA: string, chordsCA: string, chordsBA: string) {
   const partTypes = ['Verse', 'Chorus', 'Bridge'];
   const songStructure = [];
   let remainingParts = partsLength;

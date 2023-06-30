@@ -1,6 +1,6 @@
 //import midi from 'midi';
 
-let drumHits = {
+const drumHits: Record<string, number> = {
     'x': 36, 'X': 36,  // kick drum
     'y': 40, 'Y': 40,  // snare drum
     'v': 42, 'V': 42,  // closed hi-hat
@@ -13,7 +13,7 @@ let drumHits = {
     's': 43, 'S': 43   // low tom
 };
   
-let bassNotes = {
+const bassNotes: Record<string, number> = {
     'o': 41, 'O': 42,   // F, F#
     'p': 43, 'P': 44,   // G, G#
     'a': 45, 'A': 46,  // All capitals are sharp
@@ -25,7 +25,7 @@ let bassNotes = {
     'g': 55, 'G': 56,
 };
 
-let chordTones = {
+let chordTones: Record<string, number[]> = {
   '6': [45, 48, 52],       // Am
   '7': [47, 50, 53],      // Bdim
   '1': [48, 52, 55, 60],  // C
@@ -43,23 +43,23 @@ let chordTones = {
   '%': [52, 55, 59, 62],   //G7
 }
 
-export function adjustBassNotes(keyAdjust) {
+export function adjustBassNotes(keyAdjust: number) {
     for (let key in bassNotes) {
         bassNotes[key] = bassNotes[key] + keyAdjust;
     }
 }
 
-export function adjustChordNotes(keyAdjust) {
+export function adjustChordNotes(keyAdjust: number) {
   for (let [key, value] of Object.entries(chordTones)) {
     chordTones[key] = value.map(note => note + keyAdjust);
   }
 }
 
-export async function playBeat(pattern, groove, bpm) {
+export async function playBeat(pattern: string, groove: number[], bpm: number) {
   const beatDuration = 60 / bpm // duration of one beat in seconds
   const swingRatio = 3/3; // adjust as needed
 
-  function wait(time) {
+  function wait(time: number) {
     return new Promise(resolve => setTimeout(resolve, time * 1000));
   }
   //const output = new midi.Output();
@@ -89,11 +89,11 @@ export async function playBeat(pattern, groove, bpm) {
   }
 }
   
-export async function playBass(pattern, groove, bpm) {
+export async function playBass(pattern: string, groove: number[], bpm: number) {
   const beatDuration = 60 / bpm // duration of one beat in seconds
   const swingRatio = 3/3; // adjust as needed
 
-  function wait(time) {
+  function wait(time: number) {
     return new Promise(resolve => setTimeout(resolve, time * 1000));
   }
   //const output = new midi.Output();
@@ -119,11 +119,11 @@ export async function playBass(pattern, groove, bpm) {
   }
 }
 
-export async function playChords(pattern, groove, bpm) {
+export async function playChords(pattern: string, groove: number[], bpm: number) {
   const beatDuration = 60 / bpm // duration of one beat in seconds
   const swingRatio = 3/3; // adjust as needed
 
-  function wait(time) {
+  function wait(time: number) {
     return new Promise(resolve => setTimeout(resolve, time * 1000));
   }
   //const output = new midi.Output();

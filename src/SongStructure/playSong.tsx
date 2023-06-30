@@ -1,8 +1,8 @@
 //import midi from 'midi'
 import { playBeat, playBass, playChords } from './playParts.js'
 
-export async function countIn(bpm, initDrums, 
-  hiHatV) {
+export async function countIn(bpm: number, initDrums: number[], 
+  hiHatV: string) {
   for (let i = 0; i < 1; i++) {
     await Promise.all([
     playBeat(hiHatV.replace(/\|/g, ''), initDrums, bpm),
@@ -10,8 +10,8 @@ export async function countIn(bpm, initDrums,
   }
 }
 
-export async function playVerse(bpm, initDrums, initBass, initChords,
-    bassDrumV, snareDrumV, hiHatV, flairV, bassV, chordsV) {
+export async function playVerse(bpm: number, initDrums: number[], initBass: number[], initChords: number[],
+    bassDrumV: string, snareDrumV: string, hiHatV: string, flairV: string, bassV: string, chordsV: string) {
     for (let i = 0; i < 1; i++) {
       await Promise.all([
       playBeat(bassDrumV.replace(/\|/g, ''), initDrums, bpm),
@@ -24,8 +24,8 @@ export async function playVerse(bpm, initDrums, initBass, initChords,
     }
   }
   
-export async function playChorus(bpm, chorusDrums, chorusBass, chorusChords,
-    bassDrumC, snareDrumC, hiHatC, flairC, bassC, chordsC) {
+export async function playChorus(bpm: number, chorusDrums: number[], chorusBass: number[], chorusChords: number[],
+    bassDrumC: string, snareDrumC: string, hiHatC: string, flairC: string, bassC: string, chordsC: string) {
     for (let i = 0; i < 1; i++) {
       await Promise.all([
       playBeat(bassDrumC.replace(/\|/g, ''), chorusDrums, bpm),
@@ -38,8 +38,8 @@ export async function playChorus(bpm, chorusDrums, chorusBass, chorusChords,
     }
   }
   
-export async function playBridge(bpm, bridgeDrums, bridgeBass, bridgeChords,
-    bassDrumB, snareDrumB, hiHatB, flairB, bassB, chordsB) {
+export async function playBridge(bpm: number, bridgeDrums: number[], bridgeBass: number[], bridgeChords: number[],
+    bassDrumB: string, snareDrumB: string, hiHatB: string, flairB: string, bassB: string, chordsB: string) {
     for (let i = 0; i < 1; i++) {
       await Promise.all([
       playBeat(bassDrumB.replace(/\|/g, ''), bridgeDrums, bpm),
@@ -52,11 +52,11 @@ export async function playBridge(bpm, bridgeDrums, bridgeBass, bridgeChords,
     }
   }
 
-export async function playSong(songStructure, bpm, initDrums, initBass, initChords,
-    chorusDrums, chorusBass, chorusChords, bridgeDrums, bridgeBass, bridgeChords,
-    bassDrumV, snareDrumV, hiHatV, flairV, bassV, chordsV, 
-    bassDrumC, snareDrumC, hiHatC, flairC, bassC, chordsC, 
-    bassDrumB, snareDrumB, hiHatB, flairB, bassB, chordsB) {
+export async function playSong(songStructure: any[], bpm: number, initDrums: number[], initBass: number[], initChords: number[],
+    chorusDrums: number[], chorusBass: number[], chorusChords: number[], bridgeDrums: number[], bridgeBass: number[], bridgeChords: number[],
+    bassDrumV: string, snareDrumV: string, hiHatV: string, flairV: string, bassV: string, chordsV: string, 
+    bassDrumC: string, snareDrumC: string, hiHatC: string, flairC: string, bassC: string, chordsC: string, 
+    bassDrumB: string, snareDrumB: string, hiHatB: string, flairB: string, bassB: string, chordsB: string) {
     //const output = new midi.Output()
     //output.openPort(3)
     //Start recording
