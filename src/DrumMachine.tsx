@@ -113,7 +113,8 @@ console.log(stepsRef)
 
   return (
     <div className={styles.machine}>
-
+      <div className={styles.labelList}></div>
+      <div>Key of: {songVariables.key}</div>
       {/* Renders titles */}
       <div className={styles.labelList}>
         {samples.map((sample) => (
