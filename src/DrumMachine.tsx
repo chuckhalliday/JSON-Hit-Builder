@@ -31,9 +31,9 @@ export default function DrumMachine({ samples, numOfSteps = songVariables.initDr
   let snareDrumV: string;
   let hiHatV: string;
 
-  bassDrumV = songVariables.bassDrumV.toString().replace(/\|/g, '')
-  snareDrumV = songVariables.snareDrumV.toString().replace(/\|/g, '')
-  hiHatV = songVariables.hiHatV.toString().replace(/\|/g, '')
+  bassDrumV = songVariables.bassDrumV.replace(/\|/g, '')
+  snareDrumV = songVariables.snareDrumV.replace(/\|/g, '')
+  hiHatV = songVariables.hiHatV.replace(/\|/g, '')
 
 for (let i = 0; i < bassDrumV.length; i ++){
   if (bassDrumV.charAt(i) === 'x' || bassDrumV.charAt(i) === 'X'){
