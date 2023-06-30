@@ -1,4 +1,4 @@
-Javascript app that plays randomized song structures according to customizable algorithm
+Typescript app that plays randomized song structures according to customizable algorithm
 
 Requires IAC driver enabled and DAW with instruments mapped to MIDI ports
 
