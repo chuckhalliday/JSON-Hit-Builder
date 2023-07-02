@@ -3,9 +3,20 @@ import * as Tone from "tone";
 
 import { songVariables } from "./SongStructure/play"
 
+import { playSong } from "./SongStructure/playSong";
+
 import styles from "./DrumMachine.module.scss";
 
 console.log(songVariables)
+
+/*
+playSong(songVariables.songStructure, songVariables.bpm, songVariables.initDrums, songVariables.initBass, songVariables.initChords, 
+  songVariables.chorusDrums, songVariables.chorusBass, songVariables.chorusChords, songVariables.bridgeDrums, songVariables.bridgeBass, songVariables.bridgeChords, 
+  songVariables.bassDrumV, songVariables.snareDrumV, songVariables.hiHatV, songVariables.flairV, songVariables.bassV, songVariables.chordsV, 
+  songVariables.bassDrumC, songVariables.snareDrumC, songVariables.hiHatC, songVariables.flairC, songVariables.bassC, songVariables.chordsC, 
+  songVariables.bassDrumB, songVariables.snareDrumB, songVariables.hiHatB, songVariables.flairB, songVariables.bassB, songVariables.chordsB)
+*/
+
 
 const NOTE = "C2";
 

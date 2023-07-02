@@ -1,9 +1,37 @@
 //import midi from 'midi';
 
-const drumHits: Record<string, number> = {
-    'x': 36, 'X': 36,  // kick drum
-    'y': 40, 'Y': 40,  // snare drum
-    'v': 42, 'V': 42,  // closed hi-hat
+// Create an audio context
+const audioContext = new AudioContext();
+
+// Load a sound file asynchronously
+function loadSoundFile(url: string, callback: (buffer: AudioBuffer) => void) {
+  const request = new XMLHttpRequest();
+  request.open('GET', url, true);
+  request.responseType = 'arraybuffer';
+
+  request.onload = () => {
+    audioContext.decodeAudioData(request.response, (buffer: AudioBuffer) => {
+      callback(buffer);
+    });
+  };
+
+  request.send();
+}
+
+// Play a sound file
+function playSound(buffer: AudioBuffer) {
+  const source = audioContext.createBufferSource();
+  source.buffer = buffer;
+  source.connect(audioContext.destination);
+  source.start();
+}
+
+// Usage
+
+const drumHits: Record<string, any> = {
+    'x': './kick.wav', 'X': './kick.wav',  // kick drum 36
+    'y': './snare.wav', 'Y': './snare.wav',  // snare drum 40 
+    'v': './hat-closed.wav', 'V': './hat-closed.wav',  // closed hi-hat 42
     'w': 46, 'W': 46,  // open hi-hat
     'r': 51, 'R': 51,  // ride cymbal
     'q': 39, 'Q': 39,  // bell
@@ -81,6 +109,9 @@ export async function playBeat(pattern: string, groove: number[], bpm: number) {
         }
       }
       //output.sendMessage([144, drum, velocity])
+      loadSoundFile(drum, (buffer: AudioBuffer) => {
+        playSound(buffer);
+      });
       await wait(duration)
       //output.sendMessage([128, drum, release])
     } else if (pattern[index] === '-') {

@@ -396,11 +396,12 @@ songStructure.forEach(part => {
     `);
   });
 
-playSong(songStructure, bpm, initDrums, initBass, initChords, 
+/*playSong(songStructure, bpm, initDrums, initBass, initChords, 
   chorusDrums, chorusBass, chorusChords, bridgeDrums, bridgeBass, bridgeChords, 
   bassDrumV, snareDrumV, hiHatV, flairV, bassV, chordsV, 
   bassDrumC, snareDrumC, hiHatC, flairC, bassC, chordsC, 
   bassDrumB, snareDrumB, hiHatB, flairB, bassB, chordsB);
+*/
 
 export const songVariables = {
     songStructure: songStructure,
