@@ -1,5 +1,4 @@
 import React from "react";
-import * as Tone from "tone";
 
 import { songVariables } from "./SongStructure/play"
 
@@ -7,11 +6,19 @@ import styles from "./DrumMachine.module.scss";
 
 console.log(songVariables)
 
+/*
+playSong(songVariables.songStructure, songVariables.bpm, songVariables.initDrums, songVariables.initBass, songVariables.initChords, 
+  songVariables.chorusDrums, songVariables.chorusBass, songVariables.chorusChords, songVariables.bridgeDrums, songVariables.bridgeBass, songVariables.bridgeChords, 
+  songVariables.bassDrumV, songVariables.snareDrumV, songVariables.hiHatV, songVariables.flairV, songVariables.bassV, songVariables.chordsV, 
+  songVariables.bassDrumC, songVariables.snareDrumC, songVariables.hiHatC, songVariables.flairC, songVariables.bassC, songVariables.chordsC, 
+  songVariables.bassDrumB, songVariables.snareDrumB, songVariables.hiHatB, songVariables.flairB, songVariables.bassB, songVariables.chordsB)
+*/
+
+
 const NOTE = "C2";
 
 type Track = {
   id: number;
-  sampler: Tone.Sampler;
 };
 
 type Props = {
@@ -25,91 +32,142 @@ export default function DrumMachine({ samples, numOfSteps = songVariables.initDr
   const tracksRef = React.useRef<Track[]>([]);
   const stepsRef = React.useRef<HTMLInputElement[][]>(Array.from({ length: 4 }, () => Array.from({ length: numOfSteps }, () => document.createElement('input'))));
   const lampsRef = React.useRef<HTMLInputElement[]>([]);
-  const seqRef = React.useRef<Tone.Sequence | null>(null);
 
-  let bassDrumV: string;
-  let snareDrumV: string;
-  let hiHatV: string;
+  let bassDrumV: string = songVariables.bassDrumV.replace(/\|/g, '')
+  let snareDrumV: string = songVariables.snareDrumV.replace(/\|/g, '')
+  let hiHatV: string = songVariables.hiHatV.replace(/\|/g, '')
 
-  bassDrumV = songVariables.bassDrumV.replace(/\|/g, '')
-  snareDrumV = songVariables.snareDrumV.replace(/\|/g, '')
-  hiHatV = songVariables.hiHatV.replace(/\|/g, '')
+  const audioContext = new AudioContext();
 
-for (let i = 0; i < bassDrumV.length; i ++){
-  if (bassDrumV.charAt(i) === 'x' || bassDrumV.charAt(i) === 'X'){
-    const inputElement = stepsRef.current[3][i] as HTMLInputElement;
-    inputElement.checked = true;
-  }
+// Load a sound file asynchronously
+function loadSoundFile(url: string, callback: (buffer: AudioBuffer) => void) {
+  const request = new XMLHttpRequest();
+  request.open('GET', url, true);
+  request.responseType = 'arraybuffer';
+
+  request.onload = () => {
+    audioContext.decodeAudioData(request.response, (buffer: AudioBuffer) => {
+      callback(buffer);
+    });
+  };
+
+  request.send();
 }
 
-for (let i = 0; i < snareDrumV.length; i ++){
-  if (snareDrumV.charAt(i) === 'y' || bassDrumV.charAt(i) === 'Y'){
-    const inputElement = stepsRef.current[2][i] as HTMLInputElement;
-    inputElement.checked = true;
-  }
+// Play a sound file
+function playSound(buffer: AudioBuffer) {
+  const source = audioContext.createBufferSource();
+  source.buffer = buffer;
+  source.connect(audioContext.destination);
+  source.start();
 }
 
-for (let i = 0; i < hiHatV.length; i ++){
-  if (hiHatV.charAt(i) === 'v' || hiHatV.charAt(i) === 'w' || hiHatV.charAt(i) === 'V' || hiHatV.charAt(i) === 'W'){
-    const inputElement = stepsRef.current[0][i] as HTMLInputElement;
-    inputElement.checked = true;
+  for (let i = 0; i < bassDrumV.length; i ++){
+    if (bassDrumV.charAt(i) === 'x' || bassDrumV.charAt(i) === 'X'){
+      const inputElement = stepsRef.current[3][i] as HTMLInputElement;
+      inputElement.checked = true;
+    }
   }
-}
 
-console.log(stepsRef)
+  for (let i = 0; i < snareDrumV.length; i ++){
+    if (snareDrumV.charAt(i) === 'y' || bassDrumV.charAt(i) === 'Y'){
+      const inputElement = stepsRef.current[2][i] as HTMLInputElement;
+      inputElement.checked = true;
+    }
+  }
+
+  for (let i = 0; i < hiHatV.length; i ++){
+    if (hiHatV.charAt(i) === 'v' || hiHatV.charAt(i) === 'w' || hiHatV.charAt(i) === 'V' || hiHatV.charAt(i) === 'W'){
+      const inputElement = stepsRef.current[0][i] as HTMLInputElement;
+      inputElement.checked = true;
+    }
+  }
+
   //Array of different sounds
   const trackIds = [...Array(samples.length).keys()] as const;
   //Array of beats
   const stepIds = [...Array(numOfSteps).keys()] as const;
 
+  async function playBeat(pattern: HTMLInputElement[], groove: number[], bpm: number, lamps?: HTMLInputElement[]) {
+    const beatDuration = 60 / bpm // duration of one beat in seconds
+    const swingRatio = 3/3; // adjust as needed
+  
+    function wait(time: number) {
+      return new Promise(resolve => setTimeout(resolve, time * 1000));
+    }
+    //const output = new midi.Output();
+    //output.openPort(0)
+  
+    for (let index = 0; index < numOfSteps; index++) {
+      const release = Math.floor(Math.random() * (70 - 50 + 1) + 50);
+      const isEvenSixteenth = index % 4 === 0 || index % 4 === 2;
+      const duration = isEvenSixteenth
+        ? groove[index] * beatDuration * swingRatio
+        : groove[index] * beatDuration;
+        if (lamps) {
+          lamps[index].checked = true;
+        }
+      if (pattern === stepsRef.current[3] && pattern[index].checked) {
+        loadSoundFile("/kick.wav", (buffer: AudioBuffer) => {
+          playSound(buffer);
+        });
+        await wait(duration)
+        //output.sendMessage([128, drum, release])
+      } else if (pattern === stepsRef.current[2] && pattern[index].checked) {
+        loadSoundFile("/snare.wav", (buffer: AudioBuffer) => {
+          playSound(buffer);
+        });
+        await wait(duration)
+        //output.sendMessage([128, drum, release])
+      } else if (pattern === stepsRef.current[0] && pattern[index].checked) {
+        loadSoundFile("/hat-closed.wav", (buffer: AudioBuffer) => {
+          playSound(buffer);
+        });
+        await wait(duration)
+        //output.sendMessage([128, drum, release])
+      } else {
+        await wait(duration);
+      }
+    }
+  }
+
+  let stopFlag = false
+  
   const handleStartClick = async () => {
-    if (Tone.Transport.state === "started") {
-      Tone.Transport.pause();
+    if (isPlaying) {
       setIsPlaying(false);
+      stopFlag = true; // Set the stop flag to true
     } else {
-      await Tone.start();
-      Tone.Transport.start();
+      stopFlag = false; // Set the stop flag to false
+      playVerse(songVariables.bpm, songVariables.initDrums, stepsRef.current[3], stepsRef.current[2], stepsRef.current[0], lampsRef.current);
       setIsPlaying(true);
     }
   };
 
+  async function playVerse(bpm: number, initDrums: number[], bassDrumV: HTMLInputElement[], snareDrumV: HTMLInputElement[], hiHatV: HTMLInputElement[], lamps?: HTMLInputElement[]) {
+    while (!stopFlag) {
+      if (stopFlag) {
+        break
+      } else {
+      await Promise.all([
+        playBeat(bassDrumV, initDrums, bpm, lamps),
+        playBeat(snareDrumV, initDrums, bpm),
+        playBeat(hiHatV, initDrums, bpm),
+      ])
+      }
+    }
+  }
+
+
   const handleBpmChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    Tone.Transport.bpm.value = Number(e.target.value);
     songVariables.bpm = Number(e.target.value);
   };
 
-  const handleVolumeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+ /* const handleVolumeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     Tone.Destination.volume.value = Tone.gainToDb(Number(e.target.value));
-  };
+  }; */
 
-  React.useEffect(() => {
-    tracksRef.current = samples.map((sample, i) => ({
-      id: i,
-      sampler: new Tone.Sampler({
-        urls: {
-          [NOTE]: sample.url,
-        },
-      }).toDestination(),
-    }));
-    seqRef.current = new Tone.Sequence(
-      (time, step) => {
-        tracksRef.current.map((trk) => {
-          if (stepsRef.current[trk.id]?.[step]?.checked) {
-            trk.sampler.triggerAttack(NOTE, time);
-          }
-          lampsRef.current[step].checked = true;
-        });
-      },
-      [...stepIds],
-      "16n"
-    );
-    seqRef.current.start(0);
 
-    return () => {
-      seqRef.current?.dispose();
-      tracksRef.current.map((trk) => void trk.sampler.dispose());
-    };
-  }, [samples, numOfSteps]);
 
   return (
     <div className={styles.machine}>
@@ -128,6 +186,7 @@ console.log(stepsRef)
         <div className={styles.row}>
           {stepIds.map((stepId) => (
             <label className={styles.lamp}>
+              <label className={styles.grooveLabel}>{songVariables.initDrums[stepId]}</label>
               <input
                 type="radio"
                 name="lamp"
@@ -205,7 +264,7 @@ console.log(stepsRef)
             min={0}
             max={1}
             step={0.01}
-            onChange={handleVolumeChange}
+          //  onChange={handleVolumeChange} 
             defaultValue={1}
           />
         </label>
