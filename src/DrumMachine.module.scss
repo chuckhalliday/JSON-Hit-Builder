@@ -81,10 +81,12 @@ $rowGap: 8px;
   display: flex;
   column-gap: 8px;
 
- /* & > *:nth-child(4n):not(:last-child) {
-    margin-right: 8px;
-  }*/
+ & > [data-custom-attribute = true] {
+    margin-right: 40px;
+  }
+  
 }
+
 
 .cell {
   $cell: &;
@@ -101,6 +103,9 @@ $rowGap: 8px;
       outline: solid 4px #90cdf4;
       outline-offset: 2px;
     }
+  }
+  &:addSpacing(space:true) {
+    margin-right: 20px;
   }
 
   &__content {
