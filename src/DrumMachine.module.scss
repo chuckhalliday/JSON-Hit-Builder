@@ -81,8 +81,23 @@ $rowGap: 8px;
   display: flex;
   column-gap: 8px;
 
- & > [data-custom-attribute = true] {
+ & > [measure-end=true] {
     margin-right: 40px;
+    position: relative
+  }
+ &> [measure-end=true]::after {
+  content: '';
+  position: absolute;
+  top: 0;
+ /* Adjust this value to position the line */
+  left: 50px;
+  height: 100%;
+  width: 3px;
+  background-color: black;
+}
+
+ & > [beat-end=true] {
+    margin-right: 10px;
   }
   
 }

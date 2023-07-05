@@ -169,17 +169,24 @@ function playSound(buffer: AudioBuffer) {
 
   function addSpacingToRows(step: number) {
       let sum = 0;
-      let space
+      let measure
+      let beat
   
       for (let i = 0; i < step; i++) {
         sum += songVariables.initDrums[i];
         }
         if (sum >= 7.92 && sum <= 8.08 || sum >= 15.92 && sum <= 16.08 || sum >= 23.92 && sum <= 24.08) {
-          space = true
+          measure = 'true'
+        } else if (Math.abs(sum - Math.round(sum)) <= 0.005) {
+          beat = 'true'
         } else {
-          space = false
+          measure = 'false'
+          beat = 'false'
         }
-        return space
+        return {
+          measure: measure,
+          beat: beat
+        }
       }
   
   return (
@@ -197,9 +204,10 @@ function playSound(buffer: AudioBuffer) {
         {/* Renders ticks */}
         <div className={styles.row}>
           {stepIds.map((stepId) => {
-            const space = addSpacingToRows(stepId + 1)
+            const measure = addSpacingToRows(stepId + 1).measure
+            const beat = addSpacingToRows(stepId + 1).beat
             return(
-            <label className={styles.lamp} data-custom-attribute={space}>
+            <label className={styles.lamp} measure-end={measure} beat-end={beat}>
               <label className={styles.grooveLabel}>
                 {songVariables.initDrums[stepId]}
               </label>
@@ -226,10 +234,10 @@ function playSound(buffer: AudioBuffer) {
             <div key={trackId} className={styles.row}>
               {stepIds.map((stepId) => {
                 const id = trackId + '-' + stepId;
-                const space = addSpacingToRows(stepId + 1)
-                console.log(space)
+                const measure = addSpacingToRows(stepId + 1).measure
+                const beat = addSpacingToRows(stepId + 1).beat
                 return (
-                  <label className={styles.cell} key={id} data-custom-attribute={space}>
+                  <label className={styles.cell} key={id} measure-end={measure} beat-end={beat}>
                     <input
                       key={id}
                       id={id}
