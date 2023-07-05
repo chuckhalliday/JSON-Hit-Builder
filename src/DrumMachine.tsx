@@ -167,8 +167,21 @@ function playSound(buffer: AudioBuffer) {
     Tone.Destination.volume.value = Tone.gainToDb(Number(e.target.value));
   }; */
 
-
-
+  function addSpacingToRows(step: number) {
+      let sum = 0;
+      let space
+  
+      for (let i = 0; i < step; i++) {
+        sum += songVariables.initDrums[i];
+        }
+        if (sum >= 7.9 && sum <= 8.1 || sum >= 15.9 && sum <= 16.1 || sum >= 23.9 && sum <= 24.1) {
+          space = true
+        } else {
+          space = false
+        }
+        return space
+      }
+  
   return (
     <div className={styles.machine}>
       <div className={styles.labelList}></div>
@@ -179,18 +192,21 @@ function playSound(buffer: AudioBuffer) {
           <div>{sample.name}</div>
         ))}
       </div>
-
-
+  
       <div className={styles.grid}>
-      { /* Renders ticks */}
+        {/* Renders ticks */}
         <div className={styles.row}>
-          {stepIds.map((stepId) => (
-            <label className={styles.lamp}>
-              <label className={styles.grooveLabel}>{songVariables.initDrums[stepId]}</label>
+          {stepIds.map((stepId) => {
+            const space = addSpacingToRows(stepId + 1)
+            return(
+            <label className={styles.lamp} data-custom-attribute={space}>
+              <label className={styles.grooveLabel}>
+                {songVariables.initDrums[stepId]}
+              </label>
               <input
                 type="radio"
                 name="lamp"
-                id={"lamp" + "-" + stepId}
+                id={'lamp' + '-' + stepId}
                 disabled
                 ref={(elm) => {
                   if (!elm) return;
@@ -200,18 +216,20 @@ function playSound(buffer: AudioBuffer) {
               />
               <div className={styles.lamp__content} />
             </label>
-          ))}
+            )
+          })}
         </div>
-
-
+  
         {/* Renders buttons */}
         <div className={styles.cellList}>
           {trackIds.map((trackId) => (
             <div key={trackId} className={styles.row}>
               {stepIds.map((stepId) => {
-                const id = trackId + "-" + stepId;
+                const id = trackId + '-' + stepId;
+                const space = addSpacingToRows(stepId + 1)
+                console.log(space)
                 return (
-                  <label className={styles.cell}>
+                  <label className={styles.cell} key={id} data-custom-attribute={space}>
                     <input
                       key={id}
                       id={id}
