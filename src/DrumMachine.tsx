@@ -174,7 +174,7 @@ function playSound(buffer: AudioBuffer) {
       for (let i = 0; i < step; i++) {
         sum += songVariables.initDrums[i];
         }
-        if (sum >= 7.9 && sum <= 8.1 || sum >= 15.9 && sum <= 16.1 || sum >= 23.9 && sum <= 24.1) {
+        if (sum >= 7.92 && sum <= 8.08 || sum >= 15.92 && sum <= 16.08 || sum >= 23.92 && sum <= 24.08) {
           space = true
         } else {
           space = false
