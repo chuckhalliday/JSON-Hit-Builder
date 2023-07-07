@@ -1,10 +1,8 @@
 import React from "react";
 
-import { songVariables } from "./SongStructure/play"
+import { playVerse } from "./SongStructure/playSong";
 
 import styles from "./DrumMachine.module.scss";
-
-console.log(songVariables)
 
 /*
 playSong(songVariables.songStructure, songVariables.bpm, songVariables.initDrums, songVariables.initBass, songVariables.initChords, 
@@ -15,152 +13,65 @@ playSong(songVariables.songStructure, songVariables.bpm, songVariables.initDrums
 */
 
 
-const NOTE = "C2";
-
-type Track = {
-  id: number;
-};
-
 type Props = {
-  samples: { url: string; name: string }[];
-  numOfSteps?: number;
+  numOfSteps: number;
+  drumGroove: number[]
+  kick: string
+  snare: string
+  hat: string
+  bpm: number
 };
 
-export default function DrumMachine({ samples, numOfSteps = songVariables.initDrums.length }: Props) {
+export default function DrumMachine({ numOfSteps, drumGroove, kick, snare, hat, bpm }: Props) {
   const [isPlaying, setIsPlaying] = React.useState(false);
 
-  const tracksRef = React.useRef<Track[]>([]);
   const stepsRef = React.useRef<HTMLInputElement[][]>(Array.from({ length: 4 }, () => Array.from({ length: numOfSteps }, () => document.createElement('input'))));
   const lampsRef = React.useRef<HTMLInputElement[]>([]);
 
-  let bassDrumV: string = songVariables.bassDrumV.replace(/\|/g, '')
-  let snareDrumV: string = songVariables.snareDrumV.replace(/\|/g, '')
-  let hiHatV: string = songVariables.hiHatV.replace(/\|/g, '')
+  let bassDrum: string = kick.replace(/\|/g, '')
+  let snareDrum: string = snare.replace(/\|/g, '')
+  let hiHat: string = hat.replace(/\|/g, '')
 
-  const audioContext = new AudioContext();
-
-// Load a sound file asynchronously
-function loadSoundFile(url: string, callback: (buffer: AudioBuffer) => void) {
-  const request = new XMLHttpRequest();
-  request.open('GET', url, true);
-  request.responseType = 'arraybuffer';
-
-  request.onload = () => {
-    audioContext.decodeAudioData(request.response, (buffer: AudioBuffer) => {
-      callback(buffer);
-    });
-  };
-
-  request.send();
-}
-
-// Play a sound file
-function playSound(buffer: AudioBuffer) {
-  const source = audioContext.createBufferSource();
-  source.buffer = buffer;
-  source.connect(audioContext.destination);
-  source.start();
-}
-
-  for (let i = 0; i < bassDrumV.length; i ++){
-    if (bassDrumV.charAt(i) === 'x' || bassDrumV.charAt(i) === 'X'){
+  for (let i = 0; i < bassDrum.length; i ++){
+    if (bassDrum.charAt(i) === 'x' || bassDrum.charAt(i) === 'X'){
       const inputElement = stepsRef.current[3][i] as HTMLInputElement;
       inputElement.checked = true;
     }
   }
 
-  for (let i = 0; i < snareDrumV.length; i ++){
-    if (snareDrumV.charAt(i) === 'y' || bassDrumV.charAt(i) === 'Y'){
+  for (let i = 0; i < snareDrum.length; i ++){
+    if (snareDrum.charAt(i) === 'y' || bassDrum.charAt(i) === 'Y'){
       const inputElement = stepsRef.current[2][i] as HTMLInputElement;
       inputElement.checked = true;
     }
   }
 
-  for (let i = 0; i < hiHatV.length; i ++){
-    if (hiHatV.charAt(i) === 'v' || hiHatV.charAt(i) === 'w' || hiHatV.charAt(i) === 'V' || hiHatV.charAt(i) === 'W'){
+  for (let i = 0; i < hiHat.length; i ++){
+    if (hiHat.charAt(i) === 'v' || hiHat.charAt(i) === 'w' || hiHat.charAt(i) === 'V' || hiHat.charAt(i) === 'W'){
       const inputElement = stepsRef.current[0][i] as HTMLInputElement;
       inputElement.checked = true;
     }
   }
 
+  const tracks: string[] = ["Kick", "Snare", "Flair", "HiHat"]
+
   //Array of different sounds
-  const trackIds = [...Array(samples.length).keys()] as const;
+  const trackIds = [...Array(tracks.length).keys()] as const;
   //Array of beats
   const stepIds = [...Array(numOfSteps).keys()] as const;
-
-  async function playBeat(pattern: HTMLInputElement[], groove: number[], bpm: number, lamps?: HTMLInputElement[]) {
-    const beatDuration = 60 / bpm // duration of one beat in seconds
-    const swingRatio = 3/3; // adjust as needed
-  
-    function wait(time: number) {
-      return new Promise(resolve => setTimeout(resolve, time * 1000));
-    }
-    //const output = new midi.Output();
-    //output.openPort(0)
-  
-    for (let index = 0; index < numOfSteps; index++) {
-      const release = Math.floor(Math.random() * (70 - 50 + 1) + 50);
-      const isEvenSixteenth = index % 4 === 0 || index % 4 === 2;
-      const duration = isEvenSixteenth
-        ? groove[index] * beatDuration * swingRatio
-        : groove[index] * beatDuration;
-        if (lamps) {
-          lamps[index].checked = true;
-        }
-      if (pattern === stepsRef.current[3] && pattern[index].checked) {
-        loadSoundFile("/kick.wav", (buffer: AudioBuffer) => {
-          playSound(buffer);
-        });
-        await wait(duration)
-        //output.sendMessage([128, drum, release])
-      } else if (pattern === stepsRef.current[2] && pattern[index].checked) {
-        loadSoundFile("/snare.wav", (buffer: AudioBuffer) => {
-          playSound(buffer);
-        });
-        await wait(duration)
-        //output.sendMessage([128, drum, release])
-      } else if (pattern === stepsRef.current[0] && pattern[index].checked) {
-        loadSoundFile("/hat-closed.wav", (buffer: AudioBuffer) => {
-          playSound(buffer);
-        });
-        await wait(duration)
-        //output.sendMessage([128, drum, release])
-      } else {
-        await wait(duration);
-      }
-    }
-  }
-
-  let stopFlag = false
   
   const handleStartClick = async () => {
     if (isPlaying) {
       setIsPlaying(false);
-      stopFlag = true; // Set the stop flag to true
     } else {
-      stopFlag = false; // Set the stop flag to false
-      playVerse(songVariables.bpm, songVariables.initDrums, stepsRef.current[3], stepsRef.current[2], stepsRef.current[0], lampsRef.current);
+      playVerse(bpm, drumGroove, stepsRef.current, lampsRef.current);
       setIsPlaying(true);
     }
   };
 
-  async function playVerse(bpm: number, initDrums: number[], bassDrumV: HTMLInputElement[], snareDrumV: HTMLInputElement[], hiHatV: HTMLInputElement[], lamps?: HTMLInputElement[]) {
-    while (!stopFlag) {
-      if (stopFlag) {
-        break
-      } else {
-      await Promise.all([
-        playBeat(bassDrumV, initDrums, bpm, lamps),
-        playBeat(snareDrumV, initDrums, bpm),
-        playBeat(hiHatV, initDrums, bpm),
-      ])
-      }
-    }
-  }
-
 
   const handleBpmChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    songVariables.bpm = Number(e.target.value);
+    bpm = Number(e.target.value);
   };
 
  /* const handleVolumeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -173,7 +84,7 @@ function playSound(buffer: AudioBuffer) {
       let beat
   
       for (let i = 0; i < step; i++) {
-        sum += songVariables.initDrums[i];
+        sum += drumGroove[i];
         }
         if (sum >= 7.92 && sum <= 8.08 || sum >= 15.92 && sum <= 16.08 || sum >= 23.92 && sum <= 24.08) {
           measure = 'true'
@@ -191,13 +102,12 @@ function playSound(buffer: AudioBuffer) {
   
   return (
     <div className={styles.machine}>
-      <div className={styles.labelList}></div>
-      <div>Key of: {songVariables.key}</div>
       {/* Renders titles */}
       <div className={styles.labelList}>
-        {samples.map((sample) => (
-          <div>{sample.name}</div>
-        ))}
+        <div>Hat</div>
+        <div>Flair</div>
+        <div>Snare</div>
+        <div>Kick</div>
       </div>
   
       <div className={styles.grid}>
@@ -207,9 +117,9 @@ function playSound(buffer: AudioBuffer) {
             const measure = addSpacingToRows(stepId + 1).measure
             const beat = addSpacingToRows(stepId + 1).beat
             return(
-            <label className={styles.lamp} measure-end={measure} beat-end={beat}>
+            <label key={stepId} className={styles.lamp} measure-end={measure} beat-end={beat}>
               <label className={styles.grooveLabel}>
-                {songVariables.initDrums[stepId]}
+                {drumGroove[stepId]}
               </label>
               <input
                 type="radio"
@@ -259,13 +169,6 @@ function playSound(buffer: AudioBuffer) {
           ))}
         </div>
       </div>
-
-      <div className={styles.labelList}></div>
-      <div>{songVariables.hiHatV}</div>
-      <div className={styles.labelList}></div>
-      <div>{songVariables.snareDrumV}</div>
-      <div className={styles.labelList}></div>
-      <div>{songVariables.bassDrumV}</div>
       
       {/* Renders controls */}
       <div className={styles.controls}>
@@ -273,14 +176,14 @@ function playSound(buffer: AudioBuffer) {
           {isPlaying ? "Pause" : "Start"}
         </button>
         <label className={styles.fader}>
-          <span>BPM:{songVariables.bpm}</span>
+          <span>BPM:{bpm}</span>
           <input
             type="range"
             min={90}
             max={150}
             step={1}
             onChange={handleBpmChange}
-            defaultValue={songVariables.bpm}
+            defaultValue={bpm}
           />
         </label>
         <label className={styles.fader}>
