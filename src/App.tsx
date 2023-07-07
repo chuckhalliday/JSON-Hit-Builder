@@ -5,14 +5,11 @@ import { songVariables } from "./SongStructure/play"
 function App() {
   return (
     <div>
+      <div>Key of: {songVariables.key}</div>
     <BassStaff />
-    <DrumMachine
-      samples={[
-        { url: "/hat-closed.wav", name: "CH" },
-        { url: "/clap.wav", name: "CL" },
-        { url: "/snare.wav", name: "SD" },
-        { url: "/kick.wav", name: "BD" },
-      ]}
+    <DrumMachine numOfSteps={songVariables.initDrums.length} drumGroove={songVariables.initDrums} 
+                 kick={songVariables.bassDrumV} snare={songVariables.snareDrumV} 
+                 hat={songVariables.hiHatV} bpm={songVariables.bpm}
     />
     </div>
   );

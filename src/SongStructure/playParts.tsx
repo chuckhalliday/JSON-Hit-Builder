@@ -83,7 +83,7 @@ export function adjustChordNotes(keyAdjust: number) {
   }
 }
 
-export async function playBeat(pattern: string, groove: number[], bpm: number) {
+export async function playBeat(pattern: HTMLInputElement[], groove: number[], bpm: number, stepsRef: HTMLInputElement[][], lamps?: HTMLInputElement[]) {
   const beatDuration = 60 / bpm // duration of one beat in seconds
   const swingRatio = 3/3; // adjust as needed
 
@@ -93,14 +93,38 @@ export async function playBeat(pattern: string, groove: number[], bpm: number) {
   //const output = new midi.Output();
   //output.openPort(0)
 
-  for (let index = 0; index < pattern.length; index++) {
-    const drum = drumHits[pattern[index]];
-    const release = Math.floor(Math.random() * (70 - 50 + 1) + 50);
+  for (let index = 0; index < groove.length; index++) {
+    //const drum = drumHits[pattern[index]];
+    //const release = Math.floor(Math.random() * (70 - 50 + 1) + 50);
     const isEvenSixteenth = index % 4 === 0 || index % 4 === 2;
     const duration = isEvenSixteenth
       ? groove[index] * beatDuration * swingRatio
       : groove[index] * beatDuration;
-    if (drum) {
+      if (lamps) {
+        lamps[index].checked = true;
+      }
+      if (pattern ===  stepsRef[3] && pattern[index].checked) {
+        loadSoundFile("../kick.wav", (buffer: AudioBuffer) => {
+          playSound(buffer);
+        });
+        await wait(duration)
+        //output.sendMessage([128, drum, release])
+      } else if (pattern ===  stepsRef[2]&& pattern[index].checked) {
+        loadSoundFile("../snare.wav", (buffer: AudioBuffer) => {
+          playSound(buffer);
+        });
+        await wait(duration)
+        //output.sendMessage([128, drum, release])
+      } else if (pattern ===  stepsRef[0] && pattern[index].checked) {
+        loadSoundFile("../hat-closed.wav", (buffer: AudioBuffer) => {
+          playSound(buffer);
+        });
+        await wait(duration)
+        //output.sendMessage([128, drum, release])
+      } else {
+        await wait(duration);
+      }
+    /*if (drum) {
       let velocity = Math.floor(Math.random() * (70 - 50 + 1) + 50);
       if (pattern[index] === pattern[index].toUpperCase()) {
         velocity = 90;
@@ -116,8 +140,8 @@ export async function playBeat(pattern: string, groove: number[], bpm: number) {
       //output.sendMessage([128, drum, release])
     } else if (pattern[index] === '-') {
       await wait(duration);
-    }
-  }
+    } */
+  } 
 }
   
 export async function playBass(pattern: string, groove: number[], bpm: number) {
