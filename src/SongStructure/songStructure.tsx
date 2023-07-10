@@ -17,12 +17,18 @@ export function generateSongStructure(partsLength: number, bassVA: string, bassG
   let partChords: string;
   let partChordsGroove: number[];
 
+  const randomPartLength = Math.min(remainingParts, Math.floor(Math.random() * 3) + 1);
+
+  songStructure.push({ type: 'Verse', repeat: randomPartLength, bass: bassVA, bassGroove: bassGrooveV,
+    kick: bassDrumV, snare: snareDrumV, hiHat: hiHatV, flair: flairV, drumGroove: drumGrooveV, chords: chordsVA, chordsGroove: chordsGrooveB });
+  remainingParts -= randomPartLength;
+  lastPartType = 'Verse'
+
   while (remainingParts > 0) {
     let randomPartType = partTypes[Math.floor(Math.random() * partTypes.length)];
     while (randomPartType === lastPartType) {
       randomPartType = partTypes[Math.floor(Math.random() * partTypes.length)];
     }
-    const randomPartLength = Math.min(remainingParts, Math.floor(Math.random() * 3) + 1);
     if (randomPartType === 'Verse') {
       partChords = chordsVA
       partChordsGroove = chordsGrooveV
@@ -43,7 +49,7 @@ export function generateSongStructure(partsLength: number, bassVA: string, bassG
       partHiHat = hiHatC
       partFlair = flairC
       partDrumsGroove = drumGrooveC
-    }  else {
+    } else {
       partChords = chordsBA
       partChordsGroove = chordsGrooveB
       partBass = bassBA
