@@ -69,7 +69,7 @@ export async function playSong(songStructure: any[], bpm: number, stepsRef: HTML
       //Drop locators
       //output.sendMessage([144,17,1])
       //output.sendMessage([176,sum,1])
-      for (let i = 0; i < part.length; i++) {
+      for (let i = 0; i < part.repeat; i++) {
         switch (part.type) {
           case 'Verse':
             await playVerse(bpm, initDrums, stepsRef, //initBass, initChords, 
