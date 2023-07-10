@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useRef } from "react";
 
 import { playVerse } from "./SongStructure/playSong";
 
@@ -14,6 +14,7 @@ playSong(songVariables.songStructure, songVariables.bpm, songVariables.initDrums
 
 
 type Props = {
+  onRenderWidthChange: any
   numOfSteps: number;
   drumGroove: number[]
   kick: string
@@ -22,11 +23,12 @@ type Props = {
   bpm: number
 };
 
-export default function DrumMachine({ numOfSteps, drumGroove, kick, snare, hat, bpm }: Props) {
+export default function DrumMachine({ onRenderWidthChange, numOfSteps, drumGroove, kick, snare, hat, bpm }: Props) {
   const [isPlaying, setIsPlaying] = React.useState(false);
 
   const stepsRef = React.useRef<HTMLInputElement[][]>(Array.from({ length: 4 }, () => Array.from({ length: numOfSteps }, () => document.createElement('input'))));
   const lampsRef = React.useRef<HTMLInputElement[]>([]);
+  const machineRef = useRef<HTMLDivElement>(null);
 
   let bassDrum: string = kick.replace(/\|/g, '')
   let snareDrum: string = snare.replace(/\|/g, '')
@@ -99,9 +101,17 @@ export default function DrumMachine({ numOfSteps, drumGroove, kick, snare, hat, 
           beat: beat
         }
       }
+
+      useEffect(() => {
+        if (machineRef.current) {
+          const width = machineRef.current.scrollWidth;
+          onRenderWidthChange(width);
+          // Export the width as needed
+        }
+      }, [onRenderWidthChange]);
   
   return (
-    <div className={styles.machine}>
+    <div className={styles.machine} ref={machineRef}>
       {/* Renders titles */}
       <div className={styles.labelList}>
         <div>Hat</div>

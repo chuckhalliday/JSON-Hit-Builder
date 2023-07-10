@@ -168,11 +168,11 @@ const bps: number = bpm / 60;
 const beatstotal: number = bps * songtime;
 const measures: number = Math.round(beatstotal / 4 / 4) * 4;
 const partsLength: number = measures / 8;
-const songStructure = generateSongStructure(partsLength, bassVA, bassCA, bassBA, 
-  flairV, hiHatV, snareDrumV, bassDrumV,
-  flairC, hiHatC, snareDrumC, bassDrumC,
-  flairB, hiHatB, snareDrumB, bassDrumB,
-  chordsVA, chordsCA, chordsBA) 
+const songStructure = generateSongStructure(partsLength, bassVA, initBass, bassCA, chorusBass, bassBA, bridgeBass,
+  flairV, hiHatV, snareDrumV, bassDrumV, initDrums,
+  flairC, hiHatC, snareDrumC, bassDrumC, chorusDrums,
+  flairB, hiHatB, snareDrumB, bassDrumB, bridgeDrums,
+  chordsVA, initChords, chordsCA, chorusChords, chordsBA, bridgeChords) 
 
   // Bass groove cleaned up for easy reading in console
 let line = "";
@@ -384,7 +384,7 @@ Key: ` + key + `
 
 // Song parts
 songStructure.forEach(part => {
-    console.log(`${part.type}: ${part.length}x
+    console.log(`${part.type}: ${part.repeat}x
     Chords: ${part.chords}
 
     Bass:   ${part.bass}
