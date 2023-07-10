@@ -38,7 +38,7 @@ function App() {
           songParts.push(
             <div key={key} className={styles.button}>
               <button onClick={() => handlePartOpen(key)}>
-                {songProps.type}
+                {songProps.type.charAt(0)}
               </button>
               {isOpen && (
                 <div className={styles.openedPart}>
