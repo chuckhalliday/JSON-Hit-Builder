@@ -55,6 +55,24 @@ export default function DrumMachine({ onRenderWidthChange, numOfSteps, drumGroov
     }
   }
 
+  let drumFractions: string[] = []
+
+  for (let i = 0; i < drumGroove.length; i++) {
+    if (drumGroove[i] === 0.5) {
+      drumFractions.push('1/8')
+    } else if (drumGroove[i] === 0.25){
+      drumFractions.push('1/16')
+    } else if (drumGroove[i] === 0.17){
+      drumFractions.push('--T')
+    } else if (drumGroove[i] === 0.16){
+      drumFractions.push('*8T')
+    } else if (drumGroove[i] === 0.08){
+      drumFractions.push('--T')
+    } else if (drumGroove[i] === 0.09){
+      drumFractions.push('*16T')
+    }
+  }
+
   const tracks: string[] = ["Kick", "Snare", "Flair", "HiHat"]
 
   //Array of different sounds
@@ -87,15 +105,16 @@ export default function DrumMachine({ onRenderWidthChange, numOfSteps, drumGroov
   
       for (let i = 0; i < step; i++) {
         sum += drumGroove[i];
-        }
-        if (sum >= 7.92 && sum <= 8.08 || sum >= 15.92 && sum <= 16.08 || sum >= 23.92 && sum <= 24.08) {
+        if (sum >= 3.93 && sum <= 4.07) {
           measure = 'true'
+          sum = 0
         } else if (Math.abs(sum - Math.round(sum)) <= 0.005) {
           beat = 'true'
         } else {
           measure = 'false'
           beat = 'false'
         }
+      }
         return {
           measure: measure,
           beat: beat
@@ -114,7 +133,7 @@ export default function DrumMachine({ onRenderWidthChange, numOfSteps, drumGroov
     <div className={styles.machine} ref={machineRef}>
       {/* Renders titles */}
       <div className={styles.labelList}>
-        <div>Hat</div>
+        <div>HiHat</div>
         <div>Flair</div>
         <div>Snare</div>
         <div>Kick</div>
@@ -129,7 +148,7 @@ export default function DrumMachine({ onRenderWidthChange, numOfSteps, drumGroov
             return(
             <label key={stepId} className={styles.lamp} measure-end={measure} beat-end={beat}>
               <label className={styles.grooveLabel}>
-                {drumGroove[stepId]}
+                {drumFractions[stepId]}
               </label>
               <input
                 type="radio"
