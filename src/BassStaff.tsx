@@ -91,7 +91,7 @@ export default function BassStaff({ renderWidth }: BassStaffProps) {
           }
           drawNote(ctx, location)
           
-          location.x-=CANVAS.width*0.49
+          location.x-=CANVAS.width*0.5-45
           drawClef(ctx, location)
         }
       }

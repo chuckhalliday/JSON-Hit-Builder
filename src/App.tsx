@@ -28,7 +28,7 @@ function App() {
 
   return (
     <div className={styles.rowContainer}>
-      <div>Key of: {songVariables.key}</div>
+      <div className={styles.key}>Key of : {songVariables.key}</div>
       {songStructure.map((songProps, index) => {
         const songParts = [];
         for (let i = 0; i < songProps.repeat; i++) {

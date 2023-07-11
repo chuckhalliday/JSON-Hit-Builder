@@ -35,7 +35,7 @@ export function subdivideArray(groove: number[]) {
       } else {
         tripAlt = 0
       }
-      newArr.push(trip, trip, tripAlt); // add rounded triplets
+      newArr.push(tripAlt, trip, trip); // add rounded triplets
     } else {
       // keep original element
       newArr.push(groove[i]);
