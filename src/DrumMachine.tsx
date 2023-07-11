@@ -114,7 +114,7 @@ export default function DrumMachine({ onRenderWidthChange, numOfSteps, drumGroov
     <div className={styles.machine} ref={machineRef}>
       {/* Renders titles */}
       <div className={styles.labelList}>
-        <div>Hat</div>
+        <div>HiHat</div>
         <div>Flair</div>
         <div>Snare</div>
         <div>Kick</div>
