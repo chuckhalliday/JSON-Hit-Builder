@@ -12,9 +12,53 @@ export default function BassStaff({ renderWidth }: BassStaffProps) {
   let CLEF_IMAGE=new Image()
   CLEF_IMAGE.src="/BassClef.png"
 
+  let NOTES=["G4", "F4", "E4", "D4", "C4", "B3", "A3", "G3", "F3", "E3", "D3", 
+  "C3", "B2", "A2", "G2", "F2", "E2", "D2", "C2", "B1" ,"A1"]
+
+
+  let MOUSE= {
+    x:0,
+    y:0,
+    isDown:false
+  }
+
   useEffect(() => {
+
     function main() {
+      addEventListeners()
       drawScene();
+      animate()
+    }
+
+    function animate() {
+      drawScene();
+      window.requestAnimationFrame(animate)
+    }
+
+    function addEventListeners() {
+      if (CANVAS) {
+        CANVAS.addEventListener('mousemove', onMouseMove as any);
+        CANVAS.addEventListener('mousedown', onMouseDown as any);
+        CANVAS.addEventListener('mouseup', onMouseUp as any);
+      }
+    }
+
+    function onMouseMove(event: React.MouseEvent<HTMLCanvasElement, MouseEvent>) {
+      if (CANVAS) {
+      const rect = CANVAS.getBoundingClientRect();
+      const scrollLeft = window.pageXOffset || document.documentElement.scrollLeft;
+      const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+      MOUSE.x = event.clientX - rect.left - scrollLeft;
+      MOUSE.y = event.clientY - rect.top - scrollTop;
+      }
+    }
+
+    function onMouseDown(event: React.MouseEvent<HTMLCanvasElement, MouseEvent>) {
+      MOUSE.isDown=true
+    }
+
+    function onMouseUp(event: React.MouseEvent<HTMLCanvasElement, MouseEvent>) {
+      MOUSE.isDown=false
     }
 
     function drawClef(ctx: CanvasRenderingContext2D, location: {x: number, y:number}) {
@@ -72,9 +116,10 @@ export default function BassStaff({ renderWidth }: BassStaffProps) {
     function drawScene() {
       if (CANVAS) {
         CANVAS.width = renderWidth; // Set canvas width based on renderWidth prop
-        const ctx = CANVAS.getContext('2d');
+        let ctx = CANVAS.getContext('2d');
         const spacing = CANVAS.height / 20;
         if (ctx) {
+          ctx.clearRect(0,0,CANVAS.width,CANVAS.height)
           ctx.strokeStyle = 'black';
           ctx.lineWidth = 1;
           for (let i = -2; i <= 2; i++) {
@@ -85,20 +130,21 @@ export default function BassStaff({ renderWidth }: BassStaffProps) {
             ctx.stroke();
           }
 
+          let index=Math.round(MOUSE.y/spacing)
+
           let location = {
-            x:CANVAS.width/2,
-            y:CANVAS.height/2
+            x: MOUSE.x,
+            y: index*spacing
           }
           drawNote(ctx, location)
           
-          location.x-=CANVAS.width*0.5-45
-          drawClef(ctx, location)
+          drawClef(ctx, {x: 45, y:CANVAS.height/2})
         }
       }
     }
 
     main();
-  }, [renderWidth]);
+  }, [renderWidth, MOUSE]);
 
   return <canvas ref={canvasRef} id="myCanvas" />;
 }
