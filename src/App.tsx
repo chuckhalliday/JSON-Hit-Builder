@@ -43,7 +43,9 @@ function App() {
               {isOpen && (
                 <div className={styles.openedPart}>
                   <h3>{songProps.type} ({i + 1})</h3>
-                  <BassStaff renderWidth={renderWidth}/>
+                  <BassStaff renderWidth={renderWidth}
+                  drumGroove={songProps.drumGroove}
+                  bassGroove={songProps.bassGroove}/>
                   <DrumMachine
                     onRenderWidthChange={handleRenderWidthChange}
                     numOfSteps={songProps.drumGroove.length}
