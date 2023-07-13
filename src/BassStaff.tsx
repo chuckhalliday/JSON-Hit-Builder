@@ -80,7 +80,7 @@ export default function BassStaff({ renderWidth, bass, drumGroove, bassGroove }:
       }
     }
 
-    function drawNote(ctx: CanvasRenderingContext2D, location: { x: number, y: number }) {
+    function drawNote(ctx: CanvasRenderingContext2D, location: { x: number, y: number }, bassGrid: number[], bassGroove: number[]) {
       const CANVAS = canvasRef.current;
       if (CANVAS) {
         const spacing = CANVAS.height / 20;
@@ -88,42 +88,52 @@ export default function BassStaff({ renderWidth, bass, drumGroove, bassGroove }:
         ctx.strokeStyle = "black";
         ctx.lineWidth = 1;
 
-        // half note line
-        ctx.beginPath();
-        ctx.moveTo(location.x + spacing,
-          location.y);
-        ctx.lineTo(location.x + spacing,
-          location.y - spacing * 5);
-        ctx.stroke();
-
-        // eighth note flag
-        ctx.beginPath();
-        ctx.moveTo(location.x + spacing,
-          location.y - spacing * 5);
-        ctx.bezierCurveTo(
-          location.x + spacing * 2, location.y - spacing * 3,
-          location.x + spacing * 2.5, location.y - spacing * 3,
-          location.x + spacing * 2.5, location.y - spacing * 1);
-        ctx.bezierCurveTo(
-          location.x + spacing * 2.5, location.y - spacing * 2.7,
-          location.x + spacing * 2, location.y - spacing * 2.7,
-          location.x + spacing, location.y - spacing * 4.5);
-        ctx.stroke();
-        ctx.fill();
-
-        //sixteenth note flag
-        ctx.beginPath();
-        ctx.moveTo(location.x + spacing, location.y - spacing * 5 + 8);
-        ctx.bezierCurveTo(
-          location.x + spacing * 2, location.y - spacing * 3 + 7,
-          location.x + spacing * 2.5, location.y - spacing * 3 + 7,
-          location.x + spacing * 2.5, location.y - spacing * 1 + 4);
-        ctx.bezierCurveTo(
-          location.x + spacing * 2.5, location.y - spacing * 2.7 + 7,
-          location.x + spacing * 2, location.y - spacing * 2.7 + 7,
-          location.x + spacing, location.y - spacing * 4.5 + 4);
-        ctx.stroke();
-        ctx.fill();
+        for (let i = 0; i < bassGrid.length; i++){
+          const isMatch = location.x === bassGrid[i];
+          const groove = bassGroove[i];
+          if (isMatch && groove === 1.5 || isMatch && groove === 0.75) {
+            ctx.beginPath();
+            ctx.arc(location.x + spacing + 8, location.y - 3.8, 2.8, 0, Math.PI * 2);
+            ctx.fill();
+          }
+          if (isMatch && groove <= 2) {
+            ctx.beginPath();
+            ctx.moveTo(location.x + spacing,
+              location.y);
+            ctx.lineTo(location.x + spacing,
+              location.y - spacing * 5);
+            ctx.stroke();
+          }
+          if(location.x === bassGrid[i] && bassGroove[i] <= 0.75){
+            ctx.beginPath();
+            ctx.moveTo(location.x + spacing,
+              location.y - spacing * 5);
+            ctx.bezierCurveTo(
+              location.x + spacing * 2, location.y - spacing * 3,
+              location.x + spacing * 2.5, location.y - spacing * 3,
+              location.x + spacing * 2.5, location.y - spacing * 1);
+            ctx.bezierCurveTo(
+              location.x + spacing * 2.5, location.y - spacing * 2.7,
+              location.x + spacing * 2, location.y - spacing * 2.7,
+              location.x + spacing, location.y - spacing * 4.5);
+            ctx.stroke();
+            ctx.fill();
+          }
+          if(location.x === bassGrid[i] && bassGroove[i] <= 0.25){
+            ctx.beginPath();
+            ctx.moveTo(location.x + spacing, location.y - spacing * 5 + 8);
+            ctx.bezierCurveTo(
+              location.x + spacing * 2, location.y - spacing * 3 + 7,
+              location.x + spacing * 2.5, location.y - spacing * 3 + 7,
+              location.x + spacing * 2.5, location.y - spacing * 1 + 4);
+            ctx.bezierCurveTo(
+              location.x + spacing * 2.5, location.y - spacing * 2.7 + 7,
+              location.x + spacing * 2, location.y - spacing * 2.7 + 7,
+              location.x + spacing, location.y - spacing * 4.5 + 4);
+            ctx.stroke();
+            ctx.fill();
+          }
+        }
 
         ctx.beginPath();
         ctx.save();
@@ -133,7 +143,11 @@ export default function BassStaff({ renderWidth, bass, drumGroove, bassGroove }:
         ctx.arc(0, 0, spacing, 0, Math.PI * 2);
 
         //half to quarter note fill
+        for (let i = 0; i < bassGrid.length; i++) {
+          if(location.x === bassGrid[i] && bassGroove[i] <= 1.5){
         ctx.fill();
+          }
+        }
         
         ctx.stroke();
         ctx.restore();
@@ -204,7 +218,7 @@ export default function BassStaff({ renderWidth, bass, drumGroove, bassGroove }:
             x: mouseX(bassGrid),
             y: index * spacing
           };
-          drawNote(ctx, location);
+          drawNote(ctx, location, bassGrid, bassGroove);
 
           drawClef(ctx, { x: 45, y: CANVAS.height / 2 });
         }
