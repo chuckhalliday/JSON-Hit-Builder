@@ -20,8 +20,6 @@ function App() {
 
   const [renderWidth, setRenderWidth] = useState(0);
 
-  console.log(renderWidth)
-
   const handleRenderWidthChange = (width: number) => {
     setRenderWidth(width);
   };
@@ -44,6 +42,7 @@ function App() {
                 <div className={styles.openedPart}>
                   <h3>{songProps.type} ({i + 1})</h3>
                   <BassStaff renderWidth={renderWidth}
+                  bass={songProps.bass}
                   drumGroove={songProps.drumGroove}
                   bassGroove={songProps.bassGroove}/>
                   <DrumMachine
