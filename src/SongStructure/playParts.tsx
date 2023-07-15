@@ -144,7 +144,7 @@ export async function playBeat(pattern: HTMLInputElement[], groove: number[], bp
   } 
 }
   
-export async function playBass(pattern: string, groove: number[], bpm: number) {
+export async function playBass(pattern: string[], groove: number[], bpm: number) {
   const beatDuration = 60 / bpm // duration of one beat in seconds
   const swingRatio = 3/3; // adjust as needed
 

@@ -164,7 +164,7 @@ const songStructure = generateSongStructure(partsLength, bassVA, initBass, bassC
   chordsVA, initChords, chordsCA, chorusChords, chordsBA, bridgeChords) 
 
   // Bass groove cleaned up for easy reading in console
-let line = "";
+/*let line = "";
 let sum = 0;
 let barCount = 0;
 
@@ -383,7 +383,7 @@ songStructure.forEach(part => {
     Snare:  ${part.snare}
     Kick:   ${part.kick}
     `);
-  });
+  }); 
 
 /*playSong(songStructure, bpm, initDrums, initBass, initChords, 
   chorusDrums, chorusBass, chorusChords, bridgeDrums, bridgeBass, bridgeChords, 

@@ -12,6 +12,8 @@ export default function BassStaff({ renderWidth, bass, drumGroove, bassGroove }:
   const CLEF_IMAGE = new Image();
   CLEF_IMAGE.src = "/BassClef.png";
 
+  console.log(drumGroove, bassGroove)
+
   const NOTES = ["G4", "F4", "E4", "D4", "C4", "B3", "A3", "G3", "F3", "E3", "D3",
     "C3", "B2", "A2", "G2", "F2", "E2", "D2", "C2", "B1", "A1"];
 
@@ -21,12 +23,57 @@ export default function BassStaff({ renderWidth, bass, drumGroove, bassGroove }:
     isDown: false
   };
 
+
+  function mouseX(array: number[]) {
+    let closest = array[0]; // Assume first element is closest initially
+    let minDistance = Math.abs(MOUSE.x - closest);
+  
+    for (let i = 1; i < array.length; i++) {
+      const distance = Math.abs(MOUSE.x - array[i]);
+      if (distance < minDistance) {
+        closest = array[i];
+        minDistance = distance;
+      }
+    }
+  
+    return closest;
+  }
+
+
+  let bassGrid: number[]=[115]
+  let gridX: number = 115
+  let bassSum: number = bassGroove[0]
+  let drumSum: number = 0
+  let bassIndex: number = 1
+  for (let i = 0; i < drumGroove.length; i++) {
+    drumSum+= drumGroove[i]
+    if (drumSum >= 3.93 && drumSum <= 4.07 || drumSum >= 7.93 && drumSum <= 8.07) {
+      gridX += 78
+    } else if (Math.abs(Math.round(drumSum) - drumSum) <= 0.005) {
+      gridX += 48
+    } else {
+      gridX += 38
+    }
+    if (bassSum - drumSum <= 0.05) {
+      bassGrid.push(gridX)
+      if (bassSum >= 7.95 && drumSum >= 7.95) {
+        console.log(0)
+        bassSum = 0
+        drumSum = 0
+      }
+      bassSum += bassGroove[bassIndex]
+      bassIndex++
+    }
+    console.log(`bass:${bassSum} drums:${drumSum}`)
+  }
+
   useEffect(() => {
     function main() {
       const CANVAS = canvasRef.current;
       if (CANVAS) {
         addEventListeners();
         drawScene();
+        drawBass();
         animate();
       }
     }
@@ -35,6 +82,7 @@ export default function BassStaff({ renderWidth, bass, drumGroove, bassGroove }:
       const CANVAS = canvasRef.current;
       if (CANVAS) {
         drawScene();
+        drawBass();
         window.requestAnimationFrame(animate);
       }
     }
@@ -52,8 +100,8 @@ export default function BassStaff({ renderWidth, bass, drumGroove, bassGroove }:
       const CANVAS = canvasRef.current;
       if (CANVAS) {
         const rect = CANVAS.getBoundingClientRect();
-        const scrollLeft = window.pageXOffset || document.documentElement.scrollLeft;
-        const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+        const scrollLeft = document.documentElement.scrollLeft;
+        const scrollTop = document.documentElement.scrollTop;
         MOUSE.x = event.clientX - rect.left - scrollLeft;
         MOUSE.y = event.clientY - rect.top - scrollTop;
       }
@@ -154,6 +202,7 @@ export default function BassStaff({ renderWidth, bass, drumGroove, bassGroove }:
       }
     }
 
+
     function drawScene() {
       const CANVAS = canvasRef.current;
       if (CANVAS) {
@@ -174,31 +223,23 @@ export default function BassStaff({ renderWidth, bass, drumGroove, bassGroove }:
 
           const index = Math.round(MOUSE.y / spacing);
 
-          let bassGrid: number[]=[115]
-          let gridX: number = 115
-          let bassSum: number = bassGroove[0]
-          let drumSum: number = 0
-          let bassIndex: number = 1
-          for (let i = 0; i < drumGroove.length; i++) {
-            drumSum+= drumGroove[i]
-            if (drumSum >= 3.93 && drumSum <= 4.07 || drumSum >= 7.93 && drumSum <= 8.07) {
-              gridX += 78
-            } else if (Math.abs(drumSum - Math.round(drumSum)) <= 0.005) {
-              gridX += 48
-            } else {
-              gridX += 38
-            }
-            if (drumSum === bassSum) {
-              bassGrid.push(gridX)
-              if (bassSum >= 7.93 && bassSum <= 8.07) {
-                bassSum = 0
-                drumSum = 0
-              }
-              bassSum += bassGroove[bassIndex]
-              bassIndex++
-            }
-          }
+          const location = {
+            x: mouseX(bassGrid),
+            y: index * spacing
+          };
+          drawNote(ctx, location, bassGrid, bassGroove);
 
+          drawClef(ctx, { x: 45, y: CANVAS.height / 2 });
+        }
+      }
+    }
+
+    function drawBass() {
+      const CANVAS = canvasRef.current;
+      if (CANVAS) {
+        const ctx = CANVAS.getContext('2d');
+        if (ctx) {
+          
           let initBassLocation = {
             x: 0,
             y: 0
@@ -235,29 +276,6 @@ export default function BassStaff({ renderWidth, bass, drumGroove, bassGroove }:
               drawNote(ctx, initBassLocation, bassGrid, bassGroove)
             }
           }
-
-          function mouseX(array: number[]) {
-            let closest = array[0]; // Assume first element is closest initially
-            let minDistance = Math.abs(MOUSE.x - closest);
-          
-            for (let i = 1; i < array.length; i++) {
-              const distance = Math.abs(MOUSE.x - array[i]);
-              if (distance < minDistance) {
-                closest = array[i];
-                minDistance = distance;
-              }
-            }
-          
-            return closest;
-          }
-
-          const location = {
-            x: mouseX(bassGrid),
-            y: index * spacing
-          };
-          drawNote(ctx, location, bassGrid, bassGroove);
-
-          drawClef(ctx, { x: 45, y: CANVAS.height / 2 });
         }
       }
     }
