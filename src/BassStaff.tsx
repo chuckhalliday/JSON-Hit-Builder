@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 
 interface BassStaffProps {
   renderWidth: number;
@@ -12,10 +12,67 @@ export default function BassStaff({ renderWidth, bass, drumGroove, bassGroove }:
   const CLEF_IMAGE = new Image();
   CLEF_IMAGE.src = "/BassClef.png";
 
-  console.log(drumGroove, bassGroove)
 
-  const NOTES = ["G4", "F4", "E4", "D4", "C4", "B3", "A3", "G3", "F3", "E3", "D3",
-    "C3", "B2", "A2", "G2", "F2", "E2", "D2", "C2", "B1", "A1"];
+/*  const NOTES = ["G4", "F4", "E4", "D4", "C4", "B3", "A3", "G3", "F3", "E3", "D3",
+    "C3", "B2", "A2", "G2", "F2", "E2", "D2", "C2", "B1", "A1"]; */
+
+  let bassGrid: number[]=[115]
+  let gridX: number = 115
+  let bassSum: number = bassGroove[0]
+  let drumSum: number = 0
+  let bassIndex: number = 1
+  for (let i = 0; i < drumGroove.length; i++) {
+    drumSum+= drumGroove[i]
+    if (drumSum >= 3.93 && drumSum <= 4.07 || drumSum >= 7.93 && drumSum <= 8.07) {
+      gridX += 78
+    } else if (Math.abs(Math.round(drumSum) - drumSum) <= 0.005) {
+      gridX += 48
+    } else {
+      gridX += 38
+    }
+    if (bassSum - drumSum <= 0.05) {
+      bassGrid.push(gridX)
+      if (bassSum >= 7.95 && drumSum >= 7.95) {
+        bassSum = 0
+        drumSum = 0
+      }
+      bassSum += bassGroove[bassIndex]
+      bassIndex++
+    }
+  }
+
+  function drawBass() {
+    let bassNoteLocations: {x: number, y: number }[] = [];
+    
+    for (let i = 0; i < bassGrid.length; i++) {
+      let noteLocation: {x: number, y: number } = { x: 0, y: 0 }; // Create a new object for each iteration
+    
+        noteLocation.x = bassGrid[i];
+        if (bass[i] === 'G' || bass[i] === 'G#' || bass[i] === 'Gb') {
+          noteLocation.y = 52.5;
+        } else if (bass[i] === 'F' || bass[i] === 'F#') {
+          noteLocation.y = 60;
+        } else if (bass[i] === 'E' || bass[i] === 'Eb') {
+          noteLocation.y = 67.5;
+        } else if (bass[i] === 'D' || bass[i] === 'D#' || bass[i] === 'Db') {
+          noteLocation.y = 75;
+        } else if (bass[i] === 'C' || bass[i] === 'C#') {
+          noteLocation.y = 82.5;
+        } else if (bass[i] === 'B' || bass[i] === 'Bb') {
+          noteLocation.y = 90;
+        } else if (bass[i] === 'A' || bass[i] === 'A#' || bass[i] === 'Ab') {
+          noteLocation.y = 97.5;
+        } else {
+          noteLocation.y = -20
+        }
+    
+        bassNoteLocations.push(noteLocation);
+      }
+    
+      return bassNoteLocations;
+    }
+
+  const [bassNotes, setBassNotes] = useState<{x: number, y: number}[]>(drawBass())
 
   const MOUSE = {
     x: 0,
@@ -39,41 +96,12 @@ export default function BassStaff({ renderWidth, bass, drumGroove, bassGroove }:
     return closest;
   }
 
-
-  let bassGrid: number[]=[115]
-  let gridX: number = 115
-  let bassSum: number = bassGroove[0]
-  let drumSum: number = 0
-  let bassIndex: number = 1
-  for (let i = 0; i < drumGroove.length; i++) {
-    drumSum+= drumGroove[i]
-    if (drumSum >= 3.93 && drumSum <= 4.07 || drumSum >= 7.93 && drumSum <= 8.07) {
-      gridX += 78
-    } else if (Math.abs(Math.round(drumSum) - drumSum) <= 0.005) {
-      gridX += 48
-    } else {
-      gridX += 38
-    }
-    if (bassSum - drumSum <= 0.05) {
-      bassGrid.push(gridX)
-      if (bassSum >= 7.95 && drumSum >= 7.95) {
-        console.log(0)
-        bassSum = 0
-        drumSum = 0
-      }
-      bassSum += bassGroove[bassIndex]
-      bassIndex++
-    }
-    console.log(`bass:${bassSum} drums:${drumSum}`)
-  }
-
   useEffect(() => {
     function main() {
       const CANVAS = canvasRef.current;
       if (CANVAS) {
         addEventListeners();
         drawScene();
-        drawBass();
         animate();
       }
     }
@@ -82,7 +110,6 @@ export default function BassStaff({ renderWidth, bass, drumGroove, bassGroove }:
       const CANVAS = canvasRef.current;
       if (CANVAS) {
         drawScene();
-        drawBass();
         window.requestAnimationFrame(animate);
       }
     }
@@ -107,9 +134,24 @@ export default function BassStaff({ renderWidth, bass, drumGroove, bassGroove }:
       }
     }
 
-    function onMouseDown(event: React.MouseEvent<HTMLCanvasElement, MouseEvent>) {
+    function onMouseDown() {
       MOUSE.isDown = true;
+      const CANVAS = canvasRef.current;
+      if (CANVAS) {
+      const spacing = CANVAS.height / 20;
+      const index = Math.round(MOUSE.y / spacing);
+      const x = mouseX(bassGrid);
+
+      setBassNotes((prevNotes) =>
+        prevNotes.map((note) => {
+          if (note.x === x) {
+            return { ...note, y: index * spacing };
+          }
+          return note;
+        })
+      );
     }
+  }
 
     function onMouseUp(event: React.MouseEvent<HTMLCanvasElement, MouseEvent>) {
       MOUSE.isDown = false;
@@ -182,7 +224,6 @@ export default function BassStaff({ renderWidth, bass, drumGroove, bassGroove }:
             ctx.fill();
           }
         }
-
         ctx.beginPath();
         ctx.save();
         ctx.translate(location.x, location.y);
@@ -230,52 +271,10 @@ export default function BassStaff({ renderWidth, bass, drumGroove, bassGroove }:
           drawNote(ctx, location, bassGrid, bassGroove);
 
           drawClef(ctx, { x: 45, y: CANVAS.height / 2 });
-        }
-      }
-    }
 
-    function drawBass() {
-      const CANVAS = canvasRef.current;
-      if (CANVAS) {
-        const ctx = CANVAS.getContext('2d');
-        if (ctx) {
-          
-          let initBassLocation = {
-            x: 0,
-            y: 0
-          }
-
-          for (let i = 0; i < bassGrid.length; i++) {
-            initBassLocation.x = bassGrid[i]
-            if (bass[i] === 'G' || bass[i] === 'G#' || bass[i] === 'Gb') {
-              initBassLocation.y = 52.5
-              drawNote(ctx, initBassLocation, bassGrid, bassGroove)
-            }
-            if (bass[i] === 'F' || bass[i] === 'F#') {
-              initBassLocation.y = 60
-              drawNote(ctx, initBassLocation, bassGrid, bassGroove)
-            }
-            if (bass[i] === 'E' || bass[i] === 'Eb') {
-              initBassLocation.y = 67.5
-              drawNote(ctx, initBassLocation, bassGrid, bassGroove)
-            }
-            if (bass[i] === 'D' || bass[i] === 'D#' || bass[i] === 'Db') {
-              initBassLocation.y = 75
-              drawNote(ctx, initBassLocation, bassGrid, bassGroove)
-            }
-            if (bass[i] === 'C' || bass[i] === 'C#') {
-              initBassLocation.y = 82.5
-              drawNote(ctx, initBassLocation, bassGrid, bassGroove)
-            }
-            if (bass[i] === 'B' || bass[i] === 'Bb') {
-              initBassLocation.y = 90
-              drawNote(ctx, initBassLocation, bassGrid, bassGroove)
-            }
-            if (bass[i] === 'A' || bass[i] === 'A#' || bass[i] === 'Ab') {
-              initBassLocation.y = 97.5
-              drawNote(ctx, initBassLocation, bassGrid, bassGroove)
-            }
-          }
+          bassNotes.forEach((note) => {
+            drawNote(ctx, note, bassGrid, bassGroove);
+          });
         }
       }
     }
