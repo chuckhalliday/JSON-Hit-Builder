@@ -16,7 +16,7 @@ export default function BassStaff({ renderWidth, bass, drumGroove, bassGroove }:
 /*  const NOTES = ["G4", "F4", "E4", "D4", "C4", "B3", "A3", "G3", "F3", "E3", "D3",
     "C3", "B2", "A2", "G2", "F2", "E2", "D2", "C2", "B1", "A1"]; */
 
-  let bassGrid: number[]=[115]
+  let bassArray: number[]=[115]
   let gridX: number = 115
   let bassSum: number = bassGroove[0]
   let drumSum: number = 0
@@ -31,7 +31,7 @@ export default function BassStaff({ renderWidth, bass, drumGroove, bassGroove }:
       gridX += 38
     }
     if (bassSum - drumSum <= 0.05) {
-      bassGrid.push(gridX)
+      bassArray.push(gridX)
       if (bassSum >= 7.95 && drumSum >= 7.95) {
         bassSum = 0
         drumSum = 0
@@ -40,6 +40,8 @@ export default function BassStaff({ renderWidth, bass, drumGroove, bassGroove }:
       bassIndex++
     }
   }
+
+  const [bassGrid, setBassGrid] = useState<number[]>(bassArray)
 
   function drawBass() {
     let bassNoteLocations: {x: number, y: number }[] = [];
@@ -71,6 +73,8 @@ export default function BassStaff({ renderWidth, bass, drumGroove, bassGroove }:
     
       return bassNoteLocations;
     }
+  
+
 
   const [bassNotes, setBassNotes] = useState<{x: number, y: number}[]>(drawBass())
 
@@ -264,17 +268,17 @@ export default function BassStaff({ renderWidth, bass, drumGroove, bassGroove }:
 
           const index = Math.round(MOUSE.y / spacing);
 
-          const location = {
-            x: mouseX(bassGrid),
-            y: index * spacing
-          };
-          drawNote(ctx, location, bassGrid, bassGroove);
-
           drawClef(ctx, { x: 45, y: CANVAS.height / 2 });
 
           bassNotes.forEach((note) => {
             drawNote(ctx, note, bassGrid, bassGroove);
           });
+
+          const location = {
+            x: mouseX(bassGrid),
+            y: index * spacing
+          };
+          drawNote(ctx, location, bassGrid, bassGroove);
         }
       }
     }

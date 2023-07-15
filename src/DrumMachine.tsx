@@ -1,59 +1,67 @@
 import React, { useEffect, useRef } from "react";
-
 import { playVerse } from "./SongStructure/playSong";
-
 import styles from "./DrumMachine.module.scss";
 
-/*
-playSong(songVariables.songStructure, songVariables.bpm, songVariables.initDrums, songVariables.initBass, songVariables.initChords, 
-  songVariables.chorusDrums, songVariables.chorusBass, songVariables.chorusChords, songVariables.bridgeDrums, songVariables.bridgeBass, songVariables.bridgeChords, 
-  songVariables.bassDrumV, songVariables.snareDrumV, songVariables.hiHatV, songVariables.flairV, songVariables.bassV, songVariables.chordsV, 
-  songVariables.bassDrumC, songVariables.snareDrumC, songVariables.hiHatC, songVariables.flairC, songVariables.bassC, songVariables.chordsC, 
-  songVariables.bassDrumB, songVariables.snareDrumB, songVariables.hiHatB, songVariables.flairB, songVariables.bassB, songVariables.chordsB)
-*/
-
-
 type Props = {
-  onRenderWidthChange: any
+  onRenderWidthChange: any;
   numOfSteps: number;
-  drumGroove: number[]
-  kick: string
-  snare: string
-  hat: string
-  bpm: number
+  drumGroove: number[];
+  kick: string;
+  snare: string;
+  hat: string;
+  bpm: number;
 };
 
-export default function DrumMachine({ onRenderWidthChange, numOfSteps, drumGroove, kick, snare, hat, bpm }: Props) {
+export default function DrumMachine({
+  onRenderWidthChange,
+  numOfSteps,
+  drumGroove,
+  kick,
+  snare,
+  hat,
+  bpm,
+}: Props) {
   const [isPlaying, setIsPlaying] = React.useState(false);
 
-  const stepsRef = React.useRef<HTMLInputElement[][]>(Array.from({ length: 4 }, () => Array.from({ length: numOfSteps }, () => document.createElement('input'))));
+  const stepsRef = React.useRef<HTMLInputElement[][]>(
+    Array.from({ length: 4 }, () =>
+      Array.from({ length: numOfSteps }, () => document.createElement("input"))
+    )
+  );
   const lampsRef = React.useRef<HTMLInputElement[]>([]);
   const machineRef = useRef<HTMLDivElement>(null);
 
-  let bassDrum: string = kick.replace(/\|/g, '')
-  let snareDrum: string = snare.replace(/\|/g, '')
-  let hiHat: string = hat.replace(/\|/g, '')
+  useEffect(() => {
+    let bassDrum: string = kick.replace(/\|/g, "");
+    let snareDrum: string = snare.replace(/\|/g, "");
+    let hiHat: string = hat.replace(/\|/g, "");
 
-  for (let i = 0; i < bassDrum.length; i ++){
-    if (bassDrum.charAt(i) === 'x' || bassDrum.charAt(i) === 'X'){
-      const inputElement = stepsRef.current[3][i] as HTMLInputElement;
-      inputElement.checked = true;
+    for (let i = 0; i < bassDrum.length; i++) {
+      if (bassDrum.charAt(i) === "x" || bassDrum.charAt(i) === "X") {
+        const inputElement = stepsRef.current[3][i] as HTMLInputElement;
+        inputElement.checked = true;
+      }
     }
-  }
 
-  for (let i = 0; i < snareDrum.length; i ++){
-    if (snareDrum.charAt(i) === 'y' || bassDrum.charAt(i) === 'Y'){
-      const inputElement = stepsRef.current[2][i] as HTMLInputElement;
-      inputElement.checked = true;
+    for (let i = 0; i < snareDrum.length; i++) {
+      if (snareDrum.charAt(i) === "y" || snareDrum.charAt(i) === "Y") {
+        const inputElement = stepsRef.current[2][i] as HTMLInputElement;
+        inputElement.checked = true;
+      }
     }
-  }
 
-  for (let i = 0; i < hiHat.length; i ++){
-    if (hiHat.charAt(i) === 'v' || hiHat.charAt(i) === 'w' || hiHat.charAt(i) === 'V' || hiHat.charAt(i) === 'W'){
-      const inputElement = stepsRef.current[0][i] as HTMLInputElement;
-      inputElement.checked = true;
+    for (let i = 0; i < hiHat.length; i++) {
+      if (
+        hiHat.charAt(i) === "v" ||
+        hiHat.charAt(i) === "w" ||
+        hiHat.charAt(i) === "V" ||
+        hiHat.charAt(i) === "W"
+      ) {
+        const inputElement = stepsRef.current[0][i] as HTMLInputElement;
+        inputElement.checked = true;
+      }
     }
-  }
+  }, [kick, snare, hat]);
 
   let drumFractions: string[] = []
 
