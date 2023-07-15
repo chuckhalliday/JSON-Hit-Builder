@@ -42,7 +42,7 @@ let bAcc = bVals[Math.floor(Math.random() * bVals.length)];
 
 
 export function bassString1V(bassGroove: number[]) {
-  let bass = "";
+  let bass: string[] = [];
   let sum = 0;
 
 
@@ -60,28 +60,27 @@ export function bassString1V(bassGroove: number[]) {
 
   for (let i = 0; i < bassGroove.length; i++) {
     if (bassGroove[i] <= 0.25) {
-      bass += "-";
+      bass.push("-");
     } else {
       if (sum <= 2 || sum >= 4 && sum <= 6) {
-        bass += a_c;
+        bass.push(a_c);
       } else {
-        bass += Math.random() < 0.5 ? a_c : (Math.random() < 0.5 ? acc1 : acc2);
+        bass.push(Math.random() < 0.5 ? a_c : (Math.random() < 0.5 ? acc1 : acc2));
       }
     }
     sum += bassGroove[i];
   }
-  bass += "|";
   return bass;
 }
 
-export function bassString2V(bassGroove: number[], bassLine1V: string) {
-  let bass = "";
+export function bassString2V(bassGroove: number[], bassLine1V: string[]) {
+  let bass: string[] = [];
   let sum = 0;
   let possibleBassValues;
 
-  if (bassLine1V.charAt(0) === 'c') {
+  if (bassLine1V[0] === 'c') {
     possibleBassValues = ["f", "g"];
-  } else if (bassLine1V.charAt(0) === "a") {
+  } else if (bassLine1V[0] === "a") {
     possibleBassValues = ["d", "e"];
   } else {
     possibleBassValues = ["a", "c"]
@@ -100,36 +99,37 @@ export function bassString2V(bassGroove: number[], bassLine1V: string) {
     acc = fAcc;
   } else if (bass2 === "g") {
     acc = gAcc;
+  } else {
+    acc = "c"
   }
 
   for (let i = 0; i < bassGroove.length; i++) {
     if (bassGroove[i] <= 0.25) {
-      bass += "-";
+      bass.push("-");
     } else if (sum <= 2 || (sum > 4 && sum <= 6)) {
-      bass += bass2;
+      bass.push(bass2);
     } else {
-      bass += Math.random() < 0.3 ? bass2 : acc;
+      bass.push(Math.random() < 0.3 ? bass2 : acc);
     }
     sum += bassGroove[i];
   }
-  bass += "|";
   return bass;
 }
 
-export function bassString3V(bassGroove: number[], bassLine2V: string) {
-  let bass = "";
+export function bassString3V(bassGroove: number[], bassLine2V: string[]) {
+  let bass: string[] = [];
   let sum = 0;
   let possibleBassValues = ["d", "e", "f", "g", "b"];
 
-  if (bassLine2V.charAt(0) === "f" || bassLine2V.charAt(0) === "g") {
+  if (bassLine2V[0] === "f" || bassLine2V[0] === "g") {
     possibleBassValues = ["a", "d", "e"];
-  } else if (bassLine2V.charAt(0) === "d" || bassLine2V.charAt(0) === "e") {
+  } else if (bassLine2V[0] === "d" || bassLine2V[0] === "e") {
     possibleBassValues = ["c", "f", "g"];
   } 
 
   let bass3 = possibleBassValues[Math.floor(Math.random() * possibleBassValues.length)];
 
-  let acc;
+  let acc: string;
   if (bass3 === "d") {
     acc = dAcc;
   } else if (bass3 === "e") {
@@ -142,29 +142,31 @@ export function bassString3V(bassGroove: number[], bassLine2V: string) {
     acc = cAcc;
   } else if (bass3 === "a") {
     acc = aAcc;
+  } else {
+    acc = "c"
   }
+
 
   for (let i = 0; i < bassGroove.length; i++) {
     if (bassGroove[i] <= 0.25) {
-      bass += "-";
+      bass.push("-");
     } else if (sum <= 2 || (sum > 4 && sum <= 6)) {
-      bass += bass3;
+      bass.push(bass3);
     } else {
-      bass += Math.random() < 0.3 ? bass3 : acc;
+      bass.push(Math.random() < 0.3 ? bass3 : acc);
     }
     sum += bassGroove[i];
   }
-  bass += "|";
   return bass;
 }
 
-export function bassString4V(bassGroove: number[], bassLine1V:string) {
-  let bass = "";
+export function bassString4V(bassGroove: number[], bassLine1V:string[]) {
+  let bass: string[] = [];
   let sum = 0;
   let possibleBassValues = ["d", "e", "f", "g", "b"];
-  if (bassLine1V.charAt(0) === "c") {
+  if (bassLine1V[0] === "c") {
     possibleBassValues = ["b", "g"];
-  } else if (bassLine1V.charAt(0) === "a") {
+  } else if (bassLine1V[0] === "a") {
     possibleBassValues = ["e", "g"];
   }
 
@@ -178,32 +180,33 @@ export function bassString4V(bassGroove: number[], bassLine1V:string) {
     acc = gAcc;
   } else if (bass4 === "b") {
     acc = bAcc;
+  } else {
+    acc = "c"
   }
 
   for (let i = 0; i < bassGroove.length; i++) {
     if (bassGroove[i] <= 0.25) {
-      bass += "-";
+      bass.push("-");
     } else {
       if (sum >= 0 && sum <= 2 || sum >= 7) {
-        bass += bass4;
+        bass.push(bass4);
       } else {
-        bass += Math.random() < 0.6 ? bass4 : acc;
+        bass.push(Math.random() < 0.6 ? bass4 : acc);
       }
     }
     sum += bassGroove[i];
   }
-  bass += "|";
   return bass;
 }
 
-export function bassString1C(bassGroove: number[], bassLine1V: string) {
-  let bass = "";
+export function bassString1C(bassGroove: number[], bassLine1V: string[]) {
+  let bass: string[] = [];
   let sum = 0;
   let possibleBassValues = ["d", "e", "f", "g", "b"];
 
-  if (bassLine1V.charAt(0) === 'c') {
+  if (bassLine1V[0] === 'c') {
     possibleBassValues = ["f", "g"];
-  } else if (bassLine1V.charAt(0) === "a") {
+  } else if (bassLine1V[0] === "a") {
     possibleBassValues = ["d", "e"];
   }
   let bass1 = possibleBassValues[Math.floor(Math.random() * possibleBassValues.length)];
@@ -218,30 +221,31 @@ export function bassString1C(bassGroove: number[], bassLine1V: string) {
     acc = fAcc;
   } else if (bass1 === "g") {
     acc = gAcc;
+  } else {
+    acc = "c"
   }
 
   for (let i = 0; i < bassGroove.length; i++) {
     if (bassGroove[i] <= 0.25) {
-      bass += "-";
+      bass.push("-");
     } else if (sum <= 2 || (sum > 4 && sum <= 6)) {
-      bass += bass1;
+      bass.push(bass1);
     } else {
-      bass += Math.random() < 0.3 ? bass1 : acc;
+      bass.push(Math.random() < 0.3 ? bass1 : acc);
     }
     sum += bassGroove[i];
   }
-  bass += "|";
   return bass;
 }
 
-export function bassString2C(bassGroove: number[], bassLine1C: string) {
-  let bass = "";
+export function bassString2C(bassGroove: number[], bassLine1C: string[]) {
+  let bass: string[] = [];
   let sum = 0;
   let possibleBassValues = ["d", "e", "f", "g", "b"];
 
-  if (bassLine1C.charAt(0) === "f" || bassLine1C.charAt(0) === "g") {
+  if (bassLine1C[0] === "f" || bassLine1C[0] === "g") {
     possibleBassValues = ["a", "d", "e"];
-  } else if (bassLine1C.charAt(0) === "d" || bassLine1C.charAt(0) === "e") {
+  } else if (bassLine1C[0] === "d" || bassLine1C[0] === "e") {
     possibleBassValues = ["c", "f", "g"];
   } 
 
@@ -260,60 +264,60 @@ export function bassString2C(bassGroove: number[], bassLine1C: string) {
     acc = cAcc;
   } else if (bass2 === "a") {
     acc = aAcc;
+  } else {
+    acc = "c"
   }
 
   for (let i = 0; i < bassGroove.length; i++) {
     if (bassGroove[i] <= 0.25) {
-      bass += "-";
+      bass.push("-");
     } else if (sum <= 2 || (sum >= 4 && sum < 6)) {
-      bass += bass2;
+      bass.push(bass2);
     } else {
-      bass += Math.random() < 0.3 ? bass2 : acc;
+      bass.push(Math.random() < 0.3 ? bass2 : acc);
     }
     sum += bassGroove[i];
   }
-  bass += "|";
   return bass;
 }
 
-export function bassString3C(bassGroove: number[], bassLine1V: string) {
-  let bass = "";
+export function bassString3C(bassGroove: number[], bassLine1V: string[]) {
+  let bass: string[] = [];
   let sum = 0;
 
   let possibleBassValues;
-  if (bassLine1V.charAt(0) === "c") {
+  if (bassLine1V[0] === "c") {
     possibleBassValues = ["c", "e", "b", "g", "A"];
-  } else if (bassLine1V.charAt(0) === "a") {
+  } else if (bassLine1V[0] === "a") {
     possibleBassValues = ["a", "c", "e", "g", "G"];
   } else {
     possibleBassValues = ["c", "e", "g"]
   }
 
-  let bass3 = bassLine1V.charAt(0)
+  let bass3 = bassLine1V[0]
   let acc1 = possibleBassValues[Math.floor(Math.random() * possibleBassValues.length)];
   let acc2 = possibleBassValues[Math.floor(Math.random() * possibleBassValues.length)];
 
   for (let i = 0; i < bassGroove.length; i++) {
     if (bassGroove[i] <= 0.25) {
-      bass += "-";
+      bass.push("-");
     } else if (sum <= 2 || (sum >= 4 && sum < 6)) {
-        bass += bass3
+        bass.push(bass3)
     } else {
-        bass += Math.random() < 0.4 ? acc1 : acc2;
+        bass.push(Math.random() < 0.4 ? acc1 : acc2);
     }
     sum += bassGroove[i];
   }
-  bass += "|";
   return bass;
 }
 
-export function bassString4C(bassGroove: number[], bassLine1V: string) {
-  let bass = "";
+export function bassString4C(bassGroove: number[], bassLine1V: string[]) {
+  let bass: string[] = [];
   let sum = 0;
   let possibleBassValues = ["d", "e", "f", "g", "b"];
-  if (bassLine1V.charAt(0) === "c") {
+  if (bassLine1V[0] === "c") {
     possibleBassValues = ["b", "g"];
-  } else if (bassLine1V.charAt(0) === "a") {
+  } else if (bassLine1V[0] === "a") {
     possibleBassValues = ["e", "g"];
   }
 
@@ -329,35 +333,38 @@ export function bassString4C(bassGroove: number[], bassLine1V: string) {
     acc = GAcc;
   } else if (bass4 === "b") {
     acc = bAcc;
+  } else {
+    acc = "c"
   }
 
   for (let i = 0; i < bassGroove.length; i++) {
     if (bassGroove[i] <= 0.25) {
-      bass += "-";
+      bass.push("-");
     } else if (sum >= 0 && sum <= 2 || sum >= 7) {
-        bass += bass4;
+        bass.push(bass4);
       } else {
-        bass += Math.random() < 0.6 ? bass4 : acc;
+        bass.push(Math.random() < 0.6 ? bass4 : acc);
       }
     sum += bassGroove[i];
   }
-  bass += "|";
   return bass;
 }
 
-export function bassString1B(bassGroove: number[], bassLine1C: string) {
-  let bass = "";
+export function bassString1B(bassGroove: number[], bassLine1C: string[]) {
+  let bass: string[] = [];
   let sum = 0;
   let bass1;
 
-  if (bassLine1C.charAt(0) === "f") {
+  if (bassLine1C[0] === "f") {
     bass1 = "g";
-  } else if (bassLine1C.charAt(0) === "g") {
+  } else if (bassLine1C[0] === "g") {
     bass1 = "f";
-  } else if (bassLine1C.charAt(0) === "d") {
+  } else if (bassLine1C[0] === "d") {
     bass1 = "e";
-  } else if (bassLine1C.charAt(0) === "e") {
+  } else if (bassLine1C[0] === "e") {
     bass1 = "d";
+  } else {
+    bass1 = "a"
   }
 
   let acc;
@@ -370,24 +377,25 @@ export function bassString1B(bassGroove: number[], bassLine1C: string) {
     acc = fAcc;
   } else if (bass1 === "g") {
     acc = gAcc;
+  } else {
+    acc = "c"
   }
 
   for (let i = 0; i < bassGroove.length; i++) {
     if (bassGroove[i] <= 0.25) {
-      bass += "-";
+      bass.push("-");
     } else if (sum <= 2 || (sum > 4 && sum <= 6)) {
-      bass += bass1;
+      bass.push(bass1);
     } else {
-      bass += Math.random() < 0.3 ? bass1 : acc;
+      bass.push(Math.random() < 0.3 ? bass1 : acc);
     }
     sum += bassGroove[i];
   }
-  bass += "|";
   return bass;
 }
 
-export function adjustBassString(bassString: string, keyAdjust: number) {
-  let transpose = "";
+export function adjustBassString(bassString: string[], keyAdjust: number) {
+  let transpose: string[] = [];
   let keys: string[] = []
   for (let i = 0; i < bassString.length; i++) {
     const sharpKeys = [-10, -8, -6, -5, -3, -1, 0, 2, 4, 6, 7, 9, 11];
@@ -406,63 +414,63 @@ export function adjustBassString(bassString: string, keyAdjust: number) {
     ];
   }
 
-    switch (bassString.charAt(i)) {
+    switch (bassString[i]) {
       case "a":
-        transpose += keys[12 + keyAdjust];
+        transpose.push(keys[12 + keyAdjust]);
         break;
       case "A":
-        transpose += keys[13 + keyAdjust];
+        transpose.push(keys[13 + keyAdjust]);
         break;
       case "b":
-        transpose += keys[14 + keyAdjust];
+        transpose.push(keys[14 + keyAdjust]);
         break;
       case "c":
-        transpose += keys[15 + keyAdjust];
+        transpose.push(keys[15 + keyAdjust]);
         break;
       case "C":
-        transpose += keys[16 + keyAdjust];
+        transpose.push(keys[16 + keyAdjust]);
         break;
       case "d":
-        transpose += keys[17 + keyAdjust];
+        transpose.push(keys[17 + keyAdjust]);
         break;
       case "D":
-        transpose += keys[18 + keyAdjust];
+        transpose.push(keys[18 + keyAdjust]);
         break;
       case "e":
-        transpose += keys[19 + keyAdjust];
+        transpose.push(keys[19 + keyAdjust]);
         break;
       case "f":
-        transpose += keys[20 + keyAdjust];
+        transpose.push(keys[20 + keyAdjust]);
         break;
       case "F":
-        transpose += keys[21 + keyAdjust];
+        transpose.push(keys[21 + keyAdjust]);
         break;
       case "g":
-        transpose += keys[22 + keyAdjust];
+        transpose.push(keys[22 + keyAdjust]);
         break;
       case "G":
-        transpose += keys[23 + keyAdjust];
+        transpose.push(keys[23 + keyAdjust]);
         break;
       case "o":
-        transpose += keys[20 + keyAdjust];
+        transpose.push(keys[20 + keyAdjust]);
         break;
       case "O":
-        transpose += keys[21 + keyAdjust];
+        transpose.push(keys[21 + keyAdjust]);
         break;
       case "p":
-        transpose += keys[22 + keyAdjust];
+        transpose.push(keys[22 + keyAdjust]);
         break;
       case "P":
-        transpose += keys[23 + keyAdjust];
+        transpose.push(keys[23 + keyAdjust]);
         break;
       case "-":
-        transpose += "-";
+        transpose.push("-");
         break;
       case "|":
-        transpose += "|";
+        transpose.push("|");
         break;
       case " ":
-        transpose += " ";
+        transpose.push(" ");
         break;
     }
   }

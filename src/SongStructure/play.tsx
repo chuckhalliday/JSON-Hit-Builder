@@ -45,11 +45,11 @@ const bridgeChords: number[] = createChords(bridgeBass)
 
 //verse
 
-const bassLine1V: string = bassString1V(bassPart1);
-const bassLine2V: string = bassString2V(bassPart2, bassLine1V);
-const bassLine3V: string = bassString3V(bassPart3, bassLine2V);
-const bassLine4V: string = bassString4V(bassPart4, bassLine1V);
-const bassV: string = bassLine1V.concat(bassLine2V + bassLine3V + bassLine4V);
+const bassLine1V: string[] = bassString1V(bassPart1);
+const bassLine2V: string[] = bassString2V(bassPart2, bassLine1V);
+const bassLine3V: string[] = bassString3V(bassPart3, bassLine2V);
+const bassLine4V: string[] = bassString4V(bassPart4, bassLine1V);
+const bassV: string[] = bassLine1V.concat(bassLine2V, bassLine3V, bassLine4V);
 
 const chordsV: string = chordString(initChords, initBass, bassV)
 
@@ -71,11 +71,11 @@ const flairV: string = flairString(initDrums, snareDrumV, hiHatV);
 
 //chorus
 
-const bassLine1C: string = bassString1C(bassPart2, bassLine1V);
-const bassLine2C: string = bassString2C(bassPart1, bassLine1C);
-const bassLine3C: string = bassString3C(bassPart4, bassLine1V);
-const bassLine4C: string = bassString4C(bassPart3, bassLine1V);
-const bassC: string = bassLine1C.concat(bassLine2C + bassLine3C + bassLine4C);
+const bassLine1C: string[] = bassString1C(bassPart2, bassLine1V);
+const bassLine2C: string[] = bassString2C(bassPart1, bassLine1C);
+const bassLine3C: string[] = bassString3C(bassPart4, bassLine1V);
+const bassLine4C: string[] = bassString4C(bassPart3, bassLine1V);
+const bassC: string[] = bassLine1C.concat(bassLine2C, bassLine3C, bassLine4C);
 
 const chordsC: string = chordString(chorusChords, chorusBass, bassC)
 
@@ -97,11 +97,11 @@ const flairC: string = flairString(chorusDrums, snareDrumC, hiHatC);
 
 //bridge
 
-const bassLine1B: string = bassString1B(bassPart4, bassLine1C);
-const bassLine2B: string = bassString2C(bassPart3, bassLine1B);
-const bassLine3B: string = bassString3C(bassPart2, bassLine1V);
-const bassLine4B: string = bassString4C(bassPart1, bassLine1V);
-const bassB: string = bassLine1B.concat(bassLine2B + bassLine3B + bassLine4B);
+const bassLine1B: string[] = bassString1B(bassPart4, bassLine1C);
+const bassLine2B: string[] = bassString2C(bassPart3, bassLine1B);
+const bassLine3B: string[] = bassString3C(bassPart2, bassLine1V);
+const bassLine4B: string[] = bassString4C(bassPart1, bassLine1V);
+const bassB: string[] = bassLine1B.concat(bassLine2B, bassLine3B, bassLine4B);
 
 const chordsB: string = chordString(bridgeChords, bridgeBass, bassB)
 
@@ -129,33 +129,22 @@ adjustChordNotes(keyAdjust)
 
 //Transpose bass strings and format for reading
 
-let spacedBassV = "";
-for (let i = 0; i < bassV.length; i++) {
-  spacedBassV += bassV[i] + " ";
-}
-let bassVA = adjustBassString(spacedBassV, keyAdjust)
+
+let bassVA = adjustBassString(bassV, keyAdjust)
 let spacedChordsV = "";
 for (let i = 0; i < chordsV.length; i++) {
   spacedChordsV += chordsV[i] + "  ";
 }
 let chordsVA = adjustChordString(spacedChordsV, keyAdjust)
 
-let spacedBassC = "";
-for (let i = 0; i < bassC.length; i++) {
-  spacedBassC += bassC[i] + " ";
-}
-let bassCA = adjustBassString(spacedBassC, keyAdjust)
+let bassCA = adjustBassString(bassC, keyAdjust)
 let spacedChordsC = "";
 for (let i = 0; i < chordsC.length; i++) {
   spacedChordsC += chordsC[i] + "  ";
 }
 let chordsCA = adjustChordString(spacedChordsC, keyAdjust)
 
-let spacedBassB = "";
-for (let i = 0; i < bassB.length; i++) {
-  spacedBassB += bassB[i] + " ";
-}
-let bassBA = adjustBassString(spacedBassB, keyAdjust)
+let bassBA = adjustBassString(bassB, keyAdjust)
 let spacedChordsB = "";
 for (let i = 0; i < chordsB.length; i++) {
   spacedChordsB += chordsB[i] + "  ";
