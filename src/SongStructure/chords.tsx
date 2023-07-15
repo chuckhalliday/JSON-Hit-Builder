@@ -21,7 +21,7 @@ export function createChords(bassGroove: number[]) {
   return chordArray
 }
 
-export function chordString(chordsGroove: number[], bassGroove: number[], bassString: string) {
+export function chordString(chordsGroove: number[], bassGroove: number[], bassString: string[]) {
 
 const cmajCmaj7 = Math.random() < 0.9 ? "1" : "!";
 const dmin7C9 = Math.random() < 0.8 ? "@" : "9";
@@ -35,11 +35,11 @@ let chordSum = 0;
 let bassSum = 0;
 let arr1Index = 0;
 
-let bass = bassString.replace(/\|/g, '');
+let bass = bassString
 
 for (let i = 0; i < bassGroove.length; i++) {
   
-  const note = bass.charAt(i);
+  const note = bass[i];
   
     if (bassSum === chordSum) {
       chordSum += chordsGroove[arr1Index]

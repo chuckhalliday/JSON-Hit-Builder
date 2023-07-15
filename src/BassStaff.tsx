@@ -2,7 +2,7 @@ import React, { useEffect, useRef } from 'react';
 
 interface BassStaffProps {
   renderWidth: number;
-  bass: string;
+  bass: string[];
   drumGroove: number[];
   bassGroove: number[];
 }
@@ -196,6 +196,43 @@ export default function BassStaff({ renderWidth, bass, drumGroove, bassGroove }:
               }
               bassSum += bassGroove[bassIndex]
               bassIndex++
+            }
+          }
+
+          let initBassLocation = {
+            x: 0,
+            y: 0
+          }
+
+          for (let i = 0; i < bassGrid.length; i++) {
+            initBassLocation.x = bassGrid[i]
+            if (bass[i] === 'G' || bass[i] === 'G#' || bass[i] === 'Gb') {
+              initBassLocation.y = 52.5
+              drawNote(ctx, initBassLocation, bassGrid, bassGroove)
+            }
+            if (bass[i] === 'F' || bass[i] === 'F#') {
+              initBassLocation.y = 60
+              drawNote(ctx, initBassLocation, bassGrid, bassGroove)
+            }
+            if (bass[i] === 'E' || bass[i] === 'Eb') {
+              initBassLocation.y = 67.5
+              drawNote(ctx, initBassLocation, bassGrid, bassGroove)
+            }
+            if (bass[i] === 'D' || bass[i] === 'D#' || bass[i] === 'Db') {
+              initBassLocation.y = 75
+              drawNote(ctx, initBassLocation, bassGrid, bassGroove)
+            }
+            if (bass[i] === 'C' || bass[i] === 'C#') {
+              initBassLocation.y = 82.5
+              drawNote(ctx, initBassLocation, bassGrid, bassGroove)
+            }
+            if (bass[i] === 'B' || bass[i] === 'Bb') {
+              initBassLocation.y = 90
+              drawNote(ctx, initBassLocation, bassGrid, bassGroove)
+            }
+            if (bass[i] === 'A' || bass[i] === 'A#' || bass[i] === 'Ab') {
+              initBassLocation.y = 97.5
+              drawNote(ctx, initBassLocation, bassGrid, bassGroove)
             }
           }
 

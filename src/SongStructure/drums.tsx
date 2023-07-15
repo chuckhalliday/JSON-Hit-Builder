@@ -19,14 +19,14 @@ export function createDrums(bassGroove: number[]) {
   return drumArr;
 }
 
-export function kickString(drumBeat: number[], bassBeat: number[], bassString: string) {
+export function kickString(drumBeat: number[], bassBeat: number[], bassString: string[]) {
   let kick = "";
   let kickSum = 0;
   let bassSum = 0;
   let bassBeatIndex = 0;
 
   for (let i = 0; i < drumBeat.length; i++) {
-    const note = bassString.charAt(bassBeatIndex);
+    const note = bassString[bassBeatIndex];
     if (kickSum.toFixed(1) === bassSum.toFixed(1)) {
       bassSum += bassBeat[bassBeatIndex];
       if (kickSum === 0) {

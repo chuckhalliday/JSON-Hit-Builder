@@ -27,7 +27,7 @@ export function melodyGroove(bassGroove: number[]) {
   return melodyArr;
 }
 
-export function melodyString(melodyGroove: number[], bassGroove: number[], bassString: string) {
+export function melodyString(melodyGroove: number[], bassGroove: number[], bassString: string[]) {
   const cMelody = ["j", "l", "n", "-", "-"];
   const dMelody = ["k", "m", "h", "j", "-", "-"];
   const eMelody = ["l", "n", "i", "-", "-"];
@@ -56,7 +56,7 @@ export function melodyString(melodyGroove: number[], bassGroove: number[], bassS
     let aRand = aMelody[Math.floor(Math.random() * aMelody.length)];
     let bRand = bMelody[Math.floor(Math.random() * bMelody.length)];
 
-    const note = bassString.charAt(bassGrooveIndex);
+    const note = bassString[bassGrooveIndex];
 
     if (melodySum === bassSum) {
       bassSum += bassGroove[bassGrooveIndex];
