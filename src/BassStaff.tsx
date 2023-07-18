@@ -7,6 +7,7 @@ interface BassStaffProps {
   bassGroove: number[];
 }
 
+
 export default function BassStaff({ renderWidth, bass, drumGroove, bassGroove }: BassStaffProps) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const CLEF_IMAGE = new Image();
@@ -78,6 +79,8 @@ export default function BassStaff({ renderWidth, bass, drumGroove, bassGroove }:
 
   const [bassNotes, setBassNotes] = useState<{x: number, y: number}[]>(drawBass())
 
+  console.log(bassNotes)
+
   const MOUSE = {
     x: 0,
     y: 0,
@@ -142,20 +145,22 @@ export default function BassStaff({ renderWidth, bass, drumGroove, bassGroove }:
       MOUSE.isDown = true;
       const CANVAS = canvasRef.current;
       if (CANVAS) {
-      const spacing = CANVAS.height / 20;
-      const index = Math.round(MOUSE.y / spacing);
-      const x = mouseX(bassGrid);
-
-      setBassNotes((prevNotes) =>
-        prevNotes.map((note) => {
-          if (note.x === x) {
-            return { ...note, y: index * spacing };
-          }
-          return note;
-        })
-      );
+        const spacing = CANVAS.height / 20;
+        const index = Math.round(MOUSE.y / spacing);
+        const x = mouseX(bassGrid);
+    
+        setBassNotes(prevNotes => {
+          const updatedNotes = prevNotes.map(note => {
+            if (note.x === x) {
+              return { ...note, y: index * spacing };
+            }
+            return note;
+          });
+    
+          return updatedNotes;
+        });
+      }
     }
-  }
 
     function onMouseUp(event: React.MouseEvent<HTMLCanvasElement, MouseEvent>) {
       MOUSE.isDown = false;
