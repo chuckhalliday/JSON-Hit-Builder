@@ -26,6 +26,13 @@ function playSound(buffer: AudioBuffer) {
   source.start();
 }
 
+function playNote(freq: number, duration: number) {
+
+
+ 
+}
+ 
+
 // Usage
 
 const drumHits: Record<string, any> = {
@@ -144,9 +151,9 @@ export async function playBeat(pattern: HTMLInputElement[], groove: number[], bp
   } 
 }
   
-export async function playBass(pattern: string[], groove: number[], bpm: number) {
+export async function playBass(pattern: {x: number, y: number}[], groove: number[], bpm: number) {
   const beatDuration = 60 / bpm // duration of one beat in seconds
-  const swingRatio = 3/3; // adjust as needed
+  const audioContext = new AudioContext();
 
   function wait(time: number) {
     return new Promise(resolve => setTimeout(resolve, time * 1000));
@@ -155,20 +162,53 @@ export async function playBass(pattern: string[], groove: number[], bpm: number)
   //output.openPort(1)
 
   for (let index = 0; index < pattern.length; index++) {
-    const bass = bassNotes[pattern[index]];
-    const isEvenEighth = index % 2 === 0;
-    const duration = isEvenEighth
-      ? groove[index/2] * beatDuration * swingRatio
-      : groove[Math.floor(index/2)] * beatDuration;
+    let bass = pattern[index].y;
+    if (bass === 97.5){
+      bass = 110
+    } else if (bass === 90){
+      bass = 123.47
+    } else if (bass === 82.5){
+      bass = 130.81
+    } else if (bass === 75){
+      bass = 146.83
+    } else if (bass === 67.5){
+      bass = 161.82
+    } else if (bass === 60){
+      bass = 174.61
+    } else if (bass === 52.5){
+      bass = 196
+    }
+    const duration = groove[index] * beatDuration
 
-    if (bass) {
-      let velocity = Math.floor(Math.random() * (75 - 60 + 1) + 60);
-      let release = Math.floor(Math.random() * (70 - 50 + 1) + 50);
+    if (bass > 0) {
+      //let velocity = Math.floor(Math.random() * (75 - 60 + 1) + 60);
+      //let release = Math.floor(Math.random() * (70 - 50 + 1) + 50);
 
       //output.sendMessage([144, bass, velocity])
-      await wait(duration)
+      //await wait(duration)
       //output.sendMessage([128, bass, release])
-    } else if (pattern[index] === '-') {
+      const osc = audioContext.createOscillator();
+      const gainNode = audioContext.createGain();
+
+      gainNode.gain.setValueAtTime(0, audioContext.currentTime);
+      gainNode.gain.linearRampToValueAtTime(0.4, audioContext.currentTime + 0.05);
+      gainNode.gain.linearRampToValueAtTime(0, audioContext.currentTime + duration);
+
+      osc.type = "triangle";
+      osc.frequency.value = bass;
+
+      osc.connect(gainNode);
+      gainNode.connect(audioContext.destination);
+
+      osc.start(audioContext.currentTime);
+      console.log(duration)
+      await wait(duration);
+      osc.stop(audioContext.currentTime);
+
+      osc.disconnect();
+      gainNode.disconnect();
+    } else if (bass <= 0) {
+      console.log(duration)
       await wait(duration);
     }
   }
