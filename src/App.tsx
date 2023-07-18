@@ -13,7 +13,7 @@ const songStructure = songVariables.songStructure
 function App() {
   const [openedParts, setOpenedParts] = useState<{ [key: string]: boolean }>({});
   const [isPlaying, setIsPlaying] = React.useState(false);
-  const bpm = useSelector((state) => state.bpm.value)
+  const bpm = useSelector((state: { bpm: { value: number } }) => state.bpm.value);
   const dispatch = useDispatch()
 
   const handlePartOpen = (key: string) => {
