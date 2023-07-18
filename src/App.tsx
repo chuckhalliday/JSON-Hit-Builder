@@ -58,7 +58,8 @@ function App() {
                   <BassStaff renderWidth={renderWidth}
                   bass={songProps.bass}
                   drumGroove={songProps.drumGroove}
-                  bassGroove={songProps.bassGroove}/>
+                  bassGroove={songProps.bassGroove}
+                  part={songProps.type}/>
                   <DrumMachine
                     onRenderWidthChange={handleRenderWidthChange}
                     numOfSteps={songProps.drumGroove.length}
@@ -67,6 +68,7 @@ function App() {
                     snare={songProps.snare}
                     hat={songProps.hiHat}
                     bpm={bpm}
+                    part={songProps.type}
                   />
                 </div>
               )}
