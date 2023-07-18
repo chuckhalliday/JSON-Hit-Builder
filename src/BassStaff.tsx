@@ -1,11 +1,17 @@
 import React, { useEffect, useRef, useState } from 'react';
 
+import { songVariables } from './SongStructure/play';
+import { playBass } from './SongStructure/playParts';
+
+import styles from "./DrumMachine.module.scss";
+
 interface BassStaffProps {
   renderWidth: number;
   bass: string[];
   drumGroove: number[];
   bassGroove: number[];
 }
+
 
 export default function BassStaff({ renderWidth, bass, drumGroove, bassGroove }: BassStaffProps) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -76,7 +82,9 @@ export default function BassStaff({ renderWidth, bass, drumGroove, bassGroove }:
   
 
 
-  const [bassNotes, setBassNotes] = useState<{x: number, y: number}[]>(drawBass())
+  const bassNotes = React.useRef<{x: number, y: number}[]>(drawBass())
+
+  console.log(bassNotes)
 
   const MOUSE = {
     x: 0,
@@ -142,20 +150,18 @@ export default function BassStaff({ renderWidth, bass, drumGroove, bassGroove }:
       MOUSE.isDown = true;
       const CANVAS = canvasRef.current;
       if (CANVAS) {
-      const spacing = CANVAS.height / 20;
-      const index = Math.round(MOUSE.y / spacing);
-      const x = mouseX(bassGrid);
-
-      setBassNotes((prevNotes) =>
-        prevNotes.map((note) => {
+        const spacing = CANVAS.height / 20;
+        const index = Math.round(MOUSE.y / spacing);
+        const x = mouseX(bassGrid);
+    
+        bassNotes.current = bassNotes.current.map((note) => {
           if (note.x === x) {
             return { ...note, y: index * spacing };
           }
           return note;
-        })
-      );
+        });
+      }
     }
-  }
 
     function onMouseUp(event: React.MouseEvent<HTMLCanvasElement, MouseEvent>) {
       MOUSE.isDown = false;
@@ -270,7 +276,7 @@ export default function BassStaff({ renderWidth, bass, drumGroove, bassGroove }:
 
           drawClef(ctx, { x: 45, y: CANVAS.height / 2 });
 
-          bassNotes.forEach((note) => {
+          bassNotes.current.forEach((note) => {
             drawNote(ctx, note, bassGrid, bassGroove);
           });
 
@@ -286,5 +292,26 @@ export default function BassStaff({ renderWidth, bass, drumGroove, bassGroove }:
     main();
   }, [renderWidth, MOUSE]);
 
-  return <div><div>{bass}</div><canvas ref={canvasRef} id="myCanvas" /></div>
+  const [isPlaying, setIsPlaying] = React.useState(false);
+
+  const handleStartClick = async () => {
+    if (isPlaying) {
+      setIsPlaying(false);
+    } else {
+      playBass(bassNotes.current, bassGroove, songVariables.bpm);
+      setIsPlaying(true);
+    }
+  };
+
+
+  return <div>
+          <div>{bass}</div>
+          <canvas ref={canvasRef} id="myCanvas" />
+                {/* Renders controls */}
+      <div className={styles.controls}>
+        <button onClick={handleStartClick} className={styles.button}>
+          {isPlaying ? "Pause" : "Start"}
+        </button>
+      </div>
+          </div>
 }
