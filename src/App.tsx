@@ -1,7 +1,9 @@
-import { useState } from 'react'
+import React, { useState } from 'react'
 import DrumMachine from "./DrumMachine";
 import BassStaff from "./BassStaff";
-import { songVariables } from "./SongStructure/play"
+import { useSelector, useDispatch } from "react-redux"
+import { incrementByAmount } from './Reducers/bpm';
+import { songVariables } from './SongStructure/play';
 
 import styles from "./App.module.scss"
 
@@ -10,6 +12,9 @@ const songStructure = songVariables.songStructure
 
 function App() {
   const [openedParts, setOpenedParts] = useState<{ [key: string]: boolean }>({});
+  const [isPlaying, setIsPlaying] = React.useState(false);
+  const bpm = useSelector((state) => state.bpm.value)
+  const dispatch = useDispatch()
 
   const handlePartOpen = (key: string) => {
     setOpenedParts((prevState) => ({
@@ -24,6 +29,15 @@ function App() {
     setRenderWidth(width);
   };
 
+  const handleStartClick = async () => {
+    if (isPlaying) {
+      setIsPlaying(false);
+    } else {
+      //playSong(bpm, drumGroove, stepsRef.current, lampsRef.current);
+      setIsPlaying(true);
+    }
+  };
+
   return (
     <div className={styles.rowContainer}>
       <div className={styles.key}>Key of : {songVariables.key}</div>
@@ -34,7 +48,7 @@ function App() {
           const isOpen = openedParts[key];
 
           songParts.push(
-            <div key={key} className={styles.button}>
+            <div key={key} className={styles.parts}>
               <button onClick={() => handlePartOpen(key)}>
                 {songProps.type.charAt(0)}
               </button>
@@ -52,7 +66,7 @@ function App() {
                     kick={songProps.kick}
                     snare={songProps.snare}
                     hat={songProps.hiHat}
-                    bpm={songVariables.bpm}
+                    bpm={bpm}
                   />
                 </div>
               )}
@@ -61,6 +75,34 @@ function App() {
         }
         return songParts;
       })}
+      {/* Renders controls */}
+      <div className={styles.controls}>
+      <button onClick={handleStartClick} className={styles.button}>
+          {isPlaying ? "Pause" : "Start"}
+        </button>
+        <label className={styles.fader}>
+          <span>BPM:{bpm}</span>
+          <input
+            type="range"
+            min={90}
+            max={150}
+            step={1}
+            onChange={(e) => dispatch(incrementByAmount(e.target.value))}
+            defaultValue={bpm}
+          />
+        </label>
+        <label className={styles.fader}>
+          <span>Volume</span>
+          <input
+            type="range"
+            min={0}
+            max={1}
+            step={0.01}
+          //  onChange={handleVolumeChange} 
+            defaultValue={1}
+          />
+        </label>
+      </div>
     </div>
   );
 }

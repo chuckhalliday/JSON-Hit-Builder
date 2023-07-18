@@ -98,11 +98,11 @@ export default function DrumMachine({
   };
 
 
-  const handleBpmChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+ /* const handleBpmChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     bpm = Number(e.target.value);
   };
 
- /* const handleVolumeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleVolumeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     Tone.Destination.volume.value = Tone.gainToDb(Number(e.target.value));
   }; */
 
@@ -212,28 +212,6 @@ export default function DrumMachine({
         <button onClick={handleStartClick} className={styles.button}>
           {isPlaying ? "Pause" : "Start"}
         </button>
-        <label className={styles.fader}>
-          <span>BPM:{bpm}</span>
-          <input
-            type="range"
-            min={90}
-            max={150}
-            step={1}
-            onChange={handleBpmChange}
-            defaultValue={bpm}
-          />
-        </label>
-        <label className={styles.fader}>
-          <span>Volume</span>
-          <input
-            type="range"
-            min={0}
-            max={1}
-            step={0.01}
-          //  onChange={handleVolumeChange} 
-            defaultValue={1}
-          />
-        </label>
       </div>
     </div>
   );
