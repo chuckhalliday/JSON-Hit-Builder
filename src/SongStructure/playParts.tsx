@@ -172,7 +172,7 @@ export async function playBass(pattern: {x: number, y: number}[], groove: number
     } else if (bass === 75){
       bass = 146.83
     } else if (bass === 67.5){
-      bass = 161.82
+      bass = 164.81
     } else if (bass === 60){
       bass = 174.61
     } else if (bass === 52.5){
@@ -189,24 +189,50 @@ export async function playBass(pattern: {x: number, y: number}[], groove: number
       //output.sendMessage([128, bass, release])
       const osc = audioContext.createOscillator();
       const gainNode = audioContext.createGain();
+      const filterNode = audioContext.createBiquadFilter();
 
-      gainNode.gain.setValueAtTime(0, audioContext.currentTime);
-      gainNode.gain.linearRampToValueAtTime(0.4, audioContext.currentTime + 0.05);
-      gainNode.gain.linearRampToValueAtTime(0, audioContext.currentTime + duration);
+      const fundamentalFreq = bass;
 
-      osc.type = "triangle";
-      osc.frequency.value = bass;
+      const harmonics = [1.5, 2, 3]; // Additional harmonics
+      const harmonicGains = [0.2, 0.1, 0.05]; // Gain values for harmonics
+
+      osc.type = "sine"; // Use a sine waveform
+      osc.frequency.value = fundamentalFreq;
 
       osc.connect(gainNode);
-      gainNode.connect(audioContext.destination);
+      gainNode.connect(filterNode);
+      filterNode.connect(audioContext.destination);
+
+      // Add additional harmonics
+      for (let i = 0; i < harmonics.length; i++) {
+        const harmonicOsc = audioContext.createOscillator();
+        harmonicOsc.type = "sine";
+        harmonicOsc.frequency.value = fundamentalFreq * harmonics[i];
+        const harmonicGainNode = audioContext.createGain();
+        harmonicGainNode.gain.value = harmonicGains[i];
+        harmonicOsc.connect(harmonicGainNode);
+        harmonicGainNode.connect(filterNode);
+        harmonicOsc.start(audioContext.currentTime);
+        harmonicOsc.stop(audioContext.currentTime + duration);
+      }
+
+      const attackTime = 0.01; // Adjust the attack time as needed
+      const releaseTime = 0.2; // Adjust the release time as needed
+
+      gainNode.gain.setValueAtTime(0, audioContext.currentTime);
+      gainNode.gain.linearRampToValueAtTime(0.4, audioContext.currentTime + attackTime);
+      gainNode.gain.linearRampToValueAtTime(0, audioContext.currentTime + duration - releaseTime);
+
+      filterNode.type = "lowpass"; // Apply a low-pass filter
+      filterNode.frequency.value = 500; // Adjust the cutoff frequency as needed
 
       osc.start(audioContext.currentTime);
-      console.log(duration)
       await wait(duration);
-      osc.stop(audioContext.currentTime);
+      osc.stop(audioContext.currentTime + releaseTime);
 
       osc.disconnect();
       gainNode.disconnect();
+      filterNode.disconnect();
     } else if (bass <= 0) {
       console.log(duration)
       await wait(duration);
