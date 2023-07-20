@@ -1,6 +1,9 @@
 import React, { useEffect, useRef } from "react";
 import { playVerse } from "./SongStructure/playSong";
 import styles from "./DrumMachine.module.scss";
+import { setDrumVerse, setDrumChorus, setDrumBridge } from "./Reducers/drumLine";
+import { useDispatch } from "react-redux";
+import { setlampVerse, setlampChorus, setlampBridge } from "./Reducers/lamps";
 
 type Props = {
   onRenderWidthChange: any;
@@ -10,6 +13,7 @@ type Props = {
   snare: string;
   hat: string;
   bpm: number;
+  part: string
 };
 
 export default function DrumMachine({
@@ -20,8 +24,10 @@ export default function DrumMachine({
   snare,
   hat,
   bpm,
+  part
 }: Props) {
   const [isPlaying, setIsPlaying] = React.useState(false);
+  const dispatch = useDispatch()
 
   const stepsRef = React.useRef<HTMLInputElement[][]>(
     Array.from({ length: 4 }, () =>
@@ -30,6 +36,38 @@ export default function DrumMachine({
   );
   const lampsRef = React.useRef<HTMLInputElement[]>([]);
   const machineRef = useRef<HTMLDivElement>(null);
+
+  function setLampState() {
+    const lampLights: { index: number; checked: boolean }[] = lampsRef.current.map((inputElement, index) => ({
+      index: index,
+      checked: inputElement.checked,
+    }));
+  
+    if (part === 'Verse') {
+      dispatch(setlampVerse(lampLights));
+    } else if (part === 'Chorus') {
+      dispatch(setlampChorus(lampLights));
+    } else if (part === 'Bridge') {
+      dispatch(setlampBridge(lampLights));
+    }
+  }
+
+  function setDrumState() {
+      const drumHits: Array<Array<{ index: number; checked: boolean }>> = stepsRef.current.map((row, rowIndex) =>
+        row.map((inputElement, columnIndex) => ({
+          index: columnIndex,
+          checked: inputElement.checked,
+        }))
+      );
+  
+      if (part === 'Verse') {
+        dispatch(setDrumVerse(drumHits));
+      } else if (part === 'Chorus') {
+        dispatch(setDrumChorus(drumHits));
+      } else if (part === 'Bridge') {
+        dispatch(setDrumBridge(drumHits));
+      }
+  }
 
   useEffect(() => {
     let bassDrum: string = kick.replace(/\|/g, "");
@@ -61,7 +99,11 @@ export default function DrumMachine({
         inputElement.checked = true;
       }
     }
+
+    setLampState()
+    setDrumState()
   }, [kick, snare, hat]);
+  
 
   let drumFractions: string[] = []
 
@@ -92,19 +134,10 @@ export default function DrumMachine({
     if (isPlaying) {
       setIsPlaying(false);
     } else {
-      playVerse(bpm, drumGroove, stepsRef.current, lampsRef.current);
+    //  playVerse(bpm, drumGroove, stepsRef.current, lampsRef.current);
       setIsPlaying(true);
     }
   };
-
-
- /* const handleBpmChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    bpm = Number(e.target.value);
-  };
-
-  const handleVolumeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    Tone.Destination.volume.value = Tone.gainToDb(Number(e.target.value));
-  }; */
 
   function addSpacingToRows(step: number) {
       let sum = 0;
@@ -168,6 +201,7 @@ export default function DrumMachine({
                   lampsRef.current[stepId] = elm;
                 }}
                 className={styles.lamp__input}
+                onChange={setLampState}
               />
               <div className={styles.lamp__content} />
             </label>
@@ -197,6 +231,7 @@ export default function DrumMachine({
                         stepsRef.current[trackId][stepId] = elm;
                       }}
                       className={styles.cell__input}
+                      onChange={setDrumState}
                     />
                     <div className={styles.cell__content} />
                   </label>

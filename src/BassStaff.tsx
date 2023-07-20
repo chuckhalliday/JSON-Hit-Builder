@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
-
-import { songVariables } from './SongStructure/play';
+import { useSelector, useDispatch } from 'react-redux';
 import { playBass } from './SongStructure/playParts';
+import { setBassVerse, setBassChorus, setBassBridge } from './Reducers/bassLine';
 
 import styles from "./DrumMachine.module.scss";
 
@@ -10,14 +10,19 @@ interface BassStaffProps {
   bass: string[];
   drumGroove: number[];
   bassGroove: number[];
+  part: string
 }
 
 
-export default function BassStaff({ renderWidth, bass, drumGroove, bassGroove }: BassStaffProps) {
+export default function BassStaff({ renderWidth, bass, drumGroove, bassGroove, part }: BassStaffProps) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const CLEF_IMAGE = new Image();
   CLEF_IMAGE.src = "/BassClef.png";
+  const dispatch = useDispatch()
 
+  console.log(part)
+
+  const bpm = useSelector((state: { bpm: { value: number } }) => state.bpm.value);
 
 /*  const NOTES = ["G4", "F4", "E4", "D4", "C4", "B3", "A3", "G3", "F3", "E3", "D3",
     "C3", "B2", "A2", "G2", "F2", "E2", "D2", "C2", "B1", "A1"]; */
@@ -82,9 +87,19 @@ export default function BassStaff({ renderWidth, bass, drumGroove, bassGroove }:
   
 
 
-  const bassNotes = React.useRef<{x: number, y: number}[]>(drawBass())
+  const bassNotesRef = React.useRef<{x: number, y: number}[]>(drawBass())
 
-  console.log(bassNotes)
+  function setBassState() {
+  const bassNotes = bassNotesRef.current
+
+  if (part === 'Verse') {
+    dispatch(setBassVerse(bassNotes))
+  } else if (part === 'Chorus') {
+    dispatch(setBassChorus(bassNotes))
+  } else if (part === 'Bridge') {
+    dispatch(setBassBridge(bassNotes))
+  }
+}
 
   const MOUSE = {
     x: 0,
@@ -115,6 +130,7 @@ export default function BassStaff({ renderWidth, bass, drumGroove, bassGroove }:
         addEventListeners();
         drawScene();
         animate();
+        setBassState()
       }
     }
 
@@ -154,12 +170,13 @@ export default function BassStaff({ renderWidth, bass, drumGroove, bassGroove }:
         const index = Math.round(MOUSE.y / spacing);
         const x = mouseX(bassGrid);
     
-        bassNotes.current = bassNotes.current.map((note) => {
+        bassNotesRef.current = bassNotesRef.current.map((note) => {
           if (note.x === x) {
             return { ...note, y: index * spacing };
           }
           return note;
         });
+        setBassState()
       }
     }
 
@@ -276,7 +293,7 @@ export default function BassStaff({ renderWidth, bass, drumGroove, bassGroove }:
 
           drawClef(ctx, { x: 45, y: CANVAS.height / 2 });
 
-          bassNotes.current.forEach((note) => {
+          bassNotesRef.current.forEach((note) => {
             drawNote(ctx, note, bassGrid, bassGroove);
           });
 
@@ -298,7 +315,7 @@ export default function BassStaff({ renderWidth, bass, drumGroove, bassGroove }:
     if (isPlaying) {
       setIsPlaying(false);
     } else {
-      playBass(bassNotes.current, bassGroove, songVariables.bpm);
+      playBass(bassNotesRef.current, bassGroove, bpm);
       setIsPlaying(true);
     }
   };

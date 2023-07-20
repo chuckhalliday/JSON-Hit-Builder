@@ -90,7 +90,7 @@ export function adjustChordNotes(keyAdjust: number) {
   }
 }
 
-export async function playBeat(pattern: HTMLInputElement[], groove: number[], bpm: number, stepsRef: HTMLInputElement[][], lamps?: HTMLInputElement[]) {
+export async function playBeat(pattern: Array<{ index: number; checked: boolean }>, groove: number[], bpm: number, stepsRef: Array<Array<{ index: number; checked: boolean }>>, lamps?: HTMLInputElement[]) {
   const beatDuration = 60 / bpm // duration of one beat in seconds
   const swingRatio = 3/3; // adjust as needed
 
@@ -108,6 +108,7 @@ export async function playBeat(pattern: HTMLInputElement[], groove: number[], bp
       ? groove[index] * beatDuration * swingRatio
       : groove[index] * beatDuration;
       if (lamps) {
+        const lampsCopy = lamps.slice()
         lamps[index].checked = true;
       }
       if (pattern ===  stepsRef[3] && pattern[index].checked) {
