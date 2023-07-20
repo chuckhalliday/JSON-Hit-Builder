@@ -2,7 +2,7 @@
 import { playBeat, playBass, playChords } from './playParts.js'
 
 export async function countIn(bpm: number, initDrums: number[], 
-  hiHatV: HTMLInputElement[], stepsRef: HTMLInputElement[][]) {
+  stepsRef: Array<Array<{ index: number; checked: boolean }>>) {
   for (let i = 0; i < 1; i++) {
     await Promise.all([
     playBeat(stepsRef[0], initDrums, bpm, stepsRef),
@@ -10,59 +10,67 @@ export async function countIn(bpm: number, initDrums: number[],
   }
 }
 
-export async function playVerse(bpm: number, initDrums: number[], stepsRef: HTMLInputElement[][], //initBass: number[], initChords: number[],
-    lamps?: HTMLInputElement[] /*flairV: HTMLInputElement[], bassV: string, chordsV: string */) {
+export async function playVerse(bpm: number, verseDrumGroove: number[], verseDrums: Array<Array<{ index: number; checked: boolean }>>, verseBassGroove: number[], //verseChordGroove: number[],
+    verseBass: {x: number, y: number }[], lamps?: HTMLInputElement[], /* verseChords: string */) {
     for (let i = 0; i < 1; i++) {
       await Promise.all([
-      playBeat(stepsRef[3], initDrums, bpm, stepsRef, lamps),
-      playBeat(stepsRef[2], initDrums, bpm, stepsRef),
-      playBeat(stepsRef[0], initDrums, bpm, stepsRef),
+      playBeat(verseDrums[3], verseDrumGroove, bpm, verseDrums, lamps),
+      playBeat(verseDrums[2], verseDrumGroove, bpm, verseDrums),
+      playBeat(verseDrums[0], verseDrumGroove, bpm, verseDrums),
       //playBeat(flairV.replace(/\|/g, ''), initDrums, bpm),
-      //playBass(bassV.replace(/\|/g, ''), initBass, bpm),
+      playBass(verseBass, verseBassGroove, bpm),
       //playChords(chordsV.replace(/\|/g, ''), initChords, bpm)
     ])
     }
   }
   
-/* export async function playChorus(bpm: number, chorusDrums: number[], chorusBass: number[], chorusChords: number[],
-    bassDrumC: string, snareDrumC: string, hiHatC: string, flairC: string, bassC: string, chordsC: string) {
+export async function playChorus(bpm: number, chorusDrumGroove: number[], chorusDrums: Array<Array<{ index: number; checked: boolean }>>, chorusBassGroove: number[], //chorusChordGroove: number[],
+chorusBass: {x: number, y: number }[], lamps?: HTMLInputElement[], /* chorusChords: string */) {
     for (let i = 0; i < 1; i++) {
       await Promise.all([
-      playBeat(bassDrumC.replace(/\|/g, ''), chorusDrums, bpm),
-      playBeat(snareDrumC.replace(/\|/g, ''), chorusDrums, bpm),
-      playBeat(hiHatC.replace(/\|/g, ''), chorusDrums, bpm),
-      playBeat(flairC.replace(/\|/g, ''), chorusDrums, bpm),
-      playBass(bassC.replace(/\|/g, ''), chorusBass, bpm),
-      playChords(chordsC.replace(/\|/g, ''), chorusChords, bpm)
+        playBeat(chorusDrums[3], chorusDrumGroove, bpm, chorusDrums, lamps),
+        playBeat(chorusDrums[2], chorusDrumGroove, bpm, chorusDrums),
+        playBeat(chorusDrums[0], chorusDrumGroove, bpm, chorusDrums),
+      //playBeat(flairC.replace(/\|/g, ''), chorusDrumGroove, bpm),
+        playBass(chorusBass, chorusBassGroove, bpm),
+      //playChords(chordsC.replace(/\|/g, ''), chorusChords, bpm)
     ])
     }
   }
   
-export async function playBridge(bpm: number, bridgeDrums: number[], bridgeBass: number[], bridgeChords: number[],
-    bassDrumB: string, snareDrumB: string, hiHatB: string, flairB: string, bassB: string, chordsB: string) {
+export async function playBridge(bpm: number, bridgeDrumGroove: number[], bridgeDrums: Array<Array<{ index: number; checked: boolean }>>, bridgeBassGroove: number[], //bridgeChordGroove: number[],
+bridgeBass: {x: number, y: number }[], lamps?: HTMLInputElement[], /* bridgeChords: string */) {
     for (let i = 0; i < 1; i++) {
       await Promise.all([
-      playBeat(bassDrumB.replace(/\|/g, ''), bridgeDrums, bpm),
-      playBeat(snareDrumB.replace(/\|/g, ''), bridgeDrums, bpm),
-      playBeat(hiHatB.replace(/\|/g, ''), bridgeDrums, bpm),
-      playBeat(flairB.replace(/\|/g, ''), bridgeDrums, bpm),
-      playBass(bassB.replace(/\|/g, ''), bridgeBass, bpm),
-      playChords(chordsB.replace(/\|/g, ''), bridgeChords, bpm)
+        playBeat(bridgeDrums[3], bridgeDrumGroove, bpm, bridgeDrums, lamps),
+        playBeat(bridgeDrums[2], bridgeDrumGroove, bpm, bridgeDrums),
+        playBeat(bridgeDrums[0], bridgeDrumGroove, bpm, bridgeDrums),
+      //playBeat(flairB.replace(/\|/g, ''), bridgeDrums, bpm),
+        playBass(bridgeBass, bridgeBassGroove, bpm),
+      //playChords(chordsB.replace(/\|/g, ''), bridgeChords, bpm)
     ])
     }
-  } */
+  }
 
-export async function playSong(songStructure: any[], bpm: number, stepsRef: HTMLInputElement[][], initDrums: number[], initBass: number[], initChords: number[],
-    chorusDrums: number[], chorusBass: number[], chorusChords: number[], bridgeDrums: number[], bridgeBass: number[], bridgeChords: number[],
-    bassDrumV: HTMLInputElement[], snareDrumV: HTMLInputElement[], hiHatV: HTMLInputElement[], flairV: HTMLInputElement[], bassV: HTMLInputElement[], chordsV: HTMLInputElement[], 
-    bassDrumC: HTMLInputElement[], snareDrumC: HTMLInputElement[], hiHatC: HTMLInputElement[], flairC: HTMLInputElement[], bassC: HTMLInputElement[], chordsC: HTMLInputElement[], 
-    bassDrumB: HTMLInputElement[], snareDrumB: HTMLInputElement[], hiHatB: HTMLInputElement[], flairB: HTMLInputElement[], bassB: HTMLInputElement[], chordsB: HTMLInputElement[]) {
+export async function playSong(songStructure: any[], bpm: number,
+    verseDrums: Array<Array<{ index: number; checked: boolean }>>, verseDrumGroove: number[], 
+    verseBass: {x: number, y: number }[], verseBassGroove: number[], 
+    /*verseChords: HTMLInputElement[], verseChordGroove: number[],*/
+    chorusDrums: Array<Array<{ index: number; checked: boolean }>>, chorusDrumGroove: number[],  
+    chorusBass: {x: number, y: number }[], chorusBassGroove: number[],
+    /*chorusChords: HTMLInputElement[], chorusChordGroove: number[], */
+    bridgeDrums: Array<Array<{ index: number; checked: boolean }>>, bridgeDrumGroove: number[], 
+    bridgeBass: {x: number, y: number }[], bridgeBassGroove: number[], 
+    /*bridgeChords: HTMLInputElement[], bridgeChordGroove: number[]*/
+    verseLamps?: HTMLInputElement[], chorusLamps?: HTMLInputElement[], bridgeLamps?: HTMLInputElement[]) {
+
     //const output = new midi.Output()
     //output.openPort(3)
+
     //Start recording
     let tempo = bpm - 60
     //output.sendMessage([144,16,1])
-    await countIn(bpm, initDrums, hiHatV, stepsRef)
+    await countIn(bpm, verseDrumGroove, verseDrums)
     //output.sendMessage([176,50,tempo]);
     let sum = 18
     for (const part of songStructure) {
@@ -72,17 +80,17 @@ export async function playSong(songStructure: any[], bpm: number, stepsRef: HTML
       for (let i = 0; i < part.repeat; i++) {
         switch (part.type) {
           case 'Verse':
-            await playVerse(bpm, initDrums, stepsRef, //initBass, initChords, 
-                 /*flairV, bassV, chordsV */);
+            await playVerse(bpm, verseDrumGroove, verseDrums, verseBassGroove, verseBass 
+                 /*verseChords, verseChordGroove */);
             break;
-         /* case 'Chorus':
-            await playChorus(bpm, chorusDrums, //chorusBass, chorusChords, 
-                bassDrumC, snareDrumC, hiHatC, flairC, bassC, chordsC);
+          case 'Chorus':
+            await playChorus(bpm, chorusDrumGroove, chorusDrums, chorusBassGroove, chorusBass 
+              /*chorusChords, chorusChordGroove */);
             break;
           case 'Bridge':
-            await playBridge(bpm, bridgeDrums, //bridgeBass, bridgeChords,
-                bassDrumB, snareDrumB, hiHatB, flairB, bassB, chordsB );
-            break; */
+            await playBridge(bpm, bridgeDrumGroove, bridgeDrums, bridgeBassGroove, bridgeBass 
+              /*bridgeChords, bridgeChordGroove */);
+            break;
           default:
             throw new Error(`Invalid part type: ${part.type}`);
         }

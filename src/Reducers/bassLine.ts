@@ -7,9 +7,9 @@ interface BassLineState {
 }
 
 const initialState: BassLineState = {
-  bassVerse: [],
-  bassChorus: [],
-  bassBridge: []
+  bassVerse: Array.from({ length: 1 }),
+  bassChorus: Array.from({ length: 1 }),
+  bassBridge: Array.from({ length: 1 })
 };
 
 const bassLine = createSlice({

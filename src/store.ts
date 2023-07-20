@@ -11,9 +11,9 @@ const store = configureStore({
         bpm: bpm.reducer,
         drumGroove: drumGroove.reducer,
         bassGroove: bassGroove.reducer,
-        bassline: bassLine.reducer,
+        bassLine: bassLine.reducer,
         drumLine: drumLine.reducer,
-        lamp: lamp.reducer
+        lamps: lamp.reducer
     }
 })
 
