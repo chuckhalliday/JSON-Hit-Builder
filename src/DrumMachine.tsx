@@ -52,14 +52,20 @@ export default function DrumMachine({
     }
   }
 
+  const drumHits: Array<Array<{ index: number; checked: boolean }>> = stepsRef.current.map((row, rowIndex) =>
+  row.map((inputElement, columnIndex) => ({
+    index: columnIndex,
+    checked: inputElement.checked,
+  }))
+);
+
   function setDrumState() {
-      const drumHits: Array<Array<{ index: number; checked: boolean }>> = stepsRef.current.map((row, rowIndex) =>
-        row.map((inputElement, columnIndex) => ({
-          index: columnIndex,
-          checked: inputElement.checked,
-        }))
-      );
-  
+    const drumHits: Array<Array<{ index: number; checked: boolean }>> = stepsRef.current.map((row, rowIndex) =>
+      row.map((inputElement, columnIndex) => ({
+      index: columnIndex,
+      checked: inputElement.checked,
+    }))
+  );
       if (part === 'Verse') {
         dispatch(setDrumVerse(drumHits));
       } else if (part === 'Chorus') {
@@ -134,7 +140,7 @@ export default function DrumMachine({
     if (isPlaying) {
       setIsPlaying(false);
     } else {
-    //  playVerse(bpm, drumGroove, stepsRef.current, lampsRef.current);
+     playVerse(bpm, drumGroove, drumHits, lampsRef.current);
       setIsPlaying(true);
     }
   };
