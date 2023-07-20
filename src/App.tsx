@@ -45,6 +45,10 @@ function App() {
     setRenderWidth(width);
   };
 
+  let verseLamps: HTMLInputElement[]
+  let chorusLamps: HTMLInputElement[]
+  let bridgeLamps: HTMLInputElement[]
+
   const handleStartClick = async () => {
     if (isPlaying) {
       setIsPlaying(false);
@@ -55,7 +59,8 @@ function App() {
   chorusDrums,chorusDrumGroove,  
   chorusBass, chorusBassGroove,
   bridgeDrums, bridgeDrumGroove, 
-  bridgeBass, bridgeBassGroove)
+  bridgeBass, bridgeBassGroove,
+  verseLamps, chorusLamps, bridgeLamps)
       setIsPlaying(true);
     }
   };

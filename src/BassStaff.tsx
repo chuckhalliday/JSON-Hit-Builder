@@ -322,7 +322,6 @@ export default function BassStaff({ renderWidth, bass, drumGroove, bassGroove, p
 
 
   return <div>
-          <div>{bass}</div>
           <canvas ref={canvasRef} id="myCanvas" />
                 {/* Renders controls */}
       <div className={styles.controls}>
