@@ -396,7 +396,6 @@ export const songVariables = {
     songStructure: songStructure,
     bpm: bpm,
     key: key,
-    drumPart1: drumPart1,
     bassDrum1V: bassDrum1V,
     initDrums: initDrums, 
     initBass: initBass, 

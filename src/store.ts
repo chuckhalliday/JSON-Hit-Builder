@@ -1,4 +1,5 @@
 import { configureStore } from '@reduxjs/toolkit'
+import song from './Reducers/song';
 import bpm from './Reducers/bpm'
 import drumGroove from './Reducers/drumGroove';
 import bassGroove from './Reducers/bassGroove';
@@ -13,7 +14,8 @@ const store = configureStore({
         bassGroove: bassGroove.reducer,
         bassLine: bassLine.reducer,
         drumLine: drumLine.reducer,
-        lamps: lamp.reducer
+        lamps: lamp.reducer,
+        song: song.reducer
     }
 })
 

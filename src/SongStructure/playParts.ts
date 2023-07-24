@@ -108,7 +108,6 @@ export async function playBeat(pattern: Array<{ index: number; checked: boolean 
       ? groove[index] * beatDuration * swingRatio
       : groove[index] * beatDuration;
       if (lamps) {
-        const lampsCopy = lamps.slice()
         lamps[index].checked = true;
       }
       if (pattern ===  stepsRef[3] && pattern[index].checked) {
