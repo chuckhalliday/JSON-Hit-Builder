@@ -80,11 +80,8 @@ function App() {
               </button>
               {isOpen && (
                 <div className={styles.openedPart}>
-                  <h3>{songProps.type}</h3>
+                  <h3>{songProps.type} ({songProps.repeat})</h3>
                   <BassStaff renderWidth={renderWidth}
-                  bass={songProps.bass}
-                  drumGroove={songProps.drumGroove}
-                  bassGroove={songProps.bassGroove}
                   part={index}/>
                   <DrumMachine
                     onRenderWidthChange={handleRenderWidthChange}
@@ -93,8 +90,8 @@ function App() {
                     kick={songProps.kick}
                     snare={songProps.snare}
                     hat={songProps.hiHat}
-                    bpm={bpm}
-                    part={songProps.type}
+                    type={songProps.type}
+                    part={index}
                   />
                 </div>
               )}

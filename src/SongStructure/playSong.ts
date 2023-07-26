@@ -17,6 +17,7 @@ export async function playVerse(bpm: number, verseDrumGroove: number[], verseDru
           await Promise.all([
             playBeat(verseDrums[3], verseDrumGroove, bpm, verseDrums, lamps),
             playBeat(verseDrums[2], verseDrumGroove, bpm, verseDrums),
+            playBeat(verseDrums[1], verseDrumGroove, bpm, verseDrums),
             playBeat(verseDrums[0], verseDrumGroove, bpm, verseDrums),
             playBass(verseBass, verseBassGroove, bpm),
             //playChords(verseChords, verseChordGroove, bpm)
@@ -25,6 +26,7 @@ export async function playVerse(bpm: number, verseDrumGroove: number[], verseDru
           await Promise.all([
             playBeat(verseDrums[3], verseDrumGroove, bpm, verseDrums, lamps),
             playBeat(verseDrums[2], verseDrumGroove, bpm, verseDrums),
+            playBeat(verseDrums[1], verseDrumGroove, bpm, verseDrums),
             playBeat(verseDrums[0], verseDrumGroove, bpm, verseDrums),
           ])
         }
@@ -38,6 +40,7 @@ chorusBassGroove?: number[], chorusBass?: {x: number, y: number }[], /* chorusCh
       await Promise.all([
         playBeat(chorusDrums[3], chorusDrumGroove, bpm, chorusDrums, lamps),
         playBeat(chorusDrums[2], chorusDrumGroove, bpm, chorusDrums),
+        playBeat(chorusDrums[1], chorusDrumGroove, bpm, chorusDrums),
         playBeat(chorusDrums[0], chorusDrumGroove, bpm, chorusDrums),
         playBass(chorusBass, chorusBassGroove, bpm),
         //playChords(chorusChords, chorusChordGroove, bpm)
@@ -46,6 +49,7 @@ chorusBassGroove?: number[], chorusBass?: {x: number, y: number }[], /* chorusCh
       await Promise.all([
         playBeat(chorusDrums[3], chorusDrumGroove, bpm, chorusDrums, lamps),
         playBeat(chorusDrums[2], chorusDrumGroove, bpm, chorusDrums),
+        playBeat(chorusDrums[1], chorusDrumGroove, bpm, chorusDrums),
         playBeat(chorusDrums[0], chorusDrumGroove, bpm, chorusDrums),
       ])
     }
@@ -59,6 +63,7 @@ bridgeBassGroove?: number[], bridgeBass?: {x: number, y: number }[], /* bridgeCh
         await Promise.all([
           playBeat(bridgeDrums[3], bridgeDrumGroove, bpm, bridgeDrums, lamps),
           playBeat(bridgeDrums[2], bridgeDrumGroove, bpm, bridgeDrums),
+          playBeat(bridgeDrums[1], bridgeDrumGroove, bpm, bridgeDrums),
           playBeat(bridgeDrums[0], bridgeDrumGroove, bpm, bridgeDrums),
           playBass(bridgeBass, bridgeBassGroove, bpm),
           //playChords(bridgeChords, bridgeChordGroove, bpm)
@@ -67,6 +72,7 @@ bridgeBassGroove?: number[], bridgeBass?: {x: number, y: number }[], /* bridgeCh
         await Promise.all([
           playBeat(bridgeDrums[3], bridgeDrumGroove, bpm, bridgeDrums, lamps),
           playBeat(bridgeDrums[2], bridgeDrumGroove, bpm, bridgeDrums),
+          playBeat(bridgeDrums[1], bridgeDrumGroove, bpm, bridgeDrums),
           playBeat(bridgeDrums[0], bridgeDrumGroove, bpm, bridgeDrums),
         ])
       }

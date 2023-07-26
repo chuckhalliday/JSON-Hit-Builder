@@ -7,14 +7,11 @@ import styles from "./DrumMachine.module.scss";
 
 interface BassStaffProps {
   renderWidth: number;
-  bass: string[];
-  drumGroove: number[];
-  bassGroove: number[];
   part: number
 }
 
 
-export default function BassStaff({ renderWidth, bass, drumGroove, bassGroove, part }: BassStaffProps) {
+export default function BassStaff({ renderWidth, part }: BassStaffProps) {
   console.log(part)
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const CLEF_IMAGE = new Image();
@@ -27,6 +24,7 @@ export default function BassStaff({ renderWidth, bass, drumGroove, bassGroove, p
 
   const bassGrid = useSelector((state: any) => state.song.songStructure[part].bassGrid);
   const bassNoteGrid = useSelector((state: any) => state.song.songStructure[part].bassNoteLocations);
+  const bassGroove = useSelector((state: any) => state.song.songStructure[part].bassGroove);
 
 /*  const NOTES = ["G4", "F4", "E4", "D4", "C4", "B3", "A3", "G3", "F3", "E3", "D3",
     "C3", "B2", "A2", "G2", "F2", "E2", "D2", "C2", "B1", "A1"]; */
@@ -103,7 +101,7 @@ export default function BassStaff({ renderWidth, bass, drumGroove, bassGroove, p
     
         bassNotesRef.current = bassNotesRef.current.map((note) => {
           if (note.x === x) {
-            return { ...note, y: index * spacing, index };
+            return { ...note, y: index * spacing };
           }
           return note;
         });

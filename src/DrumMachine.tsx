@@ -2,7 +2,7 @@ import React, { useEffect, useRef } from "react";
 import { playVerse } from "./SongStructure/playSong";
 import styles from "./DrumMachine.module.scss";
 import { setDrumVerse, setDrumChorus, setDrumBridge } from "./Reducers/drumLine";
-import { useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { setlampVerse, setlampChorus, setlampBridge } from "./Reducers/lamps";
 
 type Props = {
@@ -12,8 +12,8 @@ type Props = {
   kick: string;
   snare: string;
   hat: string;
-  bpm: number;
-  part: string
+  type: string
+  part: number
 };
 
 export default function DrumMachine({
@@ -23,11 +23,13 @@ export default function DrumMachine({
   kick,
   snare,
   hat,
-  bpm,
+  type,
   part
 }: Props) {
   const [isPlaying, setIsPlaying] = React.useState(false);
   const dispatch = useDispatch()
+
+  const bpm = useSelector((state: { bpm: { value: number } }) => state.bpm.value);
 
   const stepsRef = React.useRef<HTMLInputElement[][]>(
     Array.from({ length: 4 }, () =>
@@ -43,21 +45,14 @@ export default function DrumMachine({
       checked: inputElement.checked,
     }));
   
-    if (part === 'Verse') {
+    if (type === 'Verse') {
       dispatch(setlampVerse(lampLights));
-    } else if (part === 'Chorus') {
+    } else if (type === 'Chorus') {
       dispatch(setlampChorus(lampLights));
-    } else if (part === 'Bridge') {
+    } else if (type === 'Bridge') {
       dispatch(setlampBridge(lampLights));
     }
   }
-
-  const drumHits: Array<Array<{ index: number; checked: boolean }>> = stepsRef.current.map((row, rowIndex) =>
-  row.map((inputElement, columnIndex) => ({
-    index: columnIndex,
-    checked: inputElement.checked,
-  }))
-);
 
   function setDrumState() {
     const drumHits: Array<Array<{ index: number; checked: boolean }>> = stepsRef.current.map((row, rowIndex) =>
@@ -66,11 +61,11 @@ export default function DrumMachine({
       checked: inputElement.checked,
     }))
   );
-      if (part === 'Verse') {
+      if (type === 'Verse') {
         dispatch(setDrumVerse(drumHits));
-      } else if (part === 'Chorus') {
+      } else if (type === 'Chorus') {
         dispatch(setDrumChorus(drumHits));
-      } else if (part === 'Bridge') {
+      } else if (type === 'Bridge') {
         dispatch(setDrumBridge(drumHits));
       }
   }
@@ -95,12 +90,10 @@ export default function DrumMachine({
     }
 
     for (let i = 0; i < hiHat.length; i++) {
-      if (
-        hiHat.charAt(i) === "v" ||
-        hiHat.charAt(i) === "w" ||
-        hiHat.charAt(i) === "V" ||
-        hiHat.charAt(i) === "W"
-      ) {
+      if (hiHat.charAt(i) === "v" || hiHat.charAt(i) === "V") {
+        const inputElement = stepsRef.current[1][i] as HTMLInputElement;
+        inputElement.checked = true;
+      } else if (hiHat.charAt(i) === "w" || hiHat.charAt(i) === "W") {
         const inputElement = stepsRef.current[0][i] as HTMLInputElement;
         inputElement.checked = true;
       }
@@ -137,6 +130,12 @@ export default function DrumMachine({
   const stepIds = [...Array(numOfSteps).keys()] as const;
   
   const handleStartClick = async () => {
+    const drumHits: Array<Array<{ index: number; checked: boolean }>> = stepsRef.current.map((row, rowIndex) =>
+    row.map((inputElement, columnIndex) => ({
+      index: columnIndex,
+      checked: inputElement.checked,
+    }))
+  );
     if (isPlaying) {
       setIsPlaying(false);
     } else {
@@ -180,8 +179,8 @@ export default function DrumMachine({
     <div className={styles.machine} ref={machineRef}>
       {/* Renders titles */}
       <div className={styles.labelList}>
-        <div>HiHat</div>
-        <div>Flair</div>
+        <div>OHat</div>
+        <div>CHat</div>
         <div>Snare</div>
         <div>Kick</div>
       </div>

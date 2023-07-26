@@ -1,11 +1,14 @@
 import { drawBass } from "./bass";
 
 export function generateSongStructure(partsLength: number, bassVA: string[], bassGrooveV: number[], bassCA: string[], bassGrooveC: number[], bassBA: string[], bassGrooveB: number[], 
-  flairV: string, hiHatV: string, snareDrumV: string, bassDrumV: string, drumGrooveV: number[],
-  flairC: string, hiHatC: string, snareDrumC: string, bassDrumC: string, drumGrooveC: number[],
-  flairB: string, hiHatB: string, snareDrumB: string, bassDrumB: string, drumGrooveB: number[],
-  chordsVA: string, chordsGrooveV: number[], chordsCA: string, chordsGrooveC: number[], chordsBA: string, chordsGrooveB: number[]) {
+flairV: string, hiHatV: string, snareDrumV: string, bassDrumV: string, drumGrooveV: number[],
+flairC: string, hiHatC: string, snareDrumC: string, bassDrumC: string, drumGrooveC: number[],
+flairB: string, hiHatB: string, snareDrumB: string, bassDrumB: string, drumGrooveB: number[],
+chordsVA: string, chordsGrooveV: number[], chordsCA: string, chordsGrooveC: number[], chordsBA: string, chordsGrooveB: number[]) {
   const partTypes = ['Verse', 'Chorus', 'Bridge'];
+  let verseCount: number = 0
+  let chorusCount: number = 0
+  let bridgeCount: number = 0
   const songStructure: {
     type: string;
     repeat: number;
@@ -68,7 +71,8 @@ export function generateSongStructure(partsLength: number, bassVA: string[], bas
   const bassNoteLocations = (drawBass(bassVA, bassGrid))
 
   for (let i = 0; i < randomPartLength; i++) {
-  songStructure.push({ type: 'Verse', repeat: randomPartLength, bass: bassVA, bassGroove: bassGrooveV, bassGrid: bassGrid, bassNoteLocations: bassNoteLocations,
+  verseCount++
+  songStructure.push({ type: 'Verse', repeat: verseCount, bass: bassVA, bassGroove: bassGrooveV, bassGrid: bassGrid, bassNoteLocations: bassNoteLocations,
   kick: bassDrumV, snare: snareDrumV, hiHat: hiHatV, flair: flairV, drumGroove: drumGrooveV, chords: chordsVA, chordsGroove: chordsGrooveB });
   }
   remainingParts -= randomPartLength;
@@ -142,7 +146,20 @@ export function generateSongStructure(partsLength: number, bassVA: string[], bas
 
     const bassNoteLocations = drawBass(partBass, bassGrid)
     for (let i = 0; i < randomPartLength; i++) {
-    songStructure.push({ type: randomPartType, repeat: randomPartLength, bass: partBass, bassGroove: partBassGroove, bassGrid: bassGrid, bassNoteLocations: bassNoteLocations,
+      let repeat: number;
+      if (randomPartType === 'Verse') {
+        verseCount++
+        repeat = verseCount
+      } else if (randomPartType === 'Chorus') {
+        chorusCount++
+        repeat = chorusCount
+      } else if (randomPartType === 'Bridge') {
+        bridgeCount++
+        repeat = bridgeCount
+      } else {
+        repeat = 0
+      }
+    songStructure.push({ type: randomPartType, repeat: repeat, bass: partBass, bassGroove: partBassGroove, bassGrid: bassGrid, bassNoteLocations: bassNoteLocations,
       kick: partKick, snare: partSnare, hiHat: partHiHat, flair: partFlair, drumGroove: partDrumsGroove, chords: partChords, chordsGroove: partChordsGroove });
     }
     remainingParts -= randomPartLength;

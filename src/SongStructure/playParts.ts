@@ -111,19 +111,25 @@ export async function playBeat(pattern: Array<{ index: number; checked: boolean 
         lamps[index].checked = true;
       }
       if (pattern ===  stepsRef[3] && pattern[index].checked) {
-        loadSoundFile("../kick.wav", (buffer: AudioBuffer) => {
+        loadSoundFile("../kick.mp3", (buffer: AudioBuffer) => {
           playSound(buffer);
         });
         await wait(duration)
         //output.sendMessage([128, drum, release])
       } else if (pattern ===  stepsRef[2]&& pattern[index].checked) {
-        loadSoundFile("../snare.wav", (buffer: AudioBuffer) => {
+        loadSoundFile("../snare.mp3", (buffer: AudioBuffer) => {
+          playSound(buffer);
+        });
+        await wait(duration)
+        //output.sendMessage([128, drum, release])
+      } else if (pattern ===  stepsRef[1] && pattern[index].checked) {
+        loadSoundFile("../hihatC.mp3", (buffer: AudioBuffer) => {
           playSound(buffer);
         });
         await wait(duration)
         //output.sendMessage([128, drum, release])
       } else if (pattern ===  stepsRef[0] && pattern[index].checked) {
-        loadSoundFile("../hat-closed.wav", (buffer: AudioBuffer) => {
+        loadSoundFile("../hihatO.mp3", (buffer: AudioBuffer) => {
           playSound(buffer);
         });
         await wait(duration)
