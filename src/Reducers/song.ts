@@ -7,6 +7,11 @@ interface SongState {
         repeat: number;
         bass: string[];
         bassGroove: number[];
+        bassGrid: number[];
+        bassNoteLocations: {
+            x: number;
+            y: number;
+        }[];
         kick: string;
         snare: string;
         hiHat: string;
@@ -22,11 +27,32 @@ const initialState: SongState = {
 };
 
 const song = createSlice({
-  name: "song",
-  initialState,
-  reducers: {
+    name: "song",
+    initialState,
+    reducers: {
+      setBassState: (state: { songStructure: {
+        type: string;
+        repeat: number;
+        bass: string[];
+        bassGroove: number[];
+        bassGrid: number[];
+        bassNoteLocations: {
+            x: number;
+            y: number;
+        }[];
+        kick: string;
+        snare: string;
+        hiHat: string;
+        flair: string;
+        drumGroove: number[];
+        chords: string;
+        chordsGroove: number[];
+    }[] }, action: PayloadAction<{ index: number, bassNoteLocations: { x: number, y: number }[] }>) => {
+        console.log(action);
+        state.songStructure[action.payload.index].bassNoteLocations = action.payload.bassNoteLocations;
+      },
+    },
+  });
 
-  },
-});
-
+export const { setBassState } = song.actions;
 export default song;

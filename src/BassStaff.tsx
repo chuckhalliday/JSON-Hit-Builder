@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { playBass } from './SongStructure/playParts';
-import { setBassVerse, setBassChorus, setBassBridge } from './Reducers/bassLine';
+import { setBassState } from './Reducers/song';
 
 import styles from "./DrumMachine.module.scss";
 
@@ -10,11 +10,12 @@ interface BassStaffProps {
   bass: string[];
   drumGroove: number[];
   bassGroove: number[];
-  part: string
+  part: number
 }
 
 
 export default function BassStaff({ renderWidth, bass, drumGroove, bassGroove, part }: BassStaffProps) {
+  console.log(part)
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const CLEF_IMAGE = new Image();
   CLEF_IMAGE.src = "/BassClef.png";
@@ -24,82 +25,13 @@ export default function BassStaff({ renderWidth, bass, drumGroove, bassGroove, p
 
   const bpm = useSelector((state: { bpm: { value: number } }) => state.bpm.value);
 
+  const bassGrid = useSelector((state: any) => state.song.songStructure[part].bassGrid);
+  const bassNoteGrid = useSelector((state: any) => state.song.songStructure[part].bassNoteLocations);
+
 /*  const NOTES = ["G4", "F4", "E4", "D4", "C4", "B3", "A3", "G3", "F3", "E3", "D3",
     "C3", "B2", "A2", "G2", "F2", "E2", "D2", "C2", "B1", "A1"]; */
 
-  let bassArray: number[]=[115]
-  let gridX: number = 115
-  let bassSum: number = bassGroove[0]
-  let drumSum: number = 0
-  let bassIndex: number = 1
-  for (let i = 0; i < drumGroove.length; i++) {
-    drumSum+= drumGroove[i]
-    if (drumSum >= 3.93 && drumSum <= 4.07 || drumSum >= 7.93 && drumSum <= 8.07) {
-      gridX += 78
-    } else if (Math.abs(Math.round(drumSum) - drumSum) <= 0.005) {
-      gridX += 48
-    } else {
-      gridX += 38
-    }
-    if (bassSum - drumSum <= 0.05) {
-      bassArray.push(gridX)
-      if (bassSum >= 7.95 && drumSum >= 7.95) {
-        bassSum = 0
-        drumSum = 0
-      }
-      bassSum += bassGroove[bassIndex]
-      bassIndex++
-    }
-  }
-
-  const [bassGrid, setBassGrid] = useState<number[]>(bassArray)
-
-  function drawBass() {
-    let bassNoteLocations: {x: number, y: number }[] = [];
-    
-    for (let i = 0; i < bassGrid.length; i++) {
-      let noteLocation: {x: number, y: number } = { x: 0, y: 0 }; // Create a new object for each iteration
-    
-        noteLocation.x = bassGrid[i];
-        if (bass[i] === 'G' || bass[i] === 'G#' || bass[i] === 'Gb') {
-          noteLocation.y = 52.5;
-        } else if (bass[i] === 'F' || bass[i] === 'F#') {
-          noteLocation.y = 60;
-        } else if (bass[i] === 'E' || bass[i] === 'Eb') {
-          noteLocation.y = 67.5;
-        } else if (bass[i] === 'D' || bass[i] === 'D#' || bass[i] === 'Db') {
-          noteLocation.y = 75;
-        } else if (bass[i] === 'C' || bass[i] === 'C#') {
-          noteLocation.y = 82.5;
-        } else if (bass[i] === 'B' || bass[i] === 'Bb') {
-          noteLocation.y = 90;
-        } else if (bass[i] === 'A' || bass[i] === 'A#' || bass[i] === 'Ab') {
-          noteLocation.y = 97.5;
-        } else {
-          noteLocation.y = -20
-        }
-    
-        bassNoteLocations.push(noteLocation);
-      }
-    
-      return bassNoteLocations;
-    }
-  
-
-
-  const bassNotesRef = React.useRef<{x: number, y: number}[]>(drawBass())
-
-  function setBassState() {
-  const bassNotes = bassNotesRef.current
-
-  if (part === 'Verse') {
-    dispatch(setBassVerse(bassNotes))
-  } else if (part === 'Chorus') {
-    dispatch(setBassChorus(bassNotes))
-  } else if (part === 'Bridge') {
-    dispatch(setBassBridge(bassNotes))
-  }
-}
+  const bassNotesRef = React.useRef<{x: number, y: number}[]>(bassNoteGrid)
 
   const MOUSE = {
     x: 0,
@@ -130,7 +62,6 @@ export default function BassStaff({ renderWidth, bass, drumGroove, bassGroove, p
         addEventListeners();
         drawScene();
         animate();
-        setBassState()
       }
     }
 
@@ -172,11 +103,11 @@ export default function BassStaff({ renderWidth, bass, drumGroove, bassGroove, p
     
         bassNotesRef.current = bassNotesRef.current.map((note) => {
           if (note.x === x) {
-            return { ...note, y: index * spacing };
+            return { ...note, y: index * spacing, index };
           }
           return note;
         });
-        setBassState()
+        dispatch(setBassState({index: part, bassNoteLocations: bassNotesRef.current}))
       }
     }
 
@@ -321,13 +252,15 @@ export default function BassStaff({ renderWidth, bass, drumGroove, bassGroove, p
   };
 
 
-  return <div>
-          <canvas ref={canvasRef} id="myCanvas" />
-                {/* Renders controls */}
+  return ( 
+    <div>
+      <canvas ref={canvasRef} id="myCanvas" />
+      {/* Renders controls */}
       <div className={styles.controls}>
-        <button onClick={handleStartClick} className={styles.button}>
-          {isPlaying ? "Pause" : "Start"}
-        </button>
+          <button onClick={handleStartClick} className={styles.button}>
+            {isPlaying ? "Pause" : "Start"}
+          </button>
       </div>
-          </div>
+    </div>
+  )
 }

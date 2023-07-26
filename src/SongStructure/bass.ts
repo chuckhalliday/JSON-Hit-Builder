@@ -21,6 +21,37 @@ export function primaryGroove() {
   return initBass;
 }
 
+export function drawBass(bass: string[], bassGrid: number[]) {
+  let bassNoteLocations: { x: number, y: number }[] = [];
+  
+  for (let i = 0; i < bassGrid.length; i++) {
+    let noteLocation: {x: number, y: number } = { x: 0, y: 0 } // Create a new object for each iteration
+  
+      noteLocation.x = bassGrid[i];
+      if (bass[i] === 'G' || bass[i] === 'G#' || bass[i] === 'Gb') {
+        noteLocation.y = 52.5;
+      } else if (bass[i] === 'F' || bass[i] === 'F#') {
+        noteLocation.y = 60;
+      } else if (bass[i] === 'E' || bass[i] === 'Eb') {
+        noteLocation.y = 67.5;
+      } else if (bass[i] === 'D' || bass[i] === 'D#' || bass[i] === 'Db') {
+        noteLocation.y = 75;
+      } else if (bass[i] === 'C' || bass[i] === 'C#') {
+        noteLocation.y = 82.5;
+      } else if (bass[i] === 'B' || bass[i] === 'Bb') {
+        noteLocation.y = 90;
+      } else if (bass[i] === 'A' || bass[i] === 'A#' || bass[i] === 'Ab') {
+        noteLocation.y = 97.5;
+      } else {
+        noteLocation.y = -20
+      }
+  
+      bassNoteLocations.push(noteLocation);
+    }
+  
+    return bassNoteLocations;
+  }
+
 const a_c: string = Math.random() < 0.5 ? "a" : "c";
 
 const dVals = ["o", "a", "c", "f"];

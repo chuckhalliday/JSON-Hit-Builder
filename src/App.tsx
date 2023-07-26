@@ -15,9 +15,9 @@ function App() {
 
   const songStructure = songVariables.songStructure
   const bpm = useSelector((state: { bpm: { value: number } }) => state.bpm.value);
-  const verseDrums = useSelector((state: { drumLine: { drumVerse: Array<Array<{ index: number; checked: boolean }>> }}) => state.drumLine.drumVerse)
+  /*const verseDrums = useSelector((state: { drumLine: { drumVerse: Array<Array<{ index: number; checked: boolean }>> }}) => state.drumLine.drumVerse)
   const verseDrumGroove = useSelector((state: { drumGroove: { verseGroove: number[] }}) => state.drumGroove.verseGroove)
-  const verseBass = useSelector((state: { bassLine: { bassVerse: Array<{ x: number; y: number }> }}) => state.bassLine.bassVerse)
+  const verseBass = useSelector((state: { song: { songStructure: Array<{ x: number; y: number }> }}) => state.bassLine.bassVerse)
   const verseBassGroove = useSelector((state: { bassGroove: { verseGroove: number[] }}) => state.bassGroove.verseGroove)
 
   const chorusDrums = useSelector((state: { drumLine: { drumChorus: Array<Array<{ index: number; checked: boolean }>> }}) => state.drumLine.drumChorus)
@@ -28,7 +28,7 @@ function App() {
   const bridgeDrums = useSelector((state: { drumLine: { drumBridge: Array<Array<{ index: number; checked: boolean }>> }}) => state.drumLine.drumBridge)
   const bridgeDrumGroove =useSelector((state: { drumGroove: { bridgeGroove: number[] }}) => state.drumGroove.bridgeGroove)
   const bridgeBass = useSelector((state: { bassLine: { bassBridge: Array<{ x: number; y: number }> }}) => state.bassLine.bassBridge) 
-  const bridgeBassGroove = useSelector((state: { bassGroove: { bridgeGroove: number[] }}) => state.bassGroove.bridgeGroove)
+  const bridgeBassGroove = useSelector((state: { bassGroove: { bridgeGroove: number[] }}) => state.bassGroove.bridgeGroove) */
 
   const dispatch = useDispatch()
 
@@ -49,7 +49,7 @@ function App() {
   let chorusLamps: HTMLInputElement[]
   let bridgeLamps: HTMLInputElement[]
 
-  const handleStartClick = async () => {
+ /* const handleStartClick = async () => {
     if (isPlaying) {
       setIsPlaying(false);
     } else {
@@ -63,15 +63,14 @@ function App() {
   verseLamps, chorusLamps, bridgeLamps)
       setIsPlaying(true);
     }
-  };
+  }; */
 
   return (
     <div className={styles.rowContainer}>
       <div className={styles.key}>Key of : {songVariables.key}</div>
       {songStructure.map((songProps, index) => {
         const songParts = [];
-        for (let i = 0; i < songProps.repeat; i++) {
-          const key = `${index}_${i}`;
+          const key = `${index}`;
           const isOpen = openedParts[key];
 
           songParts.push(
@@ -81,12 +80,12 @@ function App() {
               </button>
               {isOpen && (
                 <div className={styles.openedPart}>
-                  <h3>{songProps.type} ({i + 1})</h3>
+                  <h3>{songProps.type}</h3>
                   <BassStaff renderWidth={renderWidth}
                   bass={songProps.bass}
                   drumGroove={songProps.drumGroove}
                   bassGroove={songProps.bassGroove}
-                  part={songProps.type}/>
+                  part={index}/>
                   <DrumMachine
                     onRenderWidthChange={handleRenderWidthChange}
                     numOfSteps={songProps.drumGroove.length}
@@ -101,12 +100,11 @@ function App() {
               )}
             </div>
           );
-        }
         return songParts;
       })}
       {/* Renders controls */}
       <div className={styles.controls}>
-      <button onClick={handleStartClick} className={styles.button}>
+      <button /*onClick={handleStartClick}*/ className={styles.button}>
           {isPlaying ? "Pause" : "Start"}
         </button>
         <label className={styles.fader}>
