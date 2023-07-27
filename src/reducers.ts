@@ -1,9 +1,8 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
-import { songVariables } from "../SongStructure/play";
-
-console.log(songVariables.songStructure)
+import { songVariables } from "./SongStructure/play";
 
 interface SongState {
+    bpm: number,
     songStructure: {
         type: string;
         repeat: number;
@@ -26,7 +25,8 @@ interface SongState {
 }
 
 const initialState: SongState = {
-  songStructure: songVariables.songStructure
+    bpm: songVariables.bpm,
+    songStructure: songVariables.songStructure
 };
 
 const song = createSlice({
@@ -41,8 +41,12 @@ const song = createSlice({
         console.log(action);
         state.songStructure[action.payload.index].drums[action.payload.drumPart][action.payload.drumStep] = action.payload.drums;
       },
+      incrementByAmount: (state, action: PayloadAction<string>) => {
+        console.log(action);
+        state.bpm = parseFloat(action.payload);
+      },
     },
   });
 
-export const { setBassState, setDrumState } = song.actions;
+export const { setBassState, setDrumState, incrementByAmount } = song.actions;
 export default song;

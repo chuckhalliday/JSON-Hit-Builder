@@ -117,7 +117,6 @@ const drumBridge: { index: number; checked: boolean; accent?: boolean }[][] = dr
 
 
 let keyAdjust: number = setKey()
-console.log(keyAdjust)
 let key: string = findKey(bassV, keyAdjust)
 adjustBassNotes(keyAdjust)
 adjustChordNotes(keyAdjust)

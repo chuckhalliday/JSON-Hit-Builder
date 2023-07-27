@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { playBass } from './SongStructure/playParts';
-import { setBassState } from './Reducers/song';
+import { setBassState } from './reducers';
 
 import styles from "./DrumMachine.module.scss";
 
@@ -12,15 +12,12 @@ interface BassStaffProps {
 
 
 export default function BassStaff({ renderWidth, part }: BassStaffProps) {
-  console.log(part)
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const CLEF_IMAGE = new Image();
   CLEF_IMAGE.src = "/BassClef.png";
   const dispatch = useDispatch()
 
-  console.log(part)
-
-  const bpm = useSelector((state: { bpm: { value: number } }) => state.bpm.value);
+  const bpm = useSelector((state: { song: { bpm: number } }) => state.song.bpm);
 
   const bassGrid = useSelector((state: any) => state.song.songStructure[part].bassGrid);
   const bassNoteGrid = useSelector((state: any) => state.song.songStructure[part].bassNoteLocations);

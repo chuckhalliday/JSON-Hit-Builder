@@ -1,10 +1,8 @@
 import { configureStore } from '@reduxjs/toolkit'
-import song from './Reducers/song';
-import bpm from './Reducers/bpm'
+import song from './reducers';
 
 const store = configureStore({
     reducer: {
-        bpm: bpm.reducer,
         song: song.reducer
     }
 })
