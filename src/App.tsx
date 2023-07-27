@@ -2,9 +2,9 @@ import React, { useState } from 'react'
 import DrumMachine from "./DrumMachine";
 import BassStaff from "./BassStaff";
 import { useSelector, useDispatch } from "react-redux"
-import { incrementByAmount } from './Reducers/bpm';
 import { songVariables } from './SongStructure/play';
 import { playSong } from './SongStructure/playSong';
+import { incrementByAmount } from './reducers';
 
 import styles from "./App.module.scss"
 
@@ -14,7 +14,7 @@ function App() {
   const [isPlaying, setIsPlaying] = React.useState(false);
 
   const songStructure = songVariables.songStructure
-  const bpm = useSelector((state: { bpm: { value: number } }) => state.bpm.value);
+  const bpm = useSelector((state: { song: { bpm: number } }) => state.song.bpm);
   /*const verseDrums = useSelector((state: { drumLine: { drumVerse: Array<Array<{ index: number; checked: boolean }>> }}) => state.drumLine.drumVerse)
   const verseDrumGroove = useSelector((state: { drumGroove: { verseGroove: number[] }}) => state.drumGroove.verseGroove)
   const verseBass = useSelector((state: { song: { songStructure: Array<{ x: number; y: number }> }}) => state.bassLine.bassVerse)
@@ -106,17 +106,17 @@ function App() {
             defaultValue={bpm}
           />
         </label>
-        <label className={styles.fader}>
+        {/*<label className={styles.fader}>
           <span>Volume</span>
           <input
             type="range"
             min={0}
             max={1}
             step={0.01}
-          //  onChange={handleVolumeChange} 
+            onChange={handleVolumeChange} 
             defaultValue={1}
           />
-        </label>
+    </label> */}
       </div>
     </div>
   );

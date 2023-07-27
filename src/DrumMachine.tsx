@@ -1,7 +1,7 @@
 import React, { useEffect, useRef } from "react";
 import { playVerse } from "./SongStructure/playSong";
 import styles from "./DrumMachine.module.scss";
-import { setDrumState } from "./Reducers/song";
+import { setDrumState } from "./reducers";
 import { useDispatch, useSelector } from "react-redux";
 
 type Props = {
@@ -18,7 +18,7 @@ export default function DrumMachine({
   const [isPlaying, setIsPlaying] = React.useState(false);
   const dispatch = useDispatch()
 
-  const bpm = useSelector((state: { bpm: { value: number } }) => state.bpm.value);
+  const bpm = useSelector((state: { song: { bpm: number } }) => state.song.bpm);
   const drums = useSelector((state: any) => state.song.songStructure[part].drums);
   const drumGroove = useSelector((state: any) => state.song.songStructure[part].drumGroove);
   const numOfSteps = drumGroove.length
@@ -143,8 +143,8 @@ export default function DrumMachine({
     <div className={styles.machine} ref={machineRef}>
       {/* Renders titles */}
       <div className={styles.labelList}>
-        <div>OHat</div>
-        <div>CHat</div>
+        <div>HiHat - O</div>
+        <div>HiHat - C</div>
         <div>Snare</div>
         <div>Kick</div>
       </div>

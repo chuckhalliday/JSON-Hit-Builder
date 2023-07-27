@@ -33,7 +33,8 @@ $rowGap: 8px;
   display: flex;
   flex-direction: column;
   row-gap: $rowGap;
-  margin-left: 50px;
+  margin-left: 20px;
+  width: 70px;
 
   & > * {
     height: $cellHeight;
