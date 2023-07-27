@@ -1,27 +1,41 @@
 import React, { useEffect, useRef } from "react";
 import { playVerse } from "./SongStructure/playSong";
-import styles from "./DrumMachine.module.scss";
 import { setDrumState } from "./reducers";
 import { useDispatch, useSelector } from "react-redux";
+import styles from "./DrumMachine.module.scss";
 
 type Props = {
   onRenderWidthChange: any;
-  type: string
   part: number
 };
 
-export default function DrumMachine({
-  onRenderWidthChange,
-  type,
-  part
-}: Props) {
+export default function DrumMachine({ onRenderWidthChange, part }: Props) {
   const [isPlaying, setIsPlaying] = React.useState(false);
   const dispatch = useDispatch()
 
   const bpm = useSelector((state: { song: { bpm: number } }) => state.song.bpm);
-  const drums = useSelector((state: any) => state.song.songStructure[part].drums);
-  const drumGroove = useSelector((state: any) => state.song.songStructure[part].drumGroove);
+  const drums = useSelector((state: { song: { songStructure: { drums: {index: number; checked: boolean; accent?: boolean;}[][]}[]}}) => state.song.songStructure[part].drums);
+  const drumGroove = useSelector((state: { song: { songStructure: { drumGroove: number[]}[]}}) => state.song.songStructure[part].drumGroove);
   const numOfSteps = drumGroove.length
+
+
+    const stepsRef = React.useRef<HTMLInputElement[][]>(
+      Array.from({ length: drums.length }, () =>
+        Array.from({ length: numOfSteps }, () => document.createElement("input"))
+      )
+    );
+  
+    useEffect(() => {
+      for (let trackId = 0; trackId < drums.length; trackId++) {
+        for (let i = 0; i < numOfSteps; i++) {
+          const inputElement = stepsRef.current[trackId][i] as HTMLInputElement;
+          if (drums[trackId][i].checked === true) {
+            inputElement.checked = true;
+          }
+        }
+      }
+    }, [drums]);
+  
 
   function updateDrumState(trackId: number, stepId: number) {
     const drumHits = {
@@ -31,37 +45,6 @@ export default function DrumMachine({
     dispatch(setDrumState({ index: part, drumPart: trackId, drumStep: stepId, drums: drumHits }));
   }
 
-  const stepsRef = React.useRef<HTMLInputElement[][]>(
-    Array.from({ length: 4 }, () =>
-      Array.from({ length: numOfSteps }, () => document.createElement("input"))
-    )
-  );
-  for (let i = 0; i < drums[0].length; i++) {
-    const inputElement = stepsRef.current[0][i] as HTMLInputElement;
-    if (drums[0][i].checked === true) {
-      inputElement.checked = true;
-    }
-  }
-
-  for (let i = 0; i < drums[1].length; i++) {
-    const inputElement = stepsRef.current[1][i] as HTMLInputElement;
-    if (drums[1][i].checked === true) {
-      inputElement.checked = true;
-    }
-  }
-
-  for (let i = 0; i < drums[2].length; i++) {
-    const inputElement = stepsRef.current[2][i] as HTMLInputElement;
-    if (drums[2][i].checked === true) {
-      inputElement.checked = true;
-    }
-  }
-  for (let i = 0; i < drums[3].length; i++) {
-    const inputElement = stepsRef.current[3][i] as HTMLInputElement;
-    if (drums[3][i].checked === true) {
-      inputElement.checked = true;
-    }
-  }
 
 
   const lampsRef = React.useRef<HTMLInputElement[]>([]);
@@ -109,42 +92,41 @@ export default function DrumMachine({
   };
 
   function addSpacingToRows(step: number) {
-      let sum = 0;
-      let measure
-      let beat
+    let sum = 0;
+    let measure
+    let beat
   
-      for (let i = 0; i < step; i++) {
-        sum += drumGroove[i];
-        if (sum >= 3.93 && sum <= 4.07) {
-          measure = 'true'
-          sum = 0
-        } else if (Math.abs(sum - Math.round(sum)) <= 0.005) {
-          beat = 'true'
-        } else {
-          measure = 'false'
-          beat = 'false'
-        }
+    for (let i = 0; i < step; i++) {
+      sum += drumGroove[i];
+      if (sum >= 3.93 && sum <= 4.07) {
+        measure = 'true'
+        sum = 0
+      } else if (Math.abs(sum - Math.round(sum)) <= 0.005) {
+        beat = 'true'
+      } else {
+        measure = 'false'
+        beat = 'false'
       }
-        return {
-          measure: measure,
-          beat: beat
-        }
-      }
+    }
+    return {
+      measure: measure,
+      beat: beat
+    }
+  }
 
-      useEffect(() => {
-        if (machineRef.current) {
-          const width = machineRef.current.scrollWidth;
-          onRenderWidthChange(width);
-          // Export the width as needed
-        }
-      }, [onRenderWidthChange]);
+  useEffect(() => {
+    if (machineRef.current) {
+      const width = machineRef.current.scrollWidth;
+      onRenderWidthChange(width);
+    }
+  }, [onRenderWidthChange]);
   
   return (
     <div className={styles.machine} ref={machineRef}>
       {/* Renders titles */}
       <div className={styles.labelList}>
-        <div>HiHat - O</div>
-        <div>HiHat - C</div>
+        <div>Hi-Hat O</div>
+        <div>Hi-Hat C</div>
         <div>Snare</div>
         <div>Kick</div>
       </div>

@@ -29,8 +29,8 @@ export default function BassStaff({ renderWidth, part }: BassStaffProps) {
   const bassNotesRef = React.useRef<{x: number, y: number}[]>(bassNoteGrid)
 
   const MOUSE = {
-    x: 0,
-    y: 0,
+    x: -10,
+    y: -10,
     isDown: false
   };
 
