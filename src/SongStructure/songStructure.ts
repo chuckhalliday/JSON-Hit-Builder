@@ -1,9 +1,9 @@
 import { drawBass } from "./bass";
 
 export function generateSongStructure(partsLength: number, bassVA: string[], bassGrooveV: number[], bassCA: string[], bassGrooveC: number[], bassBA: string[], bassGrooveB: number[], 
-flairV: string, hiHatV: string, snareDrumV: string, bassDrumV: string, drumGrooveV: number[],
-flairC: string, hiHatC: string, snareDrumC: string, bassDrumC: string, drumGrooveC: number[],
-flairB: string, hiHatB: string, snareDrumB: string, bassDrumB: string, drumGrooveB: number[],
+drumVerse: { index: number; checked: boolean; accent?: boolean }[][], drumGrooveV: number[],
+drumChorus: { index: number; checked: boolean; accent?: boolean }[][], drumGrooveC: number[],
+drumBridge: { index: number; checked: boolean; accent?: boolean }[][], drumGrooveB: number[],
 chordsVA: string, chordsGrooveV: number[], chordsCA: string, chordsGrooveC: number[], chordsBA: string, chordsGrooveB: number[]) {
   const partTypes = ['Verse', 'Chorus', 'Bridge'];
   let verseCount: number = 0
@@ -19,10 +19,7 @@ chordsVA: string, chordsGrooveV: number[], chordsCA: string, chordsGrooveC: numb
         x: number;
         y: number;
     }[];
-    kick: string;
-    snare: string;
-    hiHat: string;
-    flair: string;
+    drums: { index: number; checked: boolean; accent?: boolean }[][]
     drumGroove: number[];
     chords: string;
     chordsGroove: number[];
@@ -31,10 +28,7 @@ chordsVA: string, chordsGrooveV: number[], chordsCA: string, chordsGrooveC: numb
   let lastPartType = '';
   let partBass: string[];
   let partBassGroove: number[];
-  let partKick: string;
-  let partSnare: string;
-  let partHiHat: string;
-  let partFlair: string;
+  let partDrums: { index: number; checked: boolean; accent?: boolean }[][]
   let partDrumsGroove: number[];
   let partChords: string;
   let partChordsGroove: number[];
@@ -73,7 +67,7 @@ chordsVA: string, chordsGrooveV: number[], chordsCA: string, chordsGrooveC: numb
   for (let i = 0; i < randomPartLength; i++) {
   verseCount++
   songStructure.push({ type: 'Verse', repeat: verseCount, bass: bassVA, bassGroove: bassGrooveV, bassGrid: bassGrid, bassNoteLocations: bassNoteLocations,
-  kick: bassDrumV, snare: snareDrumV, hiHat: hiHatV, flair: flairV, drumGroove: drumGrooveV, chords: chordsVA, chordsGroove: chordsGrooveB });
+  drums: drumVerse, drumGroove: drumGrooveV, chords: chordsVA, chordsGroove: chordsGrooveB });
   }
   remainingParts -= randomPartLength;
   lastPartType = 'Verse'
@@ -88,30 +82,21 @@ chordsVA: string, chordsGrooveV: number[], chordsCA: string, chordsGrooveC: numb
       partChordsGroove = chordsGrooveV
       partBass = bassVA
       partBassGroove = bassGrooveV
-      partKick = bassDrumV
-      partSnare = snareDrumV
-      partHiHat = hiHatV
-      partFlair = flairV
+      partDrums = drumVerse
       partDrumsGroove = drumGrooveV
     } else if (randomPartType === 'Chorus') {
       partChords = chordsCA
       partChordsGroove = chordsGrooveC
       partBass = bassCA
       partBassGroove = bassGrooveC
-      partKick = bassDrumC
-      partSnare = snareDrumC
-      partHiHat = hiHatC
-      partFlair = flairC
+      partDrums = drumChorus
       partDrumsGroove = drumGrooveC
     } else {
       partChords = chordsBA
       partChordsGroove = chordsGrooveB
       partBass = bassBA
       partBassGroove = bassGrooveB
-      partKick = bassDrumB
-      partSnare = snareDrumB
-      partHiHat = hiHatB
-      partFlair = flairB
+      partDrums = drumBridge
       partDrumsGroove = drumGrooveB
     }
 
@@ -160,7 +145,7 @@ chordsVA: string, chordsGrooveV: number[], chordsCA: string, chordsGrooveC: numb
         repeat = 0
       }
     songStructure.push({ type: randomPartType, repeat: repeat, bass: partBass, bassGroove: partBassGroove, bassGrid: bassGrid, bassNoteLocations: bassNoteLocations,
-      kick: partKick, snare: partSnare, hiHat: partHiHat, flair: partFlair, drumGroove: partDrumsGroove, chords: partChords, chordsGroove: partChordsGroove });
+      drums: partDrums, drumGroove: partDrumsGroove, chords: partChords, chordsGroove: partChordsGroove });
     }
     remainingParts -= randomPartLength;
     lastPartType = randomPartType;

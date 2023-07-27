@@ -1,28 +1,17 @@
 import React, { useEffect, useRef } from "react";
 import { playVerse } from "./SongStructure/playSong";
 import styles from "./DrumMachine.module.scss";
-import { setDrumVerse, setDrumChorus, setDrumBridge } from "./Reducers/drumLine";
+import { setDrumState } from "./Reducers/song";
 import { useDispatch, useSelector } from "react-redux";
-import { setlampVerse, setlampChorus, setlampBridge } from "./Reducers/lamps";
 
 type Props = {
   onRenderWidthChange: any;
-  numOfSteps: number;
-  drumGroove: number[];
-  kick: string;
-  snare: string;
-  hat: string;
   type: string
   part: number
 };
 
 export default function DrumMachine({
   onRenderWidthChange,
-  numOfSteps,
-  drumGroove,
-  kick,
-  snare,
-  hat,
   type,
   part
 }: Props) {
@@ -30,78 +19,54 @@ export default function DrumMachine({
   const dispatch = useDispatch()
 
   const bpm = useSelector((state: { bpm: { value: number } }) => state.bpm.value);
+  const drums = useSelector((state: any) => state.song.songStructure[part].drums);
+  const drumGroove = useSelector((state: any) => state.song.songStructure[part].drumGroove);
+  const numOfSteps = drumGroove.length
+
+  function updateDrumState() {
+    const drumHits = stepsRef.current.map((row, rowIndex) =>
+      row.map((inputElement, columnIndex) => ({
+        index: columnIndex,
+        checked: inputElement.checked,
+      }))
+    );
+    dispatch(setDrumState({ index: part, drums: drumHits }));
+  }
 
   const stepsRef = React.useRef<HTMLInputElement[][]>(
     Array.from({ length: 4 }, () =>
       Array.from({ length: numOfSteps }, () => document.createElement("input"))
     )
   );
+  for (let i = 0; i < drums[0].length; i++) {
+    const inputElement = stepsRef.current[0][i] as HTMLInputElement;
+    if (drums[0][i].checked === true) {
+      inputElement.checked = true;
+    }
+  }
+
+  for (let i = 0; i < drums[1].length; i++) {
+    const inputElement = stepsRef.current[1][i] as HTMLInputElement;
+    if (drums[1][i].checked === true) {
+      inputElement.checked = true;
+    }
+  }
+
+  for (let i = 0; i < drums[2].length; i++) {
+    const inputElement = stepsRef.current[2][i] as HTMLInputElement;
+    if (drums[2][i].checked === true) {
+      inputElement.checked = true;
+    }
+  }
+  for (let i = 0; i < drums[3].length; i++) {
+    const inputElement = stepsRef.current[3][i] as HTMLInputElement;
+    if (drums[3][i].checked === true) {
+      inputElement.checked = true;
+    }
+  }
+
   const lampsRef = React.useRef<HTMLInputElement[]>([]);
   const machineRef = useRef<HTMLDivElement>(null);
-
-  function setLampState() {
-    const lampLights: { index: number; checked: boolean }[] = lampsRef.current.map((inputElement, index) => ({
-      index: index,
-      checked: inputElement.checked,
-    }));
-  
-    if (type === 'Verse') {
-      dispatch(setlampVerse(lampLights));
-    } else if (type === 'Chorus') {
-      dispatch(setlampChorus(lampLights));
-    } else if (type === 'Bridge') {
-      dispatch(setlampBridge(lampLights));
-    }
-  }
-
-  function setDrumState() {
-    const drumHits: Array<Array<{ index: number; checked: boolean }>> = stepsRef.current.map((row, rowIndex) =>
-      row.map((inputElement, columnIndex) => ({
-      index: columnIndex,
-      checked: inputElement.checked,
-    }))
-  );
-      if (type === 'Verse') {
-        dispatch(setDrumVerse(drumHits));
-      } else if (type === 'Chorus') {
-        dispatch(setDrumChorus(drumHits));
-      } else if (type === 'Bridge') {
-        dispatch(setDrumBridge(drumHits));
-      }
-  }
-
-  useEffect(() => {
-    let bassDrum: string = kick.replace(/\|/g, "");
-    let snareDrum: string = snare.replace(/\|/g, "");
-    let hiHat: string = hat.replace(/\|/g, "");
-
-    for (let i = 0; i < bassDrum.length; i++) {
-      if (bassDrum.charAt(i) === "x" || bassDrum.charAt(i) === "X") {
-        const inputElement = stepsRef.current[3][i] as HTMLInputElement;
-        inputElement.checked = true;
-      }
-    }
-
-    for (let i = 0; i < snareDrum.length; i++) {
-      if (snareDrum.charAt(i) === "y" || snareDrum.charAt(i) === "Y") {
-        const inputElement = stepsRef.current[2][i] as HTMLInputElement;
-        inputElement.checked = true;
-      }
-    }
-
-    for (let i = 0; i < hiHat.length; i++) {
-      if (hiHat.charAt(i) === "v" || hiHat.charAt(i) === "V") {
-        const inputElement = stepsRef.current[1][i] as HTMLInputElement;
-        inputElement.checked = true;
-      } else if (hiHat.charAt(i) === "w" || hiHat.charAt(i) === "W") {
-        const inputElement = stepsRef.current[0][i] as HTMLInputElement;
-        inputElement.checked = true;
-      }
-    }
-
-    setLampState()
-    setDrumState()
-  }, [kick, snare, hat]);
   
 
   let drumFractions: string[] = []
@@ -125,12 +90,12 @@ export default function DrumMachine({
   const tracks: string[] = ["Kick", "Snare", "Flair", "HiHat"]
 
   //Array of different sounds
-  const trackIds = [...Array(tracks.length).keys()] as const;
+  const trackIds = [...Array(tracks.length).keys()];
   //Array of beats
-  const stepIds = [...Array(numOfSteps).keys()] as const;
+  const stepIds = [...Array(numOfSteps).keys()];
   
   const handleStartClick = async () => {
-    const drumHits: Array<Array<{ index: number; checked: boolean }>> = stepsRef.current.map((row, rowIndex) =>
+    const drumHits: Array<Array<{ index: number; checked: boolean }>> = stepsRef.current.map((row) =>
     row.map((inputElement, columnIndex) => ({
       index: columnIndex,
       checked: inputElement.checked,
@@ -206,7 +171,6 @@ export default function DrumMachine({
                   lampsRef.current[stepId] = elm;
                 }}
                 className={styles.lamp__input}
-                onChange={setLampState}
               />
               <div className={styles.lamp__content} />
             </label>
@@ -216,7 +180,7 @@ export default function DrumMachine({
   
         {/* Renders buttons */}
         <div className={styles.cellList}>
-          {trackIds.map((trackId) => (
+          {trackIds.reverse().map((trackId) => (
             <div key={trackId} className={styles.row}>
               {stepIds.map((stepId) => {
                 const id = trackId + '-' + stepId;
@@ -236,7 +200,7 @@ export default function DrumMachine({
                         stepsRef.current[trackId][stepId] = elm;
                       }}
                       className={styles.cell__input}
-                      onChange={setDrumState}
+                      onChange={updateDrumState}
                     />
                     <div className={styles.cell__content} />
                   </label>

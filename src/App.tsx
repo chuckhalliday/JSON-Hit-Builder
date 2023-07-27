@@ -85,11 +85,6 @@ function App() {
                   part={index}/>
                   <DrumMachine
                     onRenderWidthChange={handleRenderWidthChange}
-                    numOfSteps={songProps.drumGroove.length}
-                    drumGroove={songProps.drumGroove}
-                    kick={songProps.kick}
-                    snare={songProps.snare}
-                    hat={songProps.hiHat}
                     type={songProps.type}
                     part={index}
                   />
