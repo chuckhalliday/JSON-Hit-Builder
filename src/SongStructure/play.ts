@@ -1,5 +1,5 @@
 import { sumArray, shuffleArray, subdivideArray } from "./groove.js";
-import { createDrums, kickString, snareString, hatString, flairString, } from "./drums.js";
+import { createDrums, drumArray, /*snareString, hatString, /*flairString, */ } from "./drums.js";
 import { primaryGroove, bassString1V, bassString2V, bassString3V, bassString4V,
 adjustBassString, bassString1B, bassString1C, bassString2C, bassString3C, bassString4C} from "./bass.js";
 import { createChords, chordString, adjustChordString } from "./chords.js";
@@ -9,7 +9,7 @@ import { adjustBassNotes, adjustChordNotes } from './playParts.js';
 import { generateSongStructure } from './songStructure.js';
 import { playSong } from './playSong.js'
 
-export const primaryBass: number[] = primaryGroove();
+const primaryBass: number[] = primaryGroove();
 const primaryBass2: number[] = primaryGroove();
 const bassPart1: number[] = Math.random() < 0.5 ? primaryBass : primaryBass2;
 const bassPart2: number[] = Math.random() < 0.5 ? primaryBass : primaryBass2;
@@ -20,6 +20,7 @@ const chorusBass: number[] = bassPart2.concat(bassPart1, bassPart4, bassPart3)
 const bridgeBass: number[] = bassPart4.concat(bassPart3, bassPart2, bassPart1)
 //let bassCount = sumArray(initBass);
 //console.log(bassCount);
+const drumHits: Array<Array<{ index: number; checked: boolean; accent: boolean }>> = [[]]
 const primaryDrums: number[] = createDrums(primaryBass);
 const primaryDrums2: number[] = createDrums(primaryBass2);
 const drumTrips1: number[] = subdivideArray(primaryDrums);
@@ -59,15 +60,13 @@ const melodyLine3V: string = melodyString(primaryMelody2, bassPart3, bassLine3V)
 const melodyLine4V: string = melodyString(primaryMelody, bassPart4, bassLine4V);
 const melodyV: string = melodyLine1V.concat(melodyLine2V + melodyLine3V + melodyLine4V);
 
-const bassDrum1V: string = kickString(drumPart1, bassPart1, bassLine1V);
-const bassDrum2V: string = kickString(drumPart2, bassPart2, bassLine2V);
-const bassDrum3V: string = kickString(drumPart3, bassPart3, bassLine3V);
-const bassDrum4V: string = kickString(drumPart4, bassPart4, bassLine4V);
-const bassDrumV: string = bassDrum1V.concat(bassDrum2V + bassDrum3V + bassDrum4V);
+const drumHitsVerse: { index: number; checked: boolean; accent?: boolean }[][] = Array.from({ length: 4 }, () => [])
 
-const snareDrumV: string = snareString(initDrums);
-const hiHatV: string = hatString(initDrums);
-const flairV: string = flairString(initDrums, snareDrumV, hiHatV);
+const bassDrum1V: { index: number; checked: boolean; accent?: boolean }[][] = drumArray(drumHitsVerse, drumPart1, bassPart1, bassLine1V);
+const bassDrum2V: { index: number; checked: boolean; accent?: boolean }[][] = drumArray(bassDrum1V, drumPart2, bassPart2, bassLine2V);
+const bassDrum3V: { index: number; checked: boolean; accent?: boolean }[][] = drumArray(bassDrum2V, drumPart3, bassPart3, bassLine3V);
+const drumVerse: { index: number; checked: boolean; accent?: boolean }[][] = drumArray(bassDrum3V, drumPart4, bassPart4, bassLine4V);
+
 
 //chorus
 
@@ -85,15 +84,13 @@ const melodyLine3C: string = melodyString(primaryMelody2, primaryBass2, bassLine
 const melodyLine4C: string = melodyString(primaryMelody, primaryBass, bassLine4C);
 const melodyC: string = melodyLine1C.concat(melodyLine2C + melodyLine3C + melodyLine4C);
 
-const bassDrum1C: string = kickString(drumPart2, bassPart2, bassLine1C);
-const bassDrum2C: string = kickString(drumPart1, bassPart1, bassLine2C);
-const bassDrum3C: string = kickString(drumPart4, bassPart4, bassLine3C);
-const bassDrum4C: string = kickString(drumPart3, bassPart3, bassLine4C);
-const bassDrumC: string = bassDrum1C.concat(bassDrum2C + bassDrum3C + bassDrum4C);
+const drumHitsChorus: { index: number; checked: boolean; accent?: boolean }[][] = Array.from({ length: 4 }, () => [])
 
-const snareDrumC: string = snareString(chorusDrums);
-const hiHatC: string = hatString(chorusDrums);
-const flairC: string = flairString(chorusDrums, snareDrumC, hiHatC);
+const bassDrum1C: { index: number; checked: boolean; accent?: boolean }[][] = drumArray(drumHitsChorus, drumPart2, bassPart2, bassLine1C);
+const bassDrum2C: { index: number; checked: boolean; accent?: boolean }[][] = drumArray(bassDrum1C, drumPart1, bassPart1, bassLine2C);
+const bassDrum3C: { index: number; checked: boolean; accent?: boolean }[][] = drumArray(bassDrum2C, drumPart4, bassPart4, bassLine3C);
+const drumChorus: { index: number; checked: boolean; accent?: boolean }[][] = drumArray(bassDrum3C, drumPart3, bassPart3, bassLine4C);
+
 
 //bridge
 
@@ -111,15 +108,13 @@ const melodyLine3B: string = melodyString(primaryMelody2, primaryBass2, bassLine
 const melodyLine4B: string = melodyString(primaryMelody, primaryBass, bassLine4B);
 const melodyB: string = melodyLine1B.concat(melodyLine2B + melodyLine3B + melodyLine4B);
 
-const bassDrum1B: string = kickString(drumPart4, bassPart4, bassLine1B);
-const bassDrum2B: string = kickString(drumPart3, bassPart3, bassLine2B);
-const bassDrum3B: string = kickString(drumPart2, bassPart2, bassLine3B);
-const bassDrum4B: string = kickString(drumPart1, bassPart1, bassLine4B);
-const bassDrumB: string = bassDrum1B.concat(bassDrum2B + bassDrum3B + bassDrum4B);
+const drumHitsBridge: { index: number; checked: boolean; accent?: boolean }[][] = Array.from({ length: 4 }, () => [])
 
-const snareDrumB: string = snareString(initDrums);
-const hiHatB: string = hatString(initDrums);
-const flairB: string = flairString(initDrums, snareDrumB, hiHatB);
+const bassDrum1B: { index: number; checked: boolean; accent?: boolean }[][] = drumArray(drumHitsBridge, drumPart4, bassPart4, bassLine1B);
+const bassDrum2B: { index: number; checked: boolean; accent?: boolean }[][] = drumArray(bassDrum1B, drumPart3, bassPart3, bassLine2B);
+const bassDrum3B: { index: number; checked: boolean; accent?: boolean }[][] = drumArray(bassDrum2B, drumPart2, bassPart2, bassLine3B);
+const drumBridge: { index: number; checked: boolean; accent?: boolean }[][] = drumArray(bassDrum3B, drumPart1, bassPart1, bassLine4B);
+
 
 let keyAdjust: number = setKey()
 console.log(keyAdjust)
@@ -158,9 +153,9 @@ const beatstotal: number = bps * songtime;
 const measures: number = Math.round(beatstotal / 4 / 4) * 4;
 const partsLength: number = measures / 8;
 const songStructure = generateSongStructure(partsLength, bassVA, initBass, bassCA, chorusBass, bassBA, bridgeBass,
-  flairV, hiHatV, snareDrumV, bassDrumV, initDrums,
-  flairC, hiHatC, snareDrumC, bassDrumC, chorusDrums,
-  flairB, hiHatB, snareDrumB, bassDrumB, bridgeDrums,
+  drumVerse, initDrums,
+  drumChorus, chorusDrums,
+  drumBridge, bridgeDrums,
   chordsVA, initChords, chordsCA, chorusChords, chordsBA, bridgeChords) 
 
   // Bass groove cleaned up for easy reading in console
@@ -396,7 +391,6 @@ export const songVariables = {
     songStructure: songStructure,
     bpm: bpm,
     key: key,
-    drumPart1: drumPart1,
     bassDrum1V: bassDrum1V,
     initDrums: initDrums, 
     initBass: initBass, 
@@ -407,22 +401,12 @@ export const songVariables = {
     bridgeDrums: bridgeDrums, 
     bridgeBass: bridgeBass, 
     bridgeChords: bridgeChords, 
-    bassDrumV: bassDrumV, 
-    snareDrumV: snareDrumV, 
-    hiHatV: hiHatV, 
-    flairV: flairV, 
+    drumVerse: drumVerse, 
     bassV: bassV, 
     chordsV: chordsV, 
-    bassDrumC: bassDrumC, 
-    snareDrumC: snareDrumC, 
-    hiHatC: hiHatC, 
-    flairC: flairC, 
+    drumChorus: drumChorus, 
     bassC: bassC, 
-    chordsC: chordsC, 
-    bassDrumB: bassDrumB, 
-    snareDrumB: snareDrumB, 
-    hiHatB: hiHatB, 
-    flairB: flairB, 
+    drumBridge: drumBridge,  
     bassB: bassB, 
     chordsB: chordsB
   }

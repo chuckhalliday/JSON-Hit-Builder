@@ -5,7 +5,7 @@ export async function countIn(bpm: number, initDrums: number[],
   stepsRef: Array<Array<{ index: number; checked: boolean }>>) {
   for (let i = 0; i < 1; i++) {
     await Promise.all([
-    playBeat(stepsRef[0], initDrums, bpm, stepsRef),
+    playBeat(stepsRef[2], initDrums, bpm, stepsRef),
   ])
   }
 }
@@ -15,17 +15,19 @@ export async function playVerse(bpm: number, verseDrumGroove: number[], verseDru
       for (let i = 0; i < 1; i++) {
         if (verseBass && verseBassGroove) {
           await Promise.all([
-            playBeat(verseDrums[3], verseDrumGroove, bpm, verseDrums, lamps),
+            playBeat(verseDrums[0], verseDrumGroove, bpm, verseDrums, lamps),
+            playBeat(verseDrums[1], verseDrumGroove, bpm, verseDrums),
             playBeat(verseDrums[2], verseDrumGroove, bpm, verseDrums),
-            playBeat(verseDrums[0], verseDrumGroove, bpm, verseDrums),
+            playBeat(verseDrums[3], verseDrumGroove, bpm, verseDrums),
             playBass(verseBass, verseBassGroove, bpm),
             //playChords(verseChords, verseChordGroove, bpm)
           ])
         } else {
           await Promise.all([
-            playBeat(verseDrums[3], verseDrumGroove, bpm, verseDrums, lamps),
+            playBeat(verseDrums[0], verseDrumGroove, bpm, verseDrums, lamps),
+            playBeat(verseDrums[1], verseDrumGroove, bpm, verseDrums),
             playBeat(verseDrums[2], verseDrumGroove, bpm, verseDrums),
-            playBeat(verseDrums[0], verseDrumGroove, bpm, verseDrums),
+            playBeat(verseDrums[3], verseDrumGroove, bpm, verseDrums),
           ])
         }
       }
@@ -36,17 +38,19 @@ chorusBassGroove?: number[], chorusBass?: {x: number, y: number }[], /* chorusCh
   for (let i = 0; i < 1; i++) {
     if (chorusBass && chorusBassGroove) {
       await Promise.all([
-        playBeat(chorusDrums[3], chorusDrumGroove, bpm, chorusDrums, lamps),
+        playBeat(chorusDrums[0], chorusDrumGroove, bpm, chorusDrums, lamps),
+        playBeat(chorusDrums[1], chorusDrumGroove, bpm, chorusDrums),
         playBeat(chorusDrums[2], chorusDrumGroove, bpm, chorusDrums),
-        playBeat(chorusDrums[0], chorusDrumGroove, bpm, chorusDrums),
+        playBeat(chorusDrums[3], chorusDrumGroove, bpm, chorusDrums),
         playBass(chorusBass, chorusBassGroove, bpm),
         //playChords(chorusChords, chorusChordGroove, bpm)
       ])
     } else {
       await Promise.all([
-        playBeat(chorusDrums[3], chorusDrumGroove, bpm, chorusDrums, lamps),
+        playBeat(chorusDrums[0], chorusDrumGroove, bpm, chorusDrums, lamps),
+        playBeat(chorusDrums[1], chorusDrumGroove, bpm, chorusDrums),
         playBeat(chorusDrums[2], chorusDrumGroove, bpm, chorusDrums),
-        playBeat(chorusDrums[0], chorusDrumGroove, bpm, chorusDrums),
+        playBeat(chorusDrums[3], chorusDrumGroove, bpm, chorusDrums),
       ])
     }
   }
@@ -57,17 +61,19 @@ bridgeBassGroove?: number[], bridgeBass?: {x: number, y: number }[], /* bridgeCh
     for (let i = 0; i < 1; i++) {
       if (bridgeBass && bridgeBassGroove) {
         await Promise.all([
-          playBeat(bridgeDrums[3], bridgeDrumGroove, bpm, bridgeDrums, lamps),
+          playBeat(bridgeDrums[0], bridgeDrumGroove, bpm, bridgeDrums, lamps),
+          playBeat(bridgeDrums[1], bridgeDrumGroove, bpm, bridgeDrums),
           playBeat(bridgeDrums[2], bridgeDrumGroove, bpm, bridgeDrums),
-          playBeat(bridgeDrums[0], bridgeDrumGroove, bpm, bridgeDrums),
+          playBeat(bridgeDrums[3], bridgeDrumGroove, bpm, bridgeDrums),
           playBass(bridgeBass, bridgeBassGroove, bpm),
           //playChords(bridgeChords, bridgeChordGroove, bpm)
         ])
       } else {
         await Promise.all([
-          playBeat(bridgeDrums[3], bridgeDrumGroove, bpm, bridgeDrums, lamps),
+          playBeat(bridgeDrums[0], bridgeDrumGroove, bpm, bridgeDrums, lamps),
+          playBeat(bridgeDrums[1], bridgeDrumGroove, bpm, bridgeDrums),
           playBeat(bridgeDrums[2], bridgeDrumGroove, bpm, bridgeDrums),
-          playBeat(bridgeDrums[0], bridgeDrumGroove, bpm, bridgeDrums),
+          playBeat(bridgeDrums[3], bridgeDrumGroove, bpm, bridgeDrums),
         ])
       }
     }

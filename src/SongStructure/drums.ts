@@ -19,77 +19,83 @@ export function createDrums(bassGroove: number[]) {
   return drumArr;
 }
 
-export function kickString(drumBeat: number[], bassBeat: number[], bassString: string[]) {
-  let kick = "";
-  let kickSum = 0;
+
+export function drumArray(drumHits: { index: number; checked: boolean; accent?: boolean }[][], drumBeat: number[], bassBeat: number[], bassString: string[]) {
+  let drumSum = 0;
   let bassSum = 0;
   let bassBeatIndex = 0;
+  let count = drumHits[0].length
 
   for (let i = 0; i < drumBeat.length; i++) {
     const note = bassString[bassBeatIndex];
-    if (kickSum.toFixed(1) === bassSum.toFixed(1)) {
+    if (drumSum.toFixed(1) === bassSum.toFixed(1)) {
       bassSum += bassBeat[bassBeatIndex];
-      if (kickSum === 0) {
-        kick += "X";
+      if (drumSum === 0) {
+        drumHits[0].push({ index: i + count, checked: true, accent: true})
       } else if (note === "-") {
-        kick += Math.random() < 0.85 ? "-" : "x";
+        Math.random() < 0.85 ? drumHits[0].push({ index: i + count, checked: false, accent: false}) : drumHits[0].push({ index: i + count, checked: true, accent: false});
       } else if (note !== "|" && note !== "-") {
-        kick += Math.random() < 0.85 ? "x" : "-";
+        Math.random() < 0.85 ? drumHits[0].push({ index: i + count, checked: true, accent: false}) : drumHits[0].push({ index: i + count, checked: false, accent: false});
+      } 
+    } else {
+      drumHits[0].push({ index: i + count, checked: false, accent: false})
+    }
+      if (Number.isInteger(drumSum + 0.5)) {
+      Math.random() < 0.85 ? drumHits[1].push({ index: i + count, checked: true, accent: false}) : drumHits[1].push({ index: i + count, checked: false, accent: false});
+    } else {
+      Math.random() < 0.85 ? drumHits[1].push({ index: i + count, checked: false, accent: false}) : drumHits[1].push({ index: i + count, checked: true, accent: false});
+    }
+    if (drumBeat[i] === 0.08 || drumBeat[i] === 0.09 ||
+        drumBeat[i] === 0.16 || drumBeat[i] === 0.17) {
+        Math.random() < 0.5 ? (drumHits[2].push({ index: i + count, checked: true, accent: true}), drumHits[3].push({ index: i + count, checked: false, accent: false})) : (drumHits[3].push({ index: i + count, checked: true, accent: false}), drumHits[2].push({ index: i + count, checked: false, accent: false}));
+      } else if (Math.abs(drumSum % 0.5 - Math.round(drumSum % 0.5)) <= 0.1) {
+        drumHits[2].push({ index: i + count, checked: true, accent: false})
+        drumHits[3].push({ index: i + count, checked: false, accent: false})
+      } else {
+        drumHits[2].push({ index: i + count, checked: false, accent: false})
+        drumHits[3].push({ index: i + count, checked: false, accent: false})
       }
-      if (kickSum < 4) {
+      drumSum += drumBeat[i]
+      if (drumSum < 4) {
         bassBeatIndex++;
       }
-    } else {
-      kick += "-";
-    }
-    kickSum += drumBeat[i];
   }
-  if (Number.isInteger(kickSum / 8)) {
-    kick += "|";
-  }
-  return kick;
+  return drumHits
 }
 
-export function snareString(drumBeat: number[]) {
-  let snare = "";
+/*export function snareString(drumHits: Array<Array<{ index: number; checked: boolean; accent: boolean }>>, drumBeat: number[]) {
   let sum = 0;
 
   for (let i = 0; i < drumBeat.length; i++) {
     if (Number.isInteger(sum + 0.5)) {
-      snare += Math.random() < 0.85 ? "y" : "-";
+      Math.random() < 0.85 ? drumHits[1].push({ index: i, checked: true, accent: false}) : drumHits[1].push({ index: i, checked: false, accent: false});
     } else {
-      snare += Math.random() < 0.85 ? "-" : "y";
+      Math.random() < 0.85 ? drumHits[1].push({ index: i, checked: false, accent: false}) : drumHits[1].push({ index: i, checked: true, accent: false});
     }
     sum += drumBeat[i];
-    if (Math.abs(sum / 8 - Math.round(sum / 8)) <= 0.005) {
-      snare += "|";
-    }
   }
-  return snare;
+  return drumHits
 }
 
-export function hatString(drumBeat: number[]) {
-  let hihat = "";
+export function hatString(drumHits: Array<Array<{ index: number; checked: boolean; accent: boolean }>>, drumBeat: number[]) {
   let sum = 0;
 
   for (let i = 0; i < drumBeat.length; i++) {
     if (drumBeat[i] === 0.08 || drumBeat[i] === 0.09 ||
       drumBeat[i] === 0.16 || drumBeat[i] === 0.17) {
-      hihat += Math.random() < 0.5 ? "V" : "w";
+      Math.random() < 0.5 ? drumHits[2].push({ index: i, checked: true, accent: true}) : drumHits[3].push({ index: i, checked: true, accent: false});
     } else if (Math.abs(sum % 0.5 - Math.round(sum % 0.5)) <= 0.1) {
-      hihat += "v";
+      drumHits[2].push({ index: i, checked: true, accent: false})
     } else {
-      hihat += "-";
+      drumHits[2].push({ index: i, checked: false, accent: false})
+      drumHits[3].push({ index: i, checked: false, accent: false})
     }
     sum += drumBeat[i];
-    if (Math.abs(sum / 8 - Math.round(sum / 8)) <= 0.005) {
-      hihat += "|";
-    }
   }
-  return hihat;
+  return drumHits
 }
 
-export function flairString(drumBeat: number[], snareString: string, hihatString: string) {
+/*export function flairString(drumBeat: number[], snareString: string, hihatString: string) {
   let flair = "";
   let sum = 0;
   let snare = snareString.replace(/\|/g, '');
@@ -127,4 +133,4 @@ export function flairString(drumBeat: number[], snareString: string, hihatString
     }
   }
   return flair;
-}
+} */

@@ -1,4 +1,4 @@
-$cellHeight: 40px;
+$cellHeight: 20px;
 $rowGap: 8px;
 
 
@@ -93,7 +93,7 @@ $rowGap: 8px;
   top: 0;
  /* Adjust this value to position the line */
   left: 50px;
-  height: 100%;
+  height: 140%;
   width: 3px;
   background-color: black;
 }
@@ -113,7 +113,7 @@ $rowGap: 8px;
     @include invisibleInput;
 
     &:checked + #{$cell}__content {
-      background-color: #005da5;
+      background-color: #eb1717;
     }
 
     &:focus-visible + #{$cell}__content {
@@ -150,8 +150,8 @@ $rowGap: 8px;
   border: none;
   cursor: pointer;
   appearance: none;
-  background-color: #005da5;
-  color: white;
+  background-color: #20e72d;
+  color: black;
   width: 80px;
   line-height: 2;
   border-radius: 4px;

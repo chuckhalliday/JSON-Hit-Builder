@@ -44,15 +44,55 @@
     margin-left: 16px;
   }
 
+/* Define standard appearance for range input */
+input[type="range"] {
+  -webkit-appearance: none; /* Safari and Chrome */
+  -moz-appearance: none; /* Firefox */
+  appearance: none; /* Standard */
+  width: 25%;
+  height: 8px;
+  border-radius: 5px;
+  background: linear-gradient(to right, blue, rgb(187, 187, 254)) no-repeat center;
+  background-size: calc(((100% - 8px) / 150) * var(--value)) 100%;
+}
+
+/* Define standard appearance for range input thumb */
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none; /* Safari and Chrome */
+  appearance: none; /* Standard */
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: black;
+  cursor: pointer;
+  margin-top: -1px;
+}
+
+/* Define standard appearance for range input thumb in Firefox */
+input[type="range"]::-moz-range-thumb {
+  -moz-appearance: none;
+  appearance: none; /* Standard */
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: black;
+  cursor: pointer;
+  margin-top: -1px;
+}
+
   .button {
     border: none;
     cursor: pointer;
     appearance: none;
-    background-color: #005da5;
-    color: white;
+    background-color: #20e72d;
+    color: black;
     width: 80px;
     line-height: 2;
     border-radius: 4px;
     font-weight: 700;
     transition: background-color 0.3s;
+
+    &:hover {
+      background-color: #4281b2;
+    }
   }

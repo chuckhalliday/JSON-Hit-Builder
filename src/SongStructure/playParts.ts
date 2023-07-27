@@ -108,23 +108,28 @@ export async function playBeat(pattern: Array<{ index: number; checked: boolean 
       ? groove[index] * beatDuration * swingRatio
       : groove[index] * beatDuration;
       if (lamps) {
-        const lampsCopy = lamps.slice()
         lamps[index].checked = true;
       }
-      if (pattern ===  stepsRef[3] && pattern[index].checked) {
-        loadSoundFile("../kick.wav", (buffer: AudioBuffer) => {
+      if (pattern ===  stepsRef[0] && pattern[index].checked) {
+        loadSoundFile("../kick.mp3", (buffer: AudioBuffer) => {
           playSound(buffer);
         });
         await wait(duration)
         //output.sendMessage([128, drum, release])
-      } else if (pattern ===  stepsRef[2]&& pattern[index].checked) {
-        loadSoundFile("../snare.wav", (buffer: AudioBuffer) => {
+      } else if (pattern ===  stepsRef[1]&& pattern[index].checked) {
+        loadSoundFile("../snare.mp3", (buffer: AudioBuffer) => {
           playSound(buffer);
         });
         await wait(duration)
         //output.sendMessage([128, drum, release])
-      } else if (pattern ===  stepsRef[0] && pattern[index].checked) {
-        loadSoundFile("../hat-closed.wav", (buffer: AudioBuffer) => {
+      } else if (pattern ===  stepsRef[2] && pattern[index].checked) {
+        loadSoundFile("../hihatC.mp3", (buffer: AudioBuffer) => {
+          playSound(buffer);
+        });
+        await wait(duration)
+        //output.sendMessage([128, drum, release])
+      } else if (pattern ===  stepsRef[3] && pattern[index].checked) {
+        loadSoundFile("../hihatO.mp3", (buffer: AudioBuffer) => {
           playSound(buffer);
         });
         await wait(duration)
