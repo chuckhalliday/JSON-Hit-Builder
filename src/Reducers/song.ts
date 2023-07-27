@@ -37,9 +37,9 @@ const song = createSlice({
         console.log(action);
         state.songStructure[action.payload.index].bassNoteLocations = action.payload.bassNoteLocations;
       },
-      setDrumState: (state, action: PayloadAction<{ index: number, drums: { index: number, checked: boolean, accent?: boolean }[][] }>) => {
+      setDrumState: (state, action: PayloadAction<{ index: number, drumPart: number, drumStep: number, drums: { index: number, checked: boolean, accent?: boolean } }>) => {
         console.log(action);
-        state.songStructure[action.payload.index].drums = action.payload.drums;
+        state.songStructure[action.payload.index].drums[action.payload.drumPart][action.payload.drumStep] = action.payload.drums;
       },
     },
   });

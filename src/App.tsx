@@ -45,10 +45,6 @@ function App() {
     setRenderWidth(width);
   };
 
-  let verseLamps: HTMLInputElement[]
-  let chorusLamps: HTMLInputElement[]
-  let bridgeLamps: HTMLInputElement[]
-
  /* const handleStartClick = async () => {
     if (isPlaying) {
       setIsPlaying(false);

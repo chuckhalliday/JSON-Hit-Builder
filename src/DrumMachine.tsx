@@ -23,14 +23,12 @@ export default function DrumMachine({
   const drumGroove = useSelector((state: any) => state.song.songStructure[part].drumGroove);
   const numOfSteps = drumGroove.length
 
-  function updateDrumState() {
-    const drumHits = stepsRef.current.map((row, rowIndex) =>
-      row.map((inputElement, columnIndex) => ({
-        index: columnIndex,
-        checked: inputElement.checked,
-      }))
-    );
-    dispatch(setDrumState({ index: part, drums: drumHits }));
+  function updateDrumState(trackId: number, stepId: number) {
+    const drumHits = {
+      index: stepId,
+      checked: stepsRef.current[trackId][stepId].checked
+    }
+    dispatch(setDrumState({ index: part, drumPart: trackId, drumStep: stepId, drums: drumHits }));
   }
 
   const stepsRef = React.useRef<HTMLInputElement[][]>(
@@ -64,6 +62,7 @@ export default function DrumMachine({
       inputElement.checked = true;
     }
   }
+
 
   const lampsRef = React.useRef<HTMLInputElement[]>([]);
   const machineRef = useRef<HTMLDivElement>(null);
@@ -200,7 +199,7 @@ export default function DrumMachine({
                         stepsRef.current[trackId][stepId] = elm;
                       }}
                       className={styles.cell__input}
-                      onChange={updateDrumState}
+                      onChange={() => updateDrumState(trackId, stepId)}
                     />
                     <div className={styles.cell__content} />
                   </label>
