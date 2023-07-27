@@ -33,10 +33,17 @@ function App() {
   const dispatch = useDispatch()
 
   const handlePartOpen = (key: string) => {
-    setOpenedParts((prevState) => ({
-      ...prevState,
-      [key]: !prevState[key]
-    }));
+    const updatedOpenedParts: { [key: string]: boolean } = {};
+
+    updatedOpenedParts[key] = !openedParts[key];
+
+    for (const partKey in openedParts) {
+      if (partKey !== key) {
+        updatedOpenedParts[partKey] = false;
+      }
+    }
+
+    setOpenedParts(updatedOpenedParts);
   };
 
   const [renderWidth, setRenderWidth] = useState(0);
@@ -81,7 +88,6 @@ function App() {
                   part={index}/>
                   <DrumMachine
                     onRenderWidthChange={handleRenderWidthChange}
-                    type={songProps.type}
                     part={index}
                   />
                 </div>
