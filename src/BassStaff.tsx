@@ -252,7 +252,7 @@ export default function BassStaff({ renderWidth, part }: BassStaffProps) {
       <canvas ref={canvasRef} id="myCanvas" />
       {/* Renders controls */}
       <div className={styles.controls}>
-          <button onClick={handleStartClick} className={styles.button}>
+          <button onClick={handleStartClick} onTouchStart={handleStartClick} className={styles.button}>
             {isPlaying ? "Pause" : "Start"}
           </button>
       </div>
