@@ -1,4 +1,5 @@
 import React, { useState } from 'react'
+import Info from './Info';
 import DrumMachine from "./DrumMachine";
 import BassStaff from "./BassStaff";
 import { useSelector, useDispatch } from "react-redux"
@@ -12,6 +13,7 @@ import styles from "./App.module.scss"
 function App() {
   const [openedParts, setOpenedParts] = useState<{ [key: string]: boolean }>({});
   const [isPlaying, setIsPlaying] = React.useState(false);
+  const [showInfoScreen, setShowInfoScreen] = useState(true);
 
   const songStructure = songVariables.songStructure
   const bpm = useSelector((state: { song: { bpm: number } }) => state.song.bpm);
@@ -44,6 +46,8 @@ function App() {
     }
 
     setOpenedParts(updatedOpenedParts);
+    const anyPartOpen = Object.values(updatedOpenedParts).some((isOpen) => isOpen);
+    setShowInfoScreen(!anyPartOpen);
   };
 
   const [renderWidth, setRenderWidth] = useState(0);
@@ -96,6 +100,9 @@ function App() {
           );
         return songParts;
       })}
+      <div className={styles.info}>
+      {showInfoScreen && <Info />}
+      </div>
       {/* Renders controls */}
       <div className={styles.controls}>
       <button /*onClick={handleStartClick}*/ className={styles.button}>
