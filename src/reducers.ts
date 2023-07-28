@@ -1,8 +1,9 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 import { songVariables } from "./SongStructure/play";
 
-interface SongState {
+export interface SongState {
     bpm: number,
+    key: string,
     songStructure: {
         type: string;
         repeat: number;
@@ -19,6 +20,7 @@ interface SongState {
             accent?: boolean;
         }[][];
         drumGroove: number[];
+        stepIds: number[];
         chords: string;
         chordsGroove: number[];
     }[]  
@@ -26,6 +28,7 @@ interface SongState {
 
 const initialState: SongState = {
     bpm: songVariables.bpm,
+    key: songVariables.key,
     songStructure: songVariables.songStructure
 };
 

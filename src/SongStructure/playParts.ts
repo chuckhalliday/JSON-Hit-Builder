@@ -202,7 +202,7 @@ export async function playBass(pattern: {x: number, y: number}[], groove: number
       const harmonics = [1.5, 2, 3]; // Additional harmonics
       const harmonicGains = [0.2, 0.1, 0.05]; // Gain values for harmonics
 
-      osc.type = "sine"; // Use a sine waveform
+      osc.type = "sawtooth"; // Use a sine waveform
       osc.frequency.value = fundamentalFreq;
 
       osc.connect(gainNode);
