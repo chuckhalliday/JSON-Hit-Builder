@@ -386,6 +386,17 @@ songStructure.forEach(part => {
   bassDrumB, snareDrumB, hiHatB, flairB, bassB, chordsB);
 */
 
+let totalSteps: number = 0
+for (let i = 0; i < songStructure.length; i++) {
+  totalSteps += songStructure[i].drumGroove.length
+}
+const allStepIds = [...Array(totalSteps).keys()]
+
+for (let i = 0; i < songStructure.length; i++) {
+  let stepIds = allStepIds.splice(0, songStructure[i].drumGroove.length)
+  songStructure[i].stepIds = stepIds
+}
+
 export const songVariables = {
     songStructure: songStructure,
     bpm: bpm,

@@ -21,6 +21,7 @@ chordsVA: string, chordsGrooveV: number[], chordsCA: string, chordsGrooveC: numb
     }[];
     drums: { index: number; checked: boolean; accent?: boolean }[][]
     drumGroove: number[];
+    stepIds: number[];
     chords: string;
     chordsGroove: number[];
 }[] = [];
@@ -67,7 +68,7 @@ chordsVA: string, chordsGrooveV: number[], chordsCA: string, chordsGrooveC: numb
   for (let i = 0; i < randomPartLength; i++) {
   verseCount++
   songStructure.push({ type: 'Verse', repeat: verseCount, bass: bassVA, bassGroove: bassGrooveV, bassGrid: bassGrid, bassNoteLocations: bassNoteLocations,
-  drums: drumVerse, drumGroove: drumGrooveV, chords: chordsVA, chordsGroove: chordsGrooveB });
+  drums: drumVerse, drumGroove: drumGrooveV, stepIds: [], chords: chordsVA, chordsGroove: chordsGrooveB });
   }
   remainingParts -= randomPartLength;
   lastPartType = 'Verse'
@@ -145,7 +146,7 @@ chordsVA: string, chordsGrooveV: number[], chordsCA: string, chordsGrooveC: numb
         repeat = 0
       }
     songStructure.push({ type: randomPartType, repeat: repeat, bass: partBass, bassGroove: partBassGroove, bassGrid: bassGrid, bassNoteLocations: bassNoteLocations,
-      drums: partDrums, drumGroove: partDrumsGroove, chords: partChords, chordsGroove: partChordsGroove });
+      drums: partDrums, drumGroove: partDrumsGroove, stepIds: [], chords: partChords, chordsGroove: partChordsGroove });
     }
     remainingParts -= randomPartLength;
     lastPartType = randomPartType;

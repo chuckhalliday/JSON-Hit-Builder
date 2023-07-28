@@ -1,9 +1,8 @@
-import React, { useState } from 'react'
+import React, { useState, useRef } from 'react'
 import Info from './Info';
 import DrumMachine from "./DrumMachine";
 import BassStaff from "./BassStaff";
 import { useSelector, useDispatch } from "react-redux"
-import { songVariables } from './SongStructure/play';
 import { playSong } from './SongStructure/playSong';
 import { incrementByAmount } from './reducers';
 
@@ -15,22 +14,32 @@ function App() {
   const [isPlaying, setIsPlaying] = React.useState(false);
   const [showInfoScreen, setShowInfoScreen] = useState(true);
 
-  const songStructure = songVariables.songStructure
+  const song = useSelector((state: { song: {
+    bpm: number,
+    key: string,
+    songStructure: {
+        type: string;
+        repeat: number;
+        bass: string[];
+        bassGroove: number[];
+        bassGrid: number[];
+        bassNoteLocations: {
+            x: number;
+            y: number;
+        }[];
+        drums: {
+            index: number;
+            checked: boolean;
+            accent?: boolean;
+        }[][];
+        drumGroove: number[];
+        chords: string;
+        chordsGroove: number[];
+    }[]  
+} }) => state.song)
   const bpm = useSelector((state: { song: { bpm: number } }) => state.song.bpm);
-  /*const verseDrums = useSelector((state: { drumLine: { drumVerse: Array<Array<{ index: number; checked: boolean }>> }}) => state.drumLine.drumVerse)
-  const verseDrumGroove = useSelector((state: { drumGroove: { verseGroove: number[] }}) => state.drumGroove.verseGroove)
-  const verseBass = useSelector((state: { song: { songStructure: Array<{ x: number; y: number }> }}) => state.bassLine.bassVerse)
-  const verseBassGroove = useSelector((state: { bassGroove: { verseGroove: number[] }}) => state.bassGroove.verseGroove)
 
-  const chorusDrums = useSelector((state: { drumLine: { drumChorus: Array<Array<{ index: number; checked: boolean }>> }}) => state.drumLine.drumChorus)
-  const chorusDrumGroove = useSelector((state: { drumGroove: { chorusGroove: number[] }}) => state.drumGroove.chorusGroove)
-  const chorusBass = useSelector((state: { bassLine: { bassChorus: Array<{ x: number; y: number }> }}) => state.bassLine.bassChorus)
-  const chorusBassGroove = useSelector((state: { bassGroove: { chorusGroove: number[] }}) => state.bassGroove.chorusGroove)
-
-  const bridgeDrums = useSelector((state: { drumLine: { drumBridge: Array<Array<{ index: number; checked: boolean }>> }}) => state.drumLine.drumBridge)
-  const bridgeDrumGroove =useSelector((state: { drumGroove: { bridgeGroove: number[] }}) => state.drumGroove.bridgeGroove)
-  const bridgeBass = useSelector((state: { bassLine: { bassBridge: Array<{ x: number; y: number }> }}) => state.bassLine.bassBridge) 
-  const bridgeBassGroove = useSelector((state: { bassGroove: { bridgeGroove: number[] }}) => state.bassGroove.bridgeGroove) */
+  //const lampsRef = React.useRef<HTMLInputElement[]>([]);
 
   const dispatch = useDispatch()
 
@@ -56,26 +65,19 @@ function App() {
     setRenderWidth(width);
   };
 
- /* const handleStartClick = async () => {
+ const handleStartClick = async () => {
     if (isPlaying) {
       setIsPlaying(false);
     } else {
-   playSong(songStructure, bpm,
-  verseDrums, verseDrumGroove, 
-  verseBass, verseBassGroove,
-  chorusDrums,chorusDrumGroove,  
-  chorusBass, chorusBassGroove,
-  bridgeDrums, bridgeDrumGroove, 
-  bridgeBass, bridgeBassGroove,
-  verseLamps, chorusLamps, bridgeLamps)
+   playSong(song)
       setIsPlaying(true);
     }
-  }; */
+  };
 
   return (
     <div className={styles.rowContainer}>
-      <div className={styles.key}>Key of : {songVariables.key}</div>
-      {songStructure.map((songProps, index) => {
+      <div className={styles.key}>Key of : {song.key}</div>
+      {song.songStructure.map((songProps, index) => {
         const songParts = [];
           const key = `${index}`;
           const isOpen = openedParts[key];
@@ -105,7 +107,7 @@ function App() {
       </div>
       {/* Renders controls */}
       <div className={styles.controls}>
-      <button /*onClick={handleStartClick}*/ className={styles.button}>
+      <button onClick={handleStartClick} className={styles.button}>
           {isPlaying ? "Pause" : "Start"}
         </button>
         <label className={styles.fader}>

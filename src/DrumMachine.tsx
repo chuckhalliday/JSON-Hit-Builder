@@ -1,6 +1,6 @@
 import React, { useEffect, useRef } from "react";
-import { playVerse } from "./SongStructure/playSong";
-import { setDrumState } from "./reducers";
+import { playDrums } from "./SongStructure/playSong";
+import { setDrumState, SongState } from "./reducers";
 import { useDispatch, useSelector } from "react-redux";
 import styles from "./DrumMachine.module.scss";
 
@@ -13,9 +13,10 @@ export default function DrumMachine({ onRenderWidthChange, part }: Props) {
   const [isPlaying, setIsPlaying] = React.useState(false);
   const dispatch = useDispatch()
 
-  const bpm = useSelector((state: { song: { bpm: number } }) => state.song.bpm);
-  const drums = useSelector((state: { song: { songStructure: { drums: {index: number; checked: boolean; accent?: boolean;}[][]}[]}}) => state.song.songStructure[part].drums);
-  const drumGroove = useSelector((state: { song: { songStructure: { drumGroove: number[]}[]}}) => state.song.songStructure[part].drumGroove);
+  const bpm = useSelector((state: { song: SongState }) => state.song.bpm);
+  const drums = useSelector((state: { song: SongState }) => state.song.songStructure[part].drums);
+  const steps = useSelector((state: { song: SongState }) => state.song.songStructure[part].stepIds);
+  const drumGroove = useSelector((state: { song: SongState }) => state.song.songStructure[part].drumGroove);
   const numOfSteps = drumGroove.length
 
 
@@ -74,8 +75,8 @@ export default function DrumMachine({ onRenderWidthChange, part }: Props) {
   //Array of different sounds
   const trackIds = [...Array(tracks.length).keys()];
   //Array of beats
-  const stepIds = [...Array(numOfSteps).keys()];
-  
+  const stepIds = [...steps.keys()]
+
   const handleStartClick = async () => {
     const drumHits: Array<Array<{ index: number; checked: boolean }>> = stepsRef.current.map((row) =>
     row.map((inputElement, columnIndex) => ({
@@ -86,7 +87,7 @@ export default function DrumMachine({ onRenderWidthChange, part }: Props) {
     if (isPlaying) {
       setIsPlaying(false);
     } else {
-     playVerse(bpm, drumGroove, drumHits, lampsRef.current);
+     playDrums(bpm, drumGroove, drumHits, lampsRef.current);
       setIsPlaying(true);
     }
   };
