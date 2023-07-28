@@ -30,20 +30,25 @@ export function drumArray(drumHits: { index: number; checked: boolean; accent?: 
     const note = bassString[bassBeatIndex];
     if (drumSum.toFixed(1) === bassSum.toFixed(1)) {
       bassSum += bassBeat[bassBeatIndex];
+      bassBeatIndex++;
       if (drumSum === 0) {
         drumHits[0].push({ index: i + count, checked: true, accent: true})
-      } else if (note === "-") {
-        Math.random() < 0.85 ? drumHits[0].push({ index: i + count, checked: false, accent: false}) : drumHits[0].push({ index: i + count, checked: true, accent: false});
+      } else if (Number.isInteger(drumSum)) {
+        Math.random() < 0.95 ? drumHits[0].push({ index: i + count, checked: true, accent: false}) : drumHits[0].push({ index: i + count, checked: false, accent: false});
+      }else if (note === "-") {
+        Math.random() < 0.9 ? drumHits[0].push({ index: i + count, checked: false, accent: false}) : drumHits[0].push({ index: i + count, checked: true, accent: false});
       } else if (note !== "|" && note !== "-") {
-        Math.random() < 0.85 ? drumHits[0].push({ index: i + count, checked: true, accent: false}) : drumHits[0].push({ index: i + count, checked: false, accent: false});
+        Math.random() < 0.6 ? drumHits[0].push({ index: i + count, checked: true, accent: false}) : drumHits[0].push({ index: i + count, checked: false, accent: false});
       } 
-    } else {
+    } else if (Number.isInteger(drumSum)) {
+      Math.random() < 0.9 ? drumHits[0].push({ index: i + count, checked: true, accent: false}) : drumHits[0].push({ index: i + count, checked: false, accent: false});
+    }else {
       drumHits[0].push({ index: i + count, checked: false, accent: false})
     }
       if (Number.isInteger(drumSum + 0.5)) {
-      Math.random() < 0.85 ? drumHits[1].push({ index: i + count, checked: true, accent: false}) : drumHits[1].push({ index: i + count, checked: false, accent: false});
+      Math.random() < 0.8 ? drumHits[1].push({ index: i + count, checked: true, accent: false}) : drumHits[1].push({ index: i + count, checked: false, accent: false});
     } else {
-      Math.random() < 0.85 ? drumHits[1].push({ index: i + count, checked: false, accent: false}) : drumHits[1].push({ index: i + count, checked: true, accent: false});
+      Math.random() < 0.9 ? drumHits[1].push({ index: i + count, checked: false, accent: false}) : drumHits[1].push({ index: i + count, checked: true, accent: false});
     }
     if (drumBeat[i] === 0.08 || drumBeat[i] === 0.09 ||
         drumBeat[i] === 0.16 || drumBeat[i] === 0.17) {
@@ -56,9 +61,6 @@ export function drumArray(drumHits: { index: number; checked: boolean; accent?: 
         drumHits[3].push({ index: i + count, checked: false, accent: false})
       }
       drumSum += drumBeat[i]
-      if (drumSum < 4) {
-        bassBeatIndex++;
-      }
   }
   return drumHits
 }
