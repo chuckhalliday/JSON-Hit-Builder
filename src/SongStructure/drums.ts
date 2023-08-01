@@ -26,73 +26,65 @@ export function drumArray(drumHits: { index: number; checked: boolean; accent?: 
   let bassBeatIndex = 0;
   let count = drumHits[0].length
 
+  const [kick, snare, lowTom, midTom, highTom, hiHatC, hiHatO, ride, crash] = [0, 1, 2, 3, 4, 5, 6, 7, 8]
+
+  const pushHit = (drum: number, beat: number) => {
+    drumHits[drum].push({ index: beat + count, checked: true, accent: false })
+  }
+  const pushAccent = (drum: number, beat: number) => {
+    drumHits[drum].push({ index: beat + count, checked: true, accent: true })
+  }
+
+  const pushRest = (drum: number, beat: number) => {
+    drumHits[drum].push({ index: beat + count, checked: false, accent: false })
+  }
+
   for (let i = 0; i < drumBeat.length; i++) {
     const note = bassString[bassBeatIndex];
     if (drumSum.toFixed(1) === bassSum.toFixed(1)) {
       bassSum += bassBeat[bassBeatIndex];
       bassBeatIndex++;
       if (drumSum === 0) {
-        drumHits[0].push({ index: i + count, checked: true, accent: true})
+        pushAccent(kick, i)
       } else if (Number.isInteger(drumSum)) {
-        Math.random() < 0.95 ? drumHits[0].push({ index: i + count, checked: true, accent: false}) : drumHits[0].push({ index: i + count, checked: false, accent: false});
+        Math.random() < 0.95 ? pushHit(kick, i) : pushRest(kick, i);
       }else if (note === "-") {
-        Math.random() < 0.9 ? drumHits[0].push({ index: i + count, checked: false, accent: false}) : drumHits[0].push({ index: i + count, checked: true, accent: false});
-      } else if (note !== "|" && note !== "-") {
-        Math.random() < 0.6 ? drumHits[0].push({ index: i + count, checked: true, accent: false}) : drumHits[0].push({ index: i + count, checked: false, accent: false});
+        Math.random() < 0.9 ? pushRest(kick, i) : pushHit(kick, i);
+      } else {
+        Math.random() < 0.6 ? pushHit(kick, i) : pushRest(kick, i);
       } 
     } else if (Number.isInteger(drumSum)) {
-      Math.random() < 0.9 ? drumHits[0].push({ index: i + count, checked: true, accent: false}) : drumHits[0].push({ index: i + count, checked: false, accent: false});
-    }else {
-      drumHits[0].push({ index: i + count, checked: false, accent: false})
-    }
-      if (Number.isInteger(drumSum + 0.5)) {
-      Math.random() < 0.8 ? drumHits[1].push({ index: i + count, checked: true, accent: false}) : drumHits[1].push({ index: i + count, checked: false, accent: false});
+      Math.random() < 0.9 ? pushHit(kick, i) : pushRest(kick, i);
     } else {
-      Math.random() < 0.9 ? drumHits[1].push({ index: i + count, checked: false, accent: false}) : drumHits[1].push({ index: i + count, checked: true, accent: false});
+      pushRest(kick, i)
     }
-    if (drumBeat[i] === 0.08 || drumBeat[i] === 0.09 ||
-        drumBeat[i] === 0.16 || drumBeat[i] === 0.17) {
-        Math.random() < 0.5 ? (drumHits[2].push({ index: i + count, checked: true, accent: true}), drumHits[3].push({ index: i + count, checked: false, accent: false})) : (drumHits[3].push({ index: i + count, checked: true, accent: false}), drumHits[2].push({ index: i + count, checked: false, accent: false}));
-      } else if (Math.abs(drumSum % 0.5 - Math.round(drumSum % 0.5)) <= 0.1) {
-        drumHits[2].push({ index: i + count, checked: true, accent: false})
-        drumHits[3].push({ index: i + count, checked: false, accent: false})
-      } else {
-        drumHits[2].push({ index: i + count, checked: false, accent: false})
-        drumHits[3].push({ index: i + count, checked: false, accent: false})
-      }
-      drumSum += drumBeat[i]
-  }
-  return drumHits
-}
-
-/*export function snareString(drumHits: Array<Array<{ index: number; checked: boolean; accent: boolean }>>, drumBeat: number[]) {
-  let sum = 0;
-
-  for (let i = 0; i < drumBeat.length; i++) {
-    if (Number.isInteger(sum + 0.5)) {
-      Math.random() < 0.85 ? drumHits[1].push({ index: i, checked: true, accent: false}) : drumHits[1].push({ index: i, checked: false, accent: false});
+    if (Number.isInteger(drumSum + 0.5)) {
+      Math.random() < 0.8 ? pushHit(snare, i) : pushRest(snare, i);
     } else {
-      Math.random() < 0.85 ? drumHits[1].push({ index: i, checked: false, accent: false}) : drumHits[1].push({ index: i, checked: true, accent: false});
+      Math.random() < 0.9 ? pushRest(snare, i) : pushHit(snare, i);
     }
-    sum += drumBeat[i];
-  }
-  return drumHits
-}
-
-export function hatString(drumHits: Array<Array<{ index: number; checked: boolean; accent: boolean }>>, drumBeat: number[]) {
-  let sum = 0;
-
-  for (let i = 0; i < drumBeat.length; i++) {
     if (drumBeat[i] === 0.08 || drumBeat[i] === 0.09 ||
       drumBeat[i] === 0.16 || drumBeat[i] === 0.17) {
-      Math.random() < 0.5 ? drumHits[2].push({ index: i, checked: true, accent: true}) : drumHits[3].push({ index: i, checked: true, accent: false});
-    } else if (Math.abs(sum % 0.5 - Math.round(sum % 0.5)) <= 0.1) {
-      drumHits[2].push({ index: i, checked: true, accent: false})
+      Math.random() < 0.5 ? (pushHit(hiHatC, i), pushRest(hiHatO, i)) : (pushHit(hiHatO, i), pushRest(hiHatC, i));
+    } else if (Math.abs(drumSum % 0.5 - Math.round(drumSum % 0.5)) <= 0.1) {
+      pushHit(hiHatC, i)
+      pushRest(hiHatO, i)
     } else {
-      drumHits[2].push({ index: i, checked: false, accent: false})
-      drumHits[3].push({ index: i, checked: false, accent: false})
+      pushRest(hiHatC, i)
+      pushRest(hiHatO, i)
     }
-    sum += drumBeat[i];
+    if (drumSum === 7.75 || drumSum === 23.75) {
+      Math.random() < 0.3 ? pushHit(crash, i) : pushRest(crash, i);
+    } else if (drumSum >= 31.75 || drumSum === 15.75) {
+      Math.random() < 0.6 ? pushAccent(crash, i) : pushRest(crash, i);
+    } else {
+      pushRest(crash, i)
+    }
+    pushRest(lowTom, i)
+    pushRest(midTom, i)
+    pushRest(highTom, i)
+    pushRest(ride, i)
+    drumSum += drumBeat[i]
   }
   return drumHits
 }
@@ -116,10 +108,6 @@ export function hatString(drumHits: Array<Array<{ index: number; checked: boolea
         flair += Math.random() < 0.3 ? "Q" : "-";
       } else if (sum === 15 || sum === 31) {
         flair += Math.random() < 0.3 ? "q" : "-";
-      } else if (sum === 7.75 || sum === 23.75) {
-        flair += Math.random() < 0.3 ? "z" : "-";
-      } else if (sum >= 31.75 || sum === 15.75) {
-        flair += Math.random() < 0.6 ? "Z" : "-";
       } else if (drumBeat[i] === 0.33 || drumBeat[i] === 0.34 ||
         drumBeat[i] === 0.17 || drumBeat[i] === 0.16) {
         flair += Math.random() < 0.3 ? tom : "-";

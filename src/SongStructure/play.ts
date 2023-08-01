@@ -60,7 +60,7 @@ const melodyLine3V: string = melodyString(primaryMelody2, bassPart3, bassLine3V)
 const melodyLine4V: string = melodyString(primaryMelody, bassPart4, bassLine4V);
 const melodyV: string = melodyLine1V.concat(melodyLine2V + melodyLine3V + melodyLine4V);
 
-const drumHitsVerse: { index: number; checked: boolean; accent?: boolean }[][] = Array.from({ length: 4 }, () => [])
+const drumHitsVerse: { index: number; checked: boolean; accent?: boolean }[][] = Array.from({ length: 9 }, () => [])
 
 const bassDrum1V: { index: number; checked: boolean; accent?: boolean }[][] = drumArray(drumHitsVerse, drumPart1, bassPart1, bassLine1V);
 const bassDrum2V: { index: number; checked: boolean; accent?: boolean }[][] = drumArray(bassDrum1V, drumPart2, bassPart2, bassLine2V);
@@ -84,7 +84,7 @@ const melodyLine3C: string = melodyString(primaryMelody2, primaryBass2, bassLine
 const melodyLine4C: string = melodyString(primaryMelody, primaryBass, bassLine4C);
 const melodyC: string = melodyLine1C.concat(melodyLine2C + melodyLine3C + melodyLine4C);
 
-const drumHitsChorus: { index: number; checked: boolean; accent?: boolean }[][] = Array.from({ length: 4 }, () => [])
+const drumHitsChorus: { index: number; checked: boolean; accent?: boolean }[][] = Array.from({ length: 9 }, () => [])
 
 const bassDrum1C: { index: number; checked: boolean; accent?: boolean }[][] = drumArray(drumHitsChorus, drumPart2, bassPart2, bassLine1C);
 const bassDrum2C: { index: number; checked: boolean; accent?: boolean }[][] = drumArray(bassDrum1C, drumPart1, bassPart1, bassLine2C);
@@ -108,7 +108,7 @@ const melodyLine3B: string = melodyString(primaryMelody2, primaryBass2, bassLine
 const melodyLine4B: string = melodyString(primaryMelody, primaryBass, bassLine4B);
 const melodyB: string = melodyLine1B.concat(melodyLine2B + melodyLine3B + melodyLine4B);
 
-const drumHitsBridge: { index: number; checked: boolean; accent?: boolean }[][] = Array.from({ length: 4 }, () => [])
+const drumHitsBridge: { index: number; checked: boolean; accent?: boolean }[][] = Array.from({ length: 9 }, () => [])
 
 const bassDrum1B: { index: number; checked: boolean; accent?: boolean }[][] = drumArray(drumHitsBridge, drumPart4, bassPart4, bassLine1B);
 const bassDrum2B: { index: number; checked: boolean; accent?: boolean }[][] = drumArray(bassDrum1B, drumPart3, bassPart3, bassLine2B);

@@ -152,7 +152,13 @@ export async function playBeat(pattern: Array<{ index: number; checked: boolean 
         });
         await wait(duration)
         //output.sendMessage([128, drum, release])
-      } else {
+      } else if (pattern === stepsRef[4] && pattern[index].checked) {
+        loadSoundFile("../crash.mp3", (buffer: AudioBuffer) => {
+          playSound(buffer, 0.5);
+        });
+        await wait(duration)
+        //output.sendMessage([128, drum, release])
+      }else {
         await wait(duration);
       }
     /*if (drum) {

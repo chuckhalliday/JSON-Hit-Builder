@@ -16,8 +16,9 @@ export async function playVerse(bpm: number, verseDrumGroove: number[], verseDru
     await Promise.all([
       playBeat(verseDrums[0], verseDrumGroove, bpm, verseDrums),
       playBeat(verseDrums[1], verseDrumGroove, bpm, verseDrums),
-      playBeat(verseDrums[2], verseDrumGroove, bpm, verseDrums),
-      playBeat(verseDrums[3], verseDrumGroove, bpm, verseDrums),
+      playBeat(verseDrums[5], verseDrumGroove, bpm, verseDrums),
+      playBeat(verseDrums[6], verseDrumGroove, bpm, verseDrums),
+      playBeat(verseDrums[8], verseDrumGroove, bpm, verseDrums),
       playBass(verseBass, verseBassGroove, bpm),
       //playChords(verseChords, verseChordGroove, bpm)
     ])
@@ -29,8 +30,9 @@ export async function playDrums(bpm: number, bridgeDrumGroove: number[], bridgeD
     await Promise.all([
       playBeat(bridgeDrums[0], bridgeDrumGroove, bpm, bridgeDrums, lamps),
       playBeat(bridgeDrums[1], bridgeDrumGroove, bpm, bridgeDrums),
-      playBeat(bridgeDrums[2], bridgeDrumGroove, bpm, bridgeDrums),
-      playBeat(bridgeDrums[3], bridgeDrumGroove, bpm, bridgeDrums),
+      playBeat(bridgeDrums[5], bridgeDrumGroove, bpm, bridgeDrums),
+      playBeat(bridgeDrums[6], bridgeDrumGroove, bpm, bridgeDrums),
+      playBeat(bridgeDrums[8], bridgeDrumGroove, bpm, bridgeDrums),
     ])
   }
 }
