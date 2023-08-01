@@ -130,25 +130,25 @@ export async function playBeat(pattern: Array<{ index: number; checked: boolean 
       }
       if (pattern === stepsRef[0] && pattern[index].checked) {
         loadSoundFile("../kick.mp3", (buffer: AudioBuffer) => {
-          playSound(buffer, 0.5);
+          playSound(buffer, 0.7);
         });
         await wait(duration)
         //output.sendMessage([128, drum, release])
       } else if (pattern === stepsRef[1]&& pattern[index].checked) {
         loadSoundFile("../snare.mp3", (buffer: AudioBuffer) => {
-          playSound(buffer, 0.2);
+          playSound(buffer, 0.4);
         });
         await wait(duration)
         //output.sendMessage([128, drum, release])
       } else if (pattern === stepsRef[2] && pattern[index].checked) {
         loadSoundFile("../hihatC.mp3", (buffer: AudioBuffer) => {
-          playSound(buffer, 0.2);
+          playSound(buffer, 0.4);
         });
         await wait(duration)
         //output.sendMessage([128, drum, release])
       } else if (pattern === stepsRef[3] && pattern[index].checked) {
         loadSoundFile("../hihatO.mp3", (buffer: AudioBuffer) => {
-          playSound(buffer, 0.4);
+          playSound(buffer, 0.5);
         });
         await wait(duration)
         //output.sendMessage([128, drum, release])
@@ -278,14 +278,25 @@ export async function playBass(pattern: {x: number, y: number, acc: string}[], g
       }
 
       const attackTime = 0.01; // Adjust the attack time as needed
-      const releaseTime = 0.2; // Adjust the release time as needed
+      const releaseTime = 0.05; // Adjust the release time as needed
 
       gainNode.gain.setValueAtTime(0, audioContext.currentTime);
-      gainNode.gain.linearRampToValueAtTime(0.4, audioContext.currentTime + attackTime);
+      gainNode.gain.linearRampToValueAtTime(0.2, audioContext.currentTime + attackTime);
       gainNode.gain.linearRampToValueAtTime(0, audioContext.currentTime + duration - releaseTime);
 
       filterNode.type = "lowpass"; // Apply a low-pass filter
-      filterNode.frequency.value = 500; // Adjust the cutoff frequency as needed
+      filterNode.frequency.value = 800; // Adjust the cutoff frequency as needed
+
+      const distortion = audioContext.createWaveShaper();
+      const distortionAmount = 30; // Adjust distortion amount as needed
+      const curve = new Float32Array(65536);
+      for (let i = 0; i < 65536; i++) {
+        const x = (i - 32768) / 32768;
+        curve[i] = Math.tanh(x * distortionAmount);
+      }
+      distortion.curve = curve;
+      gainNode.connect(distortion);
+      distortion.connect(filterNode);
 
       osc.start(audioContext.currentTime);
       await wait(duration);
