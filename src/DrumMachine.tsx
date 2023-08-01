@@ -70,7 +70,7 @@ export default function DrumMachine({ onRenderWidthChange, part }: Props) {
     }
   }
 
-  const tracks: string[] = ["Kick", "Snare", "Flair", "HiHat"]
+  const tracks: string[] = ["Kick", "Snare", "Low", "Mid", "High", "HiHatC", "HiHatO", "Ride", "Crash"]
 
   //Array of different sounds
   const trackIds = [...Array(tracks.length).keys()];
@@ -126,8 +126,13 @@ export default function DrumMachine({ onRenderWidthChange, part }: Props) {
     <div className={styles.machine} ref={machineRef}>
       {/* Renders titles */}
       <div className={styles.labelList}>
+        <div>Crash</div>
+        <div>Ride</div>
         <div>Hi-Hat O</div>
         <div>Hi-Hat C</div>
+        <div>High Tom</div>
+        <div>Mid Tom</div>
+        <div>Low Tom</div>
         <div>Snare</div>
         <div>Kick</div>
       </div>

@@ -140,19 +140,25 @@ export async function playBeat(pattern: Array<{ index: number; checked: boolean 
         });
         await wait(duration)
         //output.sendMessage([128, drum, release])
-      } else if (pattern === stepsRef[2] && pattern[index].checked) {
+      } else if (pattern === stepsRef[5] && pattern[index].checked) {
         loadSoundFile("../hihatC.mp3", (buffer: AudioBuffer) => {
           playSound(buffer, 0.4);
         });
         await wait(duration)
         //output.sendMessage([128, drum, release])
-      } else if (pattern === stepsRef[3] && pattern[index].checked) {
+      } else if (pattern === stepsRef[6] && pattern[index].checked) {
         loadSoundFile("../hihatO.mp3", (buffer: AudioBuffer) => {
           playSound(buffer, 0.5);
         });
         await wait(duration)
         //output.sendMessage([128, drum, release])
-      } else {
+      } else if (pattern === stepsRef[8] && pattern[index].checked) {
+        loadSoundFile("../crash.mp3", (buffer: AudioBuffer) => {
+          playSound(buffer, 0.5);
+        });
+        await wait(duration)
+        //output.sendMessage([128, drum, release])
+      }else {
         await wait(duration);
       }
     /*if (drum) {
