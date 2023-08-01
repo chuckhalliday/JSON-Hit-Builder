@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { playBass } from './SongStructure/playParts';
-import { setBassState } from './reducers';
+import { setBassState, SongState } from './reducers';
 
 import styles from "./DrumMachine.module.scss";
 
@@ -19,9 +19,9 @@ export default function BassStaff({ renderWidth, part }: BassStaffProps) {
 
   const bpm = useSelector((state: { song: { bpm: number } }) => state.song.bpm);
 
-  const bassGrid = useSelector((state: any) => state.song.songStructure[part].bassGrid);
-  const bassNoteGrid = useSelector((state: any) => state.song.songStructure[part].bassNoteLocations);
-  const bassGroove = useSelector((state: any) => state.song.songStructure[part].bassGroove);
+  const bassGrid = useSelector((state: { song: SongState }) => state.song.songStructure[part].bassGrid);
+  const bassNoteGrid = useSelector((state: { song: SongState }) => state.song.songStructure[part].bassNoteLocations);
+  const bassGroove = useSelector((state: { song: SongState}) => state.song.songStructure[part].bassGroove);
 
 /*  const NOTES = ["G4", "F4", "E4", "D4", "C4", "B3", "A3", "G3", "F3", "E3", "D3",
     "C3", "B2", "A2", "G2", "F2", "E2", "D2", "C2", "B1", "A1"]; */

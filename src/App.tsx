@@ -4,7 +4,7 @@ import DrumMachine from "./DrumMachine";
 import BassStaff from "./BassStaff";
 import { useSelector, useDispatch } from "react-redux"
 import { playSong } from './SongStructure/playSong';
-import { incrementByAmount } from './reducers';
+import { incrementByAmount, SongState } from './reducers';
 
 import styles from "./App.module.scss"
 
@@ -14,29 +14,7 @@ function App() {
   const [isPlaying, setIsPlaying] = React.useState(false);
   const [showInfoScreen, setShowInfoScreen] = useState(true);
 
-  const song = useSelector((state: { song: {
-    bpm: number,
-    key: string,
-    songStructure: {
-        type: string;
-        repeat: number;
-        bass: string[];
-        bassGroove: number[];
-        bassGrid: number[];
-        bassNoteLocations: {
-            x: number;
-            y: number;
-        }[];
-        drums: {
-            index: number;
-            checked: boolean;
-            accent?: boolean;
-        }[][];
-        drumGroove: number[];
-        chords: string;
-        chordsGroove: number[];
-    }[]  
-} }) => state.song)
+  const song = useSelector((state: { song: SongState }) => state.song)
   const bpm = useSelector((state: { song: { bpm: number } }) => state.song.bpm);
 
   //const lampsRef = React.useRef<HTMLInputElement[]>([]);
