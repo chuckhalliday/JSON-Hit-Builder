@@ -22,10 +22,10 @@ export function primaryGroove() {
 }
 
 export function drawBass(bass: string[], bassGrid: number[]) {
-  let bassNoteLocations: { x: number, y: number }[] = [];
+  let bassNoteLocations: { x: number, y: number, acc: string }[] = [];
   
   for (let i = 0; i < bassGrid.length; i++) {
-    let noteLocation: {x: number, y: number } = { x: 0, y: 0 } // Create a new object for each iteration
+    let noteLocation: {x: number, y: number, acc: string } = { x: 0, y: 0, acc: 'none' } // Create a new object for each iteration
   
       noteLocation.x = bassGrid[i];
       if (bass[i] === 'G' || bass[i] === 'G#' || bass[i] === 'Gb') {
@@ -44,6 +44,13 @@ export function drawBass(bass: string[], bassGrid: number[]) {
         noteLocation.y = 97.5;
       } else {
         noteLocation.y = -20
+      }
+      if (bass[i] === 'A#' || bass[i] === 'C#' || bass[i] === 'D#' || bass[i] === 'F#' || bass[i] === 'G#') {
+        noteLocation.acc = 'sharp';
+      } else if (bass[i] === 'Ab' || bass[i] === 'Bb' || bass[i] === 'Db' || bass[i] === 'Eb' || bass[i] === 'Gb') {
+        noteLocation.acc = 'flat';
+      } else {
+        noteLocation.acc = 'none'
       }
   
       bassNoteLocations.push(noteLocation);

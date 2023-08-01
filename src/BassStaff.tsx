@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { playBass } from './SongStructure/playParts';
-import { setBassState } from './reducers';
+import { setBassState, SongState } from './reducers';
 
 import styles from "./DrumMachine.module.scss";
 
@@ -19,14 +19,14 @@ export default function BassStaff({ renderWidth, part }: BassStaffProps) {
 
   const bpm = useSelector((state: { song: { bpm: number } }) => state.song.bpm);
 
-  const bassGrid = useSelector((state: any) => state.song.songStructure[part].bassGrid);
-  const bassNoteGrid = useSelector((state: any) => state.song.songStructure[part].bassNoteLocations);
-  const bassGroove = useSelector((state: any) => state.song.songStructure[part].bassGroove);
+  const bassGrid = useSelector((state: { song: SongState }) => state.song.songStructure[part].bassGrid);
+  const bassNoteGrid = useSelector((state: { song: SongState }) => state.song.songStructure[part].bassNoteLocations);
+  const bassGroove = useSelector((state: { song: SongState}) => state.song.songStructure[part].bassGroove);
 
 /*  const NOTES = ["G4", "F4", "E4", "D4", "C4", "B3", "A3", "G3", "F3", "E3", "D3",
     "C3", "B2", "A2", "G2", "F2", "E2", "D2", "C2", "B1", "A1"]; */
 
-  const bassNotesRef = React.useRef<{x: number, y: number}[]>(bassNoteGrid)
+  const bassNotesRef = React.useRef<{x: number, y: number, acc: string}[]>(bassNoteGrid)
 
   const MOUSE = {
     x: -10,
@@ -110,7 +110,7 @@ export default function BassStaff({ renderWidth, part }: BassStaffProps) {
       MOUSE.isDown = false;
     }
 
-    function drawClef(ctx: CanvasRenderingContext2D, location: { x: number, y: number }) {
+    function drawClef(ctx: CanvasRenderingContext2D, location: { x: number, y: number, acc: string }) {
       const CANVAS = canvasRef.current;
       if (CANVAS) {
         const aspectRatio = CLEF_IMAGE.width / CLEF_IMAGE.height;
@@ -123,7 +123,7 @@ export default function BassStaff({ renderWidth, part }: BassStaffProps) {
       }
     }
 
-    function drawNote(ctx: CanvasRenderingContext2D, location: { x: number, y: number }, bassGrid: number[], bassGroove: number[]) {
+    function drawNote(ctx: CanvasRenderingContext2D, location: { x: number, y: number, acc: string }, bassGrid: number[], bassGroove: number[]) {
       const CANVAS = canvasRef.current;
       if (CANVAS) {
         const spacing = CANVAS.height / 20;
@@ -131,9 +131,18 @@ export default function BassStaff({ renderWidth, part }: BassStaffProps) {
         ctx.strokeStyle = "black";
         ctx.lineWidth = 1;
 
+        const fontSize = 20;
+        ctx.font = `${fontSize}px serif`;
+
         for (let i = 0; i < bassGrid.length; i++){
           const isMatch = location.x === bassGrid[i];
           const groove = bassGroove[i];
+          if (location.x === bassGrid[i] && location.acc === 'flat') {
+            ctx.fillText('♭', location.x + spacing * -3.5, location.y - spacing * 2 + fontSize);
+          }
+          if (location.x === bassGrid[i] && location.acc === 'sharp') {
+            ctx.fillText('#', location.x + spacing * -2.5, location.y - spacing * 1.9 + fontSize );
+          }
           if (isMatch && groove === 1.5 || isMatch && groove === 0.75) {
             ctx.beginPath();
             ctx.arc(location.x + spacing + 8, location.y - 3.8, 2.8, 0, Math.PI * 2);
@@ -217,7 +226,7 @@ export default function BassStaff({ renderWidth, part }: BassStaffProps) {
 
           const index = Math.round(MOUSE.y / spacing);
 
-          drawClef(ctx, { x: 45, y: CANVAS.height / 2 });
+          drawClef(ctx, { x: 45, y: CANVAS.height / 2, acc:'none' });
 
           bassNotesRef.current.forEach((note) => {
             drawNote(ctx, note, bassGrid, bassGroove);
@@ -225,7 +234,8 @@ export default function BassStaff({ renderWidth, part }: BassStaffProps) {
 
           const location = {
             x: mouseX(bassGrid),
-            y: index * spacing
+            y: index * spacing,
+            acc: 'none'
           };
           drawNote(ctx, location, bassGrid, bassGroove);
         }

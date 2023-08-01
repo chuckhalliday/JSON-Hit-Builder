@@ -11,7 +11,7 @@ export async function countIn(bpm: number, initDrums: number[],
 }
 
 export async function playVerse(bpm: number, verseDrumGroove: number[], verseDrums: Array<Array<{ index: number; checked: boolean }>>,
-  verseBassGroove: number[], verseBass: {x: number, y: number }[], /*verseChordGroove: number[], verseChords: string*/) {
+  verseBassGroove: number[], verseBass: {x: number, y: number, acc: string }[], /*verseChordGroove: number[], verseChords: string*/) {
   for (let i = 0; i < 1; i++) {
     await Promise.all([
       playBeat(verseDrums[0], verseDrumGroove, bpm, verseDrums),
@@ -47,6 +47,7 @@ export async function playSong(song: {
       bassNoteLocations: {
           x: number;
           y: number;
+          acc: string;
       }[];
       drums: {
           index: number;
