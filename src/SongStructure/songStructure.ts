@@ -18,6 +18,7 @@ chordsVA: string, chordsGrooveV: number[], chordsCA: string, chordsGrooveC: numb
     bassNoteLocations: {
         x: number;
         y: number;
+        acc: string;
     }[];
     drums: { index: number; checked: boolean; accent?: boolean }[][]
     drumGroove: number[];

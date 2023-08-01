@@ -13,6 +13,7 @@ export interface SongState {
         bassNoteLocations: {
             x: number;
             y: number;
+            acc: string;
         }[];
         drums: {
             index: number;
@@ -36,7 +37,7 @@ const song = createSlice({
     name: "song",
     initialState,
     reducers: {
-      setBassState: (state, action: PayloadAction<{ index: number, bassNoteLocations: { x: number, y: number }[] }>) => {
+      setBassState: (state, action: PayloadAction<{ index: number, bassNoteLocations: { x: number, y: number, acc: string }[] }>) => {
         console.log(action);
         state.songStructure[action.payload.index].bassNoteLocations = action.payload.bassNoteLocations;
       },
