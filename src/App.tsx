@@ -2,6 +2,7 @@ import React, { useState, useRef } from 'react'
 import Info from './Info';
 import DrumMachine from "./DrumMachine";
 import BassStaff from "./BassStaff";
+import Piano from './Piano';
 import { useSelector, useDispatch } from "react-redux"
 import { playSong } from './SongStructure/playSong';
 import { incrementByAmount, SongState } from './reducers';
@@ -67,7 +68,8 @@ function App() {
               </button>
               {isOpen && (
                 <div className={styles.openedPart}>
-                  <h3>{songProps.type} ({songProps.repeat})</h3>
+                  <h3 className={styles.title}>{songProps.type} ({songProps.repeat})</h3>
+                  <Piano />
                   <BassStaff renderWidth={renderWidth}
                   part={index}/>
                   <DrumMachine

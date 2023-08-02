@@ -68,7 +68,7 @@ export async function playSong(song: {
     //Start recording
     let tempo = song.bpm - 60
     //output.sendMessage([144,16,1])
-    await countIn(song.bpm, song.songStructure[0].drumGroove, song.songStructure[0].drums)
+    //await countIn(song.bpm, song.songStructure[0].drumGroove, song.songStructure[0].drums)
     //output.sendMessage([176,50,tempo]);
       for (let i = 0; i < song.songStructure.length; i++) {
         let sum = 18

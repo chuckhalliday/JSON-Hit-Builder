@@ -4,12 +4,12 @@ import { setDrumState, SongState } from "./reducers";
 import { useDispatch, useSelector } from "react-redux";
 import styles from "./DrumMachine.module.scss";
 
-type Props = {
+interface DrumMachineProps {
   onRenderWidthChange: any;
   part: number
 };
 
-export default function DrumMachine({ onRenderWidthChange, part }: Props) {
+export default function DrumMachine({ onRenderWidthChange, part }: DrumMachineProps) {
   const [isPlaying, setIsPlaying] = React.useState(false);
   const dispatch = useDispatch()
 
