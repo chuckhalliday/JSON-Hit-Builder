@@ -66,10 +66,10 @@ function App() {
               <button onClick={() => handlePartOpen(key)}>
                 {songProps.type.charAt(0)}
               </button>
+              <Piano />
               {isOpen && (
                 <div className={styles.openedPart}>
-                  <h3 className={styles.title}>{songProps.type} ({songProps.repeat})</h3>
-                  <Piano />
+                  <h3>{songProps.type} ({songProps.repeat})</h3>
                   <BassStaff renderWidth={renderWidth}
                   part={index}/>
                   <DrumMachine
