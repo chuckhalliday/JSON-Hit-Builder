@@ -201,7 +201,7 @@ export default function DrumMachine({ onRenderWidthChange, part }: DrumMachinePr
       {/* Renders controls */}
       <div className={styles.controls}>
         <button onClick={handleStartClick} className={styles.button}>
-          {isPlaying ? "Pause" : "Start"}
+          {isPlaying ? "Pause" : "Play Drums"}
         </button>
       </div>
     </div>

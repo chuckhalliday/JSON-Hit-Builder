@@ -46,7 +46,10 @@
 
 .controls {
     position: fixed;
-    bottom: 5%;
+    bottom: 0;
+    z-index: 2;
+    background-color: #fff;
+    width: 100%;
 }
 
 .fader {
@@ -59,7 +62,7 @@ input[type="range"] {
   -webkit-appearance: none; /* Safari and Chrome */
   -moz-appearance: none; /* Firefox */
   appearance: none; /* Standard */
-  width: 40%;
+  width: 30%;
   height: 8px;
   border-radius: 5px;
   background: linear-gradient(to right, blue, rgb(187, 187, 254)) no-repeat center;
@@ -96,7 +99,7 @@ input[type="range"]::-moz-range-thumb {
     appearance: none;
     background-color: #20e72d;
     color: black;
-    width: 80px;
+    width: 90px;
     line-height: 2;
     border-radius: 4px;
     font-weight: 700;

@@ -263,7 +263,7 @@ export default function BassStaff({ renderWidth, part }: BassStaffProps) {
       {/* Renders controls */}
       <div className={styles.controls}>
           <button onClick={handleStartClick} className={styles.button}>
-            {isPlaying ? "Pause" : "Start"}
+            {isPlaying ? "Pause" : "Play Bass"}
           </button>
       </div>
     </div>

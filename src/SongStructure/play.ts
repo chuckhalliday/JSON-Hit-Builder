@@ -7,7 +7,6 @@ import { melodyGroove, melodyString } from "./melody.js";
 import { setKey, findKey } from './key.js';
 import { adjustBassNotes, adjustChordNotes } from './playParts.js';
 import { generateSongStructure } from './songStructure.js';
-import { playSong } from './playSong.js'
 
 const primaryBass: number[] = primaryGroove();
 const primaryBass2: number[] = primaryGroove();

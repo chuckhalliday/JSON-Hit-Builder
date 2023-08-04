@@ -2,6 +2,7 @@ import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 import { songVariables } from "./SongStructure/play";
 
 export interface SongState {
+    isPlaying: boolean,
     bpm: number,
     key: string,
     songStructure: {
@@ -28,6 +29,7 @@ export interface SongState {
 }
 
 const initialState: SongState = {
+    isPlaying: false,
     bpm: songVariables.bpm,
     key: songVariables.key,
     songStructure: songVariables.songStructure
@@ -37,6 +39,10 @@ const song = createSlice({
     name: "song",
     initialState,
     reducers: {
+      setIsPlaying: (state, action: PayloadAction<{ isPlaying: boolean }>) => {
+        console.log(action);
+        state.isPlaying = action.payload.isPlaying;
+      },
       setBassState: (state, action: PayloadAction<{ index: number, bassNoteLocations: { x: number, y: number, acc: string }[] }>) => {
         console.log(action);
         state.songStructure[action.payload.index].bassNoteLocations = action.payload.bassNoteLocations;
@@ -52,5 +58,5 @@ const song = createSlice({
     },
   });
 
-export const { setBassState, setDrumState, incrementByAmount } = song.actions;
+export const { setIsPlaying, setBassState, setDrumState, incrementByAmount } = song.actions;
 export default song;

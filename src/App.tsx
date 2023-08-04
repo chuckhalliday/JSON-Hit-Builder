@@ -1,20 +1,21 @@
-import React, { useState, useRef } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import Info from './Info';
 import DrumMachine from "./DrumMachine";
 import BassStaff from "./BassStaff";
 import Piano from './Piano';
 import { useSelector, useDispatch } from "react-redux"
 import { playSong } from './SongStructure/playSong';
-import { incrementByAmount, SongState } from './reducers';
+import { incrementByAmount, setIsPlaying, SongState } from './reducers';
 
 import styles from "./App.module.scss"
 
 
 function App() {
   const [openedParts, setOpenedParts] = useState<{ [key: string]: boolean }>({});
-  const [isPlaying, setIsPlaying] = React.useState(false);
+  //const [isPlaying, setIsPlaying] = React.useState(false);
   const [showInfoScreen, setShowInfoScreen] = useState(true);
 
+  let isPlaying = useSelector((state: { song: SongState }) => state.song.isPlaying)
   const song = useSelector((state: { song: SongState }) => state.song)
   const bpm = useSelector((state: { song: { bpm: number } }) => state.song.bpm);
 
@@ -44,12 +45,18 @@ function App() {
     setRenderWidth(width);
   };
 
+
+  useEffect(() => {
+    if (isPlaying) {
+      playSong(song)
+    }
+  }, [isPlaying]);
+
  const handleStartClick = async () => {
     if (isPlaying) {
-      setIsPlaying(false);
+      dispatch(setIsPlaying({isPlaying: false}));
     } else {
-   playSong(song)
-      setIsPlaying(true);
+      dispatch(setIsPlaying({isPlaying: true}));
     }
   };
 
@@ -88,7 +95,7 @@ function App() {
       {/* Renders controls */}
       <div className={styles.controls}>
       <button onClick={handleStartClick} className={styles.button}>
-          {isPlaying ? "Pause" : "Start"}
+          {isPlaying ? "Pause" : "Play Song"}
         </button>
         <label className={styles.fader}>
           <span>BPM:{bpm}</span>
