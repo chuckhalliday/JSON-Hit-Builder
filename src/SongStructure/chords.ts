@@ -75,17 +75,15 @@ for (let i = 0; i < bassGroove.length; i++) {
       }
     }
     bassSum += bassGroove[i];
-    if (Number.isInteger(bassSum / 8)) {
-      chords += "|";
-    }
   }
     return chords;
 }
 
 
 export function adjustChordString(chordString: string, keyAdjust: number) {
-    let transpose = "";
+    let transpose: string[] = [];
     let keys: string[] = []
+    console.log(chordString)
     for (let i = 0; i < chordString.length; i++) {
       const sharpKeys = [-10, -8, -6, -5, -3, -1, 0, 2, 4, 6, 7, 9, 11];
       const flatKeys = [-12, -11, -9, -7, -4, -2, 1, 3, 5, 8, 10, 12]
@@ -104,58 +102,52 @@ export function adjustChordString(chordString: string, keyAdjust: number) {
     }
       switch (chordString.charAt(i)) {
         case "6":
-          transpose += keys[12 + keyAdjust] + `m`;
+          transpose.push(keys[12 + keyAdjust] + `m`);
           break;
         case "7":
-          transpose += keys[14 + keyAdjust] + `dim`;
+          transpose.push(keys[14 + keyAdjust] + `dim`);
           break;
         case "1":
-          transpose += keys[15 + keyAdjust];
+          transpose.push(keys[15 + keyAdjust]);
           break;
         case "!":
-          transpose += keys[15 + keyAdjust]  + `maj7`;
+          transpose.push(keys[15 + keyAdjust]  + `maj7`);
           break;
         case "2":
-          transpose += keys[17 + keyAdjust] + `m`;
+          transpose.push(keys[17 + keyAdjust] + `m`);
           break;
         case "@":
-          transpose += keys[17 + keyAdjust] + `m7`;
+          transpose.push(keys[17 + keyAdjust] + `m7`);
           break;
         case "3":
-          transpose += keys[19 + keyAdjust] + `m`;
+          transpose.push(keys[19 + keyAdjust] + `m`);
           break;
         case "#":
-          transpose += keys[19 + keyAdjust] + `m7`;
+          transpose.push(keys[19 + keyAdjust] + `m7`);
           break;
         case "4":
-          transpose += keys[20 + keyAdjust];
+          transpose.push(keys[20 + keyAdjust]);
           break;
         case "$":
-          transpose += keys[20 + keyAdjust]  + `7`;
+          transpose.push(keys[20 + keyAdjust]  + `7`);
           break;
         case "5":
-          transpose += keys[22 + keyAdjust];
+          transpose.push(keys[22 + keyAdjust]);
           break;
         case "%":
-          transpose += keys[22 + keyAdjust]  + `7`;
+          transpose.push(keys[22 + keyAdjust]  + `7`);
           break;
         case "8":
-          transpose += keys[19 + keyAdjust];
+          transpose.push(keys[19 + keyAdjust]);
           break;
         case "0":
-          transpose += keys[20 + keyAdjust] + `m`;
+          transpose.push(keys[20 + keyAdjust] + `m`);
           break;
         case "9":
-          transpose += keys[15 + keyAdjust] + `9`;
+          transpose.push(keys[15 + keyAdjust] + `9`);
           break;
         case "-":
-          transpose += "  ";
-          break;
-        case "|":
-          transpose += "|";
-          break;
-        case " ":
-          transpose += "  ";
+          transpose.push("-");
           break;
       }
     }

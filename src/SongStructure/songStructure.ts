@@ -4,7 +4,7 @@ export function generateSongStructure(partsLength: number, bassVA: string[], bas
 drumVerse: { index: number; checked: boolean; accent?: boolean }[][], drumGrooveV: number[],
 drumChorus: { index: number; checked: boolean; accent?: boolean }[][], drumGrooveC: number[],
 drumBridge: { index: number; checked: boolean; accent?: boolean }[][], drumGrooveB: number[],
-chordsVA: string, chordsGrooveV: number[], chordsCA: string, chordsGrooveC: number[], chordsBA: string, chordsGrooveB: number[]) {
+chordsVA: string[], chordsGrooveV: number[], chordsCA: string[], chordsGrooveC: number[], chordsBA: string[], chordsGrooveB: number[]) {
   const partTypes = ['Verse', 'Chorus', 'Bridge'];
   let verseCount: number = 0
   let chorusCount: number = 0
@@ -23,7 +23,7 @@ chordsVA: string, chordsGrooveV: number[], chordsCA: string, chordsGrooveC: numb
     drums: { index: number; checked: boolean; accent?: boolean }[][]
     drumGroove: number[];
     stepIds: number[];
-    chords: string;
+    chords: string[];
     chordsGroove: number[];
 }[] = [];
   let remainingParts = partsLength;
@@ -32,7 +32,7 @@ chordsVA: string, chordsGrooveV: number[], chordsCA: string, chordsGrooveC: numb
   let partBassGroove: number[];
   let partDrums: { index: number; checked: boolean; accent?: boolean }[][]
   let partDrumsGroove: number[];
-  let partChords: string;
+  let partChords: string[];
   let partChordsGroove: number[];
 
   const randomPartLength = Math.min(remainingParts, Math.floor(Math.random() * 3) + 1);
