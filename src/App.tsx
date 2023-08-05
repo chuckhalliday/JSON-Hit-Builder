@@ -12,10 +12,9 @@ import styles from "./App.module.scss"
 
 function App() {
   const [openedParts, setOpenedParts] = useState<{ [key: string]: boolean }>({});
-  //const [isPlaying, setIsPlaying] = React.useState(false);
   const [showInfoScreen, setShowInfoScreen] = useState(true);
 
-  let isPlaying = useSelector((state: { song: SongState }) => state.song.isPlaying)
+  const isPlaying = useSelector((state: { song: SongState }) => state.song.isPlaying)
   const song = useSelector((state: { song: SongState }) => state.song)
   const bpm = useSelector((state: { song: { bpm: number } }) => state.song.bpm);
 
@@ -70,7 +69,8 @@ function App() {
 
           songParts.push(
             <div key={key} className={styles.parts}>
-              <button onClick={() => handlePartOpen(key)}>
+              <button onClick={() => handlePartOpen(key)}
+              className={isOpen ? `${styles.openButton}` : ''}>
                 {songProps.type.charAt(0)}
               </button>
               <Piano />
