@@ -1,10 +1,11 @@
 import { drawBass } from "./bass";
+import { chordLocation } from "./chords";
 
 export function generateSongStructure(partsLength: number, bassVA: string[], bassGrooveV: number[], bassCA: string[], bassGrooveC: number[], bassBA: string[], bassGrooveB: number[], 
 drumVerse: { index: number; checked: boolean; accent?: boolean }[][], drumGrooveV: number[],
 drumChorus: { index: number; checked: boolean; accent?: boolean }[][], drumGrooveC: number[],
 drumBridge: { index: number; checked: boolean; accent?: boolean }[][], drumGrooveB: number[],
-chordsVA: string, chordsGrooveV: number[], chordsCA: string, chordsGrooveC: number[], chordsBA: string, chordsGrooveB: number[]) {
+chordsVA: string[], chordsGrooveV: number[], chordsCA: string[], chordsGrooveC: number[], chordsBA: string[], chordsGrooveB: number[]) {
   const partTypes = ['Verse', 'Chorus', 'Bridge'];
   let verseCount: number = 0
   let chorusCount: number = 0
@@ -23,8 +24,9 @@ chordsVA: string, chordsGrooveV: number[], chordsCA: string, chordsGrooveC: numb
     drums: { index: number; checked: boolean; accent?: boolean }[][]
     drumGroove: number[];
     stepIds: number[];
-    chords: string;
+    chords: string[];
     chordsGroove: number[];
+    chordsLocation: number[];
 }[] = [];
   let remainingParts = partsLength;
   let lastPartType = '';
@@ -32,7 +34,7 @@ chordsVA: string, chordsGrooveV: number[], chordsCA: string, chordsGrooveC: numb
   let partBassGroove: number[];
   let partDrums: { index: number; checked: boolean; accent?: boolean }[][]
   let partDrumsGroove: number[];
-  let partChords: string;
+  let partChords: string[];
   let partChordsGroove: number[];
 
   const randomPartLength = Math.min(remainingParts, Math.floor(Math.random() * 3) + 1);
@@ -65,11 +67,12 @@ chordsVA: string, chordsGrooveV: number[], chordsCA: string, chordsGrooveC: numb
   const bassGrid = bassArray
 
   const bassNoteLocations = (drawBass(bassVA, bassGrid))
+  const chordLocations = (chordLocation(bassNoteLocations, bassGrooveV, chordsGrooveV))
 
   for (let i = 0; i < randomPartLength; i++) {
   verseCount++
   songStructure.push({ type: 'Verse', repeat: verseCount, bass: bassVA, bassGroove: bassGrooveV, bassGrid: bassGrid, bassNoteLocations: bassNoteLocations,
-  drums: drumVerse, drumGroove: drumGrooveV, stepIds: [], chords: chordsVA, chordsGroove: chordsGrooveB });
+  drums: drumVerse, drumGroove: drumGrooveV, stepIds: [], chords: chordsVA, chordsGroove: chordsGrooveB, chordsLocation: chordLocations });
   }
   remainingParts -= randomPartLength;
   lastPartType = 'Verse'
@@ -132,6 +135,7 @@ chordsVA: string, chordsGrooveV: number[], chordsCA: string, chordsGrooveC: numb
     const bassGrid = bassArray
 
     const bassNoteLocations = drawBass(partBass, bassGrid)
+    const chordLocations = (chordLocation(bassNoteLocations, partBassGroove, partChordsGroove))
     for (let i = 0; i < randomPartLength; i++) {
       let repeat: number;
       if (randomPartType === 'Verse') {
@@ -147,7 +151,7 @@ chordsVA: string, chordsGrooveV: number[], chordsCA: string, chordsGrooveC: numb
         repeat = 0
       }
     songStructure.push({ type: randomPartType, repeat: repeat, bass: partBass, bassGroove: partBassGroove, bassGrid: bassGrid, bassNoteLocations: bassNoteLocations,
-      drums: partDrums, drumGroove: partDrumsGroove, stepIds: [], chords: partChords, chordsGroove: partChordsGroove });
+      drums: partDrums, drumGroove: partDrumsGroove, stepIds: [], chords: partChords, chordsGroove: partChordsGroove, chordsLocation: chordLocations });
     }
     remainingParts -= randomPartLength;
     lastPartType = randomPartType;

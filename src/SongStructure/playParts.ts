@@ -1,9 +1,7 @@
 //import midi from 'midi';
 
-// Create an audio context
 const audioContext = new AudioContext();
 
-// Load a sound file asynchronously
 function loadSoundFile(url: string, callback: (buffer: AudioBuffer) => void) {
   const request = new XMLHttpRequest();
   request.open('GET', url, true);
@@ -18,12 +16,11 @@ function loadSoundFile(url: string, callback: (buffer: AudioBuffer) => void) {
   request.send();
 }
 
-// Play a sound file
-function playSound(buffer: AudioBuffer, volume: number = 1.0) {
+
+function playSound(buffer: AudioBuffer, volume: number = 1.0 /*set the volume 0.0 - 1.0*/) {
   const source = audioContext.createBufferSource();
   source.buffer = buffer;
   
-  // Create a gain node and set the volume (0.0 to 1.0)
   const gainNode = audioContext.createGain();
   gainNode.gain.value = volume;
 
@@ -35,12 +32,27 @@ function playSound(buffer: AudioBuffer, volume: number = 1.0) {
   source.start();
 }
 
-// Usage
+export const tone = {
+  C: [16.35, 32.7, 65.41, 130.81, 261.63, 523.25, 1046.5, 2093.0, 4186.01],
+  Db: [17.32, 34.65, 69.3, 138.59, 277.18, 554.37, 1108.73, 2217.46, 4434.92],
+  D: [18.35, 36.71, 73.42, 146.83, 293.66, 587.33, 1174.66, 2349.32, 4698.64],
+  Eb: [19.45, 38.89, 77.78, 155.56, 311.13, 622.25, 1244.51, 2489.02, 4978.03],
+  E: [20.6, 41.2, 82.41, 164.81, 329.63, 659.26, 1318.51, 2637.02],
+  F: [21.83, 43.65, 87.31, 174.61, 349.23, 698.46, 1396.91, 2793.83],
+  Gb: [23.12, 46.25, 92.5, 185.0, 369.99, 739.99, 1479.98, 2959.96],
+  G: [24.5, 49.0, 98.0, 196.0, 392.0, 783.99, 1567.98, 3135.96],
+  Ab: [25.96, 51.91, 103.83, 207.65, 415.3, 830.61, 1661.22, 3322.44],
+  A: [27.5, 55.0, 110.0, 220.0, 440.0, 880.0, 1760.0, 3520.0],
+  Bb: [29.14, 58.27, 116.54, 233.08, 466.16, 932.33, 1864.66, 3729.31],
+  B: [30.87, 61.74, 123.47, 246.94, 493.88, 987.77, 1975.53, 3951.07],
+}
 
+
+//midi
 const drumHits: Record<string, any> = {
-    'x': './kick.wav', 'X': './kick.wav',  // kick drum 36
-    'y': './snare.wav', 'Y': './snare.wav',  // snare drum 40 
-    'v': './hat-closed.wav', 'V': './hat-closed.wav',  // closed hi-hat 42
+    'x': 36, 'X': 36,  // kick drum
+    'y': 40, 'Y': 40,  // snare drum
+    'v': 42, 'V': 42,  // closed hi-hat
     'w': 46, 'W': 46,  // open hi-hat
     'r': 51, 'R': 51,  // ride cymbal
     'q': 39, 'Q': 39,  // bell
@@ -79,21 +91,6 @@ let chordTones: Record<string, number[]> = {
   '#': [52, 55, 59, 62],   // Em7
   '$': [50, 53, 57, 60],   //F7
   '%': [52, 55, 59, 62],   //G7
-}
-
-export const tone = {
-  C: [16.35, 32.7, 65.41, 130.81, 261.63, 523.25, 1046.5, 2093.0, 4186.01],
-  Db: [17.32, 34.65, 69.3, 138.59, 277.18, 554.37, 1108.73, 2217.46, 4434.92],
-  D: [18.35, 36.71, 73.42, 146.83, 293.66, 587.33, 1174.66, 2349.32, 4698.64],
-  Eb: [19.45, 38.89, 77.78, 155.56, 311.13, 622.25, 1244.51, 2489.02, 4978.03],
-  E: [20.6, 41.2, 82.41, 164.81, 329.63, 659.26, 1318.51, 2637.02],
-  F: [21.83, 43.65, 87.31, 174.61, 349.23, 698.46, 1396.91, 2793.83],
-  Gb: [23.12, 46.25, 92.5, 185.0, 369.99, 739.99, 1479.98, 2959.96],
-  G: [24.5, 49.0, 98.0, 196.0, 392.0, 783.99, 1567.98, 3135.96],
-  Ab: [25.96, 51.91, 103.83, 207.65, 415.3, 830.61, 1661.22, 3322.44],
-  A: [27.5, 55.0, 110.0, 220.0, 440.0, 880.0, 1760.0, 3520.0],
-  Bb: [29.14, 58.27, 116.54, 233.08, 466.16, 932.33, 1864.66, 3729.31],
-  B: [30.87, 61.74, 123.47, 246.94, 493.88, 987.77, 1975.53, 3951.07],
 }
 
 export function adjustBassNotes(keyAdjust: number) {
