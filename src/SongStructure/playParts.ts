@@ -191,6 +191,26 @@ export async function playBass(pattern: {x: number, y: number, acc: string}[], g
   for (let index = 0; index < pattern.length; index++) {
     let bass = pattern[index].y;
     switch (bass) {
+      case 120: if (pattern[index].acc === 'flat'){
+        bass = tone.Eb[1];
+      } else {
+        bass = tone.E[1];
+      }
+        break
+      case 112.5: if (pattern[index].acc === 'sharp') {
+        bass = tone.Gb[1];
+      } else { 
+        bass = tone.F[1];
+      }
+        break;
+      case 105: if (pattern[index].acc === 'sharp') {
+        bass = tone.Ab[1];
+      } else if (pattern[index].acc === 'flat'){
+        bass = tone.Gb[1];
+      } else {
+        bass = tone.G[1];
+      }
+        break;
       case 97.5: if (pattern[index].acc === 'sharp') {
         bass = tone.Bb[1];
       } else if (pattern[index].acc === 'flat'){
@@ -198,7 +218,7 @@ export async function playBass(pattern: {x: number, y: number, acc: string}[], g
       } else {
         bass = tone.A[1];
       }
-      break;
+        break;
       case 90: if (pattern[index].acc === 'flat'){
         bass = tone.Bb[1];
       } else {
@@ -237,6 +257,26 @@ export async function playBass(pattern: {x: number, y: number, acc: string}[], g
         bass = tone.Gb[2];
       } else {
         bass = tone.G[2];
+      }
+        break;
+      case 45: if (pattern[index].acc === 'sharp') {
+        bass = tone.Bb[2];
+      } else if (pattern[index].acc === 'flat'){
+        bass = tone.Ab[2];
+      } else {
+        bass = tone.A[2];
+      }
+        break
+      case 37.5: if (pattern[index].acc === 'flat'){
+        bass = tone.Bb[2];
+      } else {
+        bass = tone.B[2];
+      }
+        break;
+      case 30: if (pattern[index].acc === 'sharp') {
+        bass = tone.Db[3];
+      } else { 
+        bass = tone.C[3];
       }
         break;
       default:
