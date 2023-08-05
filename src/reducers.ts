@@ -23,8 +23,9 @@ export interface SongState {
         }[][];
         drumGroove: number[];
         stepIds: number[];
-        chords: string;
+        chords: string[];
         chordsGroove: number[];
+        chordsLocation: number[];
     }[]  
 }
 

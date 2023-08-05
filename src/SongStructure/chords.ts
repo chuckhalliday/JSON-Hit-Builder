@@ -79,6 +79,23 @@ for (let i = 0; i < bassGroove.length; i++) {
     return chords;
 }
 
+export function chordLocation(bassLocation: { x: number, y: number, acc: string }[], bassGroove: number[], chordGroove: number[]) {
+  let chordX: number[] = []
+  let bassSum = 0
+  let chordSum = 0
+  let chordIndex = 0
+
+  for (let i = 0; i < bassGroove.length; i++){
+    if (bassSum === chordSum) {
+      chordX.push(bassLocation[i].x)
+      chordSum += chordGroove[chordIndex]
+      chordIndex++
+    }
+    bassSum += bassGroove[i]
+  }
+  return chordX
+}
+
 
 export function adjustChordString(chordString: string, keyAdjust: number) {
     let transpose: string[] = [];

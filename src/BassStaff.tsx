@@ -22,11 +22,14 @@ export default function BassStaff({ renderWidth, part }: BassStaffProps) {
   const bassGrid = useSelector((state: { song: SongState }) => state.song.songStructure[part].bassGrid);
   const bassNoteGrid = useSelector((state: { song: SongState }) => state.song.songStructure[part].bassNoteLocations);
   const bassGroove = useSelector((state: { song: SongState}) => state.song.songStructure[part].bassGroove);
+  const chords = useSelector((state: { song: SongState }) => state.song.songStructure[part].chords);
+  const chordGrid = useSelector((state: { song: SongState }) => state.song.songStructure[part].chordsLocation);
 
 /*  const NOTES = ["G4", "F4", "E4", "D4", "C4", "B3", "A3", "G3", "F3", "E3", "D3",
     "C3", "B2", "A2", "G2", "F2", "E2", "D2", "C2", "B1", "A1"]; */
 
   const bassNotesRef = React.useRef<{x: number, y: number, acc: string}[]>(bassNoteGrid)
+  const chordsRef = React.useRef<number[]>(chordGrid)
 
   const MOUSE = {
     x: -10,
@@ -205,6 +208,24 @@ export default function BassStaff({ renderWidth, part }: BassStaffProps) {
       }
     }
 
+    function displayChord(ctx: CanvasRenderingContext2D, location: number, bassGrid: number[], chordName: string) {
+      const CANVAS = canvasRef.current;
+      if (CANVAS) {
+        const spacing = CANVAS.height / 20;
+        const fontSize = 20;
+        ctx.fillStyle = "black";
+        ctx.font = `${fontSize}px serif`;
+    
+        for (let i = 0; i < bassGrid.length; i++) {
+          const isMatch = location === bassGrid[i];
+          if (isMatch) {
+            ctx.fillText(chordName, location - spacing, CANVAS.height - 136);
+            // You can adjust the y-coordinate (CANVAS.height - spacing) as needed to place the chord name properly.
+          }
+        }
+      }
+    }
+
 
     function drawScene() {
       const CANVAS = canvasRef.current;
@@ -231,6 +252,9 @@ export default function BassStaff({ renderWidth, part }: BassStaffProps) {
           bassNotesRef.current.forEach((note) => {
             drawNote(ctx, note, bassGrid, bassGroove);
           });
+          chordsRef.current.forEach((chord, i) => {
+            displayChord(ctx, chord, bassGrid, chords[i])
+          })
 
           const location = {
             x: mouseX(bassGrid),
