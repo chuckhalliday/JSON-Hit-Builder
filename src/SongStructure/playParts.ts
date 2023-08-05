@@ -105,13 +105,14 @@ export function adjustChordNotes(keyAdjust: number) {
   }
 }
 
+function wait(time: number) {
+  return new Promise(resolve => setTimeout(resolve, time * 1000));
+}
+
 export async function playBeat(pattern: Array<{ index: number; checked: boolean }>, groove: number[], bpm: number, stepsRef: Array<Array<{ index: number; checked: boolean }>>, lamps?: HTMLInputElement[]) {
   const beatDuration = 60 / bpm // duration of one beat in seconds
   const swingRatio = 3/3; // adjust as needed
 
-  function wait(time: number) {
-    return new Promise(resolve => setTimeout(resolve, time * 1000));
-  }
   //const output = new midi.Output();
   //output.openPort(0)
 
@@ -182,55 +183,55 @@ export async function playBass(pattern: {x: number, y: number, acc: string}[], g
   const beatDuration = 60 / bpm // duration of one beat in seconds
   const audioContext = new AudioContext();
 
-  function wait(time: number) {
-    return new Promise(resolve => setTimeout(resolve, time * 1000));
-  }
   //const output = new midi.Output();
   //output.openPort(1)
 
   for (let index = 0; index < pattern.length; index++) {
     let bass = pattern[index].y;
     switch (bass) {
-      case 120: if (pattern[index].acc === 'flat'){
-        bass = tone.Eb[1];
-      } else {
-        bass = tone.E[1];
-      }
-        break
-      case 112.5: if (pattern[index].acc === 'sharp') {
-        bass = tone.Gb[1];
-      } else { 
-        bass = tone.F[1];
-      }
-        break;
+      //E
+      case 120: pattern[index].acc === 'flat' ? bass = tone.Eb[1] : bass = tone.E[1]; break
+      case 67.5: pattern[index].acc === 'flat' ? bass = tone.Eb[2] : bass = tone.E[2]; break
+      //F
+      case 112.5: pattern[index].acc === 'sharp' ? bass = tone.Gb[1] : bass = tone.F[1]; break
+      case 60: pattern[index].acc === 'sharp' ? bass = tone.Gb[2] : bass = tone.F[2]; break
+      //G
       case 105: if (pattern[index].acc === 'sharp') {
         bass = tone.Ab[1];
       } else if (pattern[index].acc === 'flat'){
         bass = tone.Gb[1];
       } else {
         bass = tone.G[1];
-      }
-        break;
+      } break;
+      case 52.5: if (pattern[index].acc === 'sharp') {
+        bass = tone.Ab[2];
+      } else if (pattern[index].acc === 'flat'){
+        bass = tone.Gb[2];
+      } else {
+        bass = tone.G[2];
+      } break;
+      //A
       case 97.5: if (pattern[index].acc === 'sharp') {
         bass = tone.Bb[1];
       } else if (pattern[index].acc === 'flat'){
         bass = tone.Ab[1];
       } else {
         bass = tone.A[1];
-      }
-        break;
-      case 90: if (pattern[index].acc === 'flat'){
-        bass = tone.Bb[1];
+      } break;
+      case 45: if (pattern[index].acc === 'sharp') {
+        bass = tone.Bb[2];
+      } else if (pattern[index].acc === 'flat'){
+        bass = tone.Ab[2];
       } else {
-        bass = tone.B[1];
-      }
-        break;
-      case 82.5: if (pattern[index].acc === 'sharp') {
-        bass = tone.Db[2];
-      } else { 
-        bass = tone.C[2];
-      }
-        break;
+        bass = tone.A[2];
+      } break
+      //B
+      case 90: pattern[index].acc === 'flat' ? bass = tone.Bb[1] : bass = tone.B[1]; break
+      case 37.5: pattern[index].acc === 'flat' ? bass = tone.Bb[2] : bass = tone.B[2]; break
+      //C
+      case 82.5: pattern[index].acc === 'sharp' ? bass = tone.Db[2] : bass = tone.C[2]; break
+      case 30: pattern[index].acc === 'sharp' ? bass = tone.Db[3] : bass = tone.C[3]; break
+      //D
       case 75: if (pattern[index].acc === 'sharp') {
         bass = tone.Eb[2];
       } else if (pattern[index].acc === 'flat'){
@@ -238,50 +239,12 @@ export async function playBass(pattern: {x: number, y: number, acc: string}[], g
       } else {
         bass = tone.D[2];
       }
-        break; 
-      case 67.5: if (pattern[index].acc === 'flat'){
-        bass = tone.Eb[2];
-      } else {
-        bass = tone.E[2];
-      }
         break;
-      case 60: if (pattern[index].acc === 'sharp') {
-        bass = tone.Gb[2];
-      } else { 
-        bass = tone.F[2];
-      }
-        break;
-      case 52.5: if (pattern[index].acc === 'sharp') {
-        bass = tone.Ab[2];
-      } else if (pattern[index].acc === 'flat'){
-        bass = tone.Gb[2];
-      } else {
-        bass = tone.G[2];
-      }
-        break;
-      case 45: if (pattern[index].acc === 'sharp') {
-        bass = tone.Bb[2];
-      } else if (pattern[index].acc === 'flat'){
-        bass = tone.Ab[2];
-      } else {
-        bass = tone.A[2];
-      }
-        break
-      case 37.5: if (pattern[index].acc === 'flat'){
-        bass = tone.Bb[2];
-      } else {
-        bass = tone.B[2];
-      }
-        break;
-      case 30: if (pattern[index].acc === 'sharp') {
-        bass = tone.Db[3];
-      } else { 
-        bass = tone.C[3];
-      }
-        break;
+
       default:
         break;
-    }
+    } 
+    
     const duration = groove[index] * beatDuration
 
     if (bass > 0) {
@@ -359,9 +322,6 @@ export async function playChords(pattern: string, groove: number[], bpm: number)
   const beatDuration = 60 / bpm // duration of one beat in seconds
   const swingRatio = 3/3; // adjust as needed
 
-  function wait(time: number) {
-    return new Promise(resolve => setTimeout(resolve, time * 1000));
-  }
   //const output = new midi.Output();
   //output.openPort(2)
 
@@ -372,12 +332,12 @@ export async function playChords(pattern: string, groove: number[], bpm: number)
 
     if (chord) {
       for (let i = 0; i < chord.length; i++) {
-        let velocity = Math.floor(Math.random() * (75 - 60 + 1) + 60);
+        //let velocity = Math.floor(Math.random() * (75 - 60 + 1) + 60);
         //output.sendMessage([144, chord[i], velocity]);
       }
       await wait(duration);
       for (let i = 0; i < chord.length; i++) {
-        let release = Math.floor(Math.random() * (70 - 50 + 1) + 50);
+        //let release = Math.floor(Math.random() * (70 - 50 + 1) + 50);
         //output.sendMessage([128, chord[i], release]);
       }
     } else if (pattern[index] === '-') {
