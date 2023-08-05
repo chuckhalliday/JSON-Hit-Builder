@@ -122,7 +122,7 @@ export function adjustChordString(chordString: string, keyAdjust: number) {
           transpose.push(keys[12 + keyAdjust] + `m`);
           break;
         case "7":
-          transpose.push(keys[14 + keyAdjust] + `dim`);
+          transpose.push(keys[14 + keyAdjust] + `°`);
           break;
         case "1":
           transpose.push(keys[15 + keyAdjust]);

@@ -28,9 +28,6 @@ export default function BassStaff({ renderWidth, part }: BassStaffProps) {
 /*  const NOTES = ["G4", "F4", "E4", "D4", "C4", "B3", "A3", "G3", "F3", "E3", "D3",
     "C3", "B2", "A2", "G2", "F2", "E2", "D2", "C2", "B1", "A1"]; */
 
-  const bassNotesRef = React.useRef<{x: number, y: number, acc: string}[]>(bassNoteGrid)
-  const chordsRef = React.useRef<number[]>(chordGrid)
-
   const MOUSE = {
     x: -10,
     y: -10,
@@ -53,32 +50,162 @@ export default function BassStaff({ renderWidth, part }: BassStaffProps) {
     return closest;
   }
 
+  function drawClef(ctx: CanvasRenderingContext2D, location: { x: number, y: number, acc: string }) {
+    const CANVAS = canvasRef.current;
+    if (CANVAS) {
+      const aspectRatio = CLEF_IMAGE.width / CLEF_IMAGE.height;
+      const newHeight = CANVAS.height * 0.52;
+      const newWidth = aspectRatio * newHeight;
+
+      ctx.drawImage(CLEF_IMAGE,
+        location.x - newWidth / 2, location.y - newHeight / 2,
+        newWidth, newHeight);
+    }
+  }
+
+  function drawNote(ctx: CanvasRenderingContext2D, location: { x: number, y: number, acc: string }, bassGrid: number[], bassGroove: number[]) {
+    const CANVAS = canvasRef.current;
+    if (CANVAS) {
+      const spacing = CANVAS.height / 20;
+      ctx.fillStyle = "black";
+      ctx.strokeStyle = "black";
+      ctx.lineWidth = 1;
+
+      const fontSize = 20;
+      ctx.font = `${fontSize}px serif`;
+
+      for (let i = 0; i < bassGrid.length; i++){
+        const isMatch = location.x === bassGrid[i];
+        const groove = bassGroove[i];
+        if (location.x === bassGrid[i] && location.acc === 'flat') {
+          ctx.fillText('♭', location.x + spacing * -3.5, location.y - spacing * 2 + fontSize);
+        }
+        if (location.x === bassGrid[i] && location.acc === 'sharp') {
+          ctx.fillText('#', location.x + spacing * -2.5, location.y - spacing * 1.9 + fontSize );
+        }
+        if (isMatch && groove === 1.5 || isMatch && groove === 0.75) {
+          ctx.beginPath();
+          ctx.arc(location.x + spacing + 8, location.y - 3.8, 2.8, 0, Math.PI * 2);
+          ctx.fill();
+        }
+        if (isMatch && groove <= 2) {
+          ctx.beginPath();
+          ctx.moveTo(location.x + spacing,
+            location.y);
+          ctx.lineTo(location.x + spacing,
+            location.y - spacing * 5);
+          ctx.stroke();
+        }
+        if(location.x === bassGrid[i] && bassGroove[i] <= 0.75){
+          ctx.beginPath();
+          ctx.moveTo(location.x + spacing,
+            location.y - spacing * 5);
+          ctx.bezierCurveTo(
+            location.x + spacing * 2, location.y - spacing * 3,
+            location.x + spacing * 2.5, location.y - spacing * 3,
+            location.x + spacing * 2.5, location.y - spacing * 1);
+          ctx.bezierCurveTo(
+            location.x + spacing * 2.5, location.y - spacing * 2.7,
+            location.x + spacing * 2, location.y - spacing * 2.7,
+            location.x + spacing, location.y - spacing * 4.5);
+          ctx.stroke();
+          ctx.fill();
+        }
+        if(location.x === bassGrid[i] && bassGroove[i] <= 0.25){
+          ctx.beginPath();
+          ctx.moveTo(location.x + spacing, location.y - spacing * 5 + 8);
+          ctx.bezierCurveTo(
+            location.x + spacing * 2, location.y - spacing * 3 + 7,
+            location.x + spacing * 2.5, location.y - spacing * 3 + 7,
+            location.x + spacing * 2.5, location.y - spacing * 1 + 4);
+          ctx.bezierCurveTo(
+            location.x + spacing * 2.5, location.y - spacing * 2.7 + 7,
+            location.x + spacing * 2, location.y - spacing * 2.7 + 7,
+            location.x + spacing, location.y - spacing * 4.5 + 4);
+          ctx.stroke();
+          ctx.fill();
+        }
+      }
+      ctx.beginPath();
+      ctx.save();
+      ctx.translate(location.x, location.y);
+      ctx.rotate(-0.2);
+      ctx.scale(1.05, 0.8);
+      ctx.arc(0, 0, spacing, 0, Math.PI * 2);
+
+      //half to quarter note fill
+      for (let i = 0; i < bassGrid.length; i++) {
+        if(location.x === bassGrid[i] && bassGroove[i] <= 1.5){
+      ctx.fill();
+        }
+      }
+      
+      ctx.stroke();
+      ctx.restore();
+    }
+  }
+
+  function displayChord(ctx: CanvasRenderingContext2D, location: number, bassGrid: number[], chordName: string) {
+    const CANVAS = canvasRef.current;
+    if (CANVAS) {
+      const spacing = CANVAS.height / 20;
+      const fontSize = 20;
+      ctx.fillStyle = "black";
+      ctx.font = `${fontSize}px serif`;
+  
+      for (let i = 0; i < bassGrid.length; i++) {
+        const isMatch = location === bassGrid[i];
+        if (isMatch) {
+          ctx.fillText(chordName, location - spacing, CANVAS.height - 136);
+          // You can adjust the y-coordinate (CANVAS.height - spacing) as needed to place the chord name properly.
+        }
+      }
+    }
+  }
+
+
+  function drawScene() {
+    const CANVAS = canvasRef.current;
+    if (CANVAS) {
+      CANVAS.width = renderWidth; // Set canvas width based on renderWidth prop
+      const ctx = CANVAS.getContext('2d');
+      const spacing = CANVAS.height / 20;
+      if (ctx) {
+        ctx.clearRect(0, 0, CANVAS.width, CANVAS.height);
+        ctx.strokeStyle = 'black';
+        ctx.lineWidth = 1;
+        for (let i = -2; i <= 2; i++) {
+          const y = CANVAS.height / 2 + i * spacing * 2;
+          ctx.beginPath();
+          ctx.moveTo(0, y);
+          ctx.lineTo(renderWidth, y);
+          ctx.stroke();
+        }
+
+        const index = Math.round(MOUSE.y / spacing);
+
+        drawClef(ctx, { x: 45, y: CANVAS.height / 2, acc:'none' });
+
+        bassNoteGrid.forEach((note) => {
+          drawNote(ctx, note, bassGrid, bassGroove);
+        });
+        chordGrid.forEach((chord, i) => {
+          displayChord(ctx, chord, bassGrid, chords[i])
+        })
+
+        const location = {
+          x: mouseX(bassGrid),
+          y: index * spacing,
+          acc: 'none'
+        };
+        drawNote(ctx, location, bassGrid, bassGroove);
+      }
+    }
+  }
+
   useEffect(() => {
-    function main() {
-      const CANVAS = canvasRef.current;
-      if (CANVAS) {
-        addEventListeners();
-        drawScene();
-        animate();
-      }
-    }
-
-    function animate() {
-      const CANVAS = canvasRef.current;
-      if (CANVAS) {
-        drawScene();
-        window.requestAnimationFrame(animate);
-      }
-    }
-
-    function addEventListeners() {
-      const CANVAS = canvasRef.current;
-      if (CANVAS) {
-        CANVAS.addEventListener('mousemove', onMouseMove as any);
-        CANVAS.addEventListener('mousedown', onMouseDown as any);
-        CANVAS.addEventListener('mouseup', onMouseUp as any);
-      }
-    }
+    // Event Listener Setup
+    const CANVAS = canvasRef.current;
 
     function onMouseMove(event: React.MouseEvent<HTMLCanvasElement, MouseEvent>) {
       const CANVAS = canvasRef.current;
@@ -99,13 +226,14 @@ export default function BassStaff({ renderWidth, part }: BassStaffProps) {
         const index = Math.round(MOUSE.y / spacing);
         const x = mouseX(bassGrid);
     
-        bassNotesRef.current = bassNotesRef.current.map((note) => {
+        const updatedBassNotes = bassNoteGrid.map((note) => {
           if (note.x === x) {
             return { ...note, y: index * spacing };
           }
           return note;
         });
-        dispatch(setBassState({index: part, bassNoteLocations: bassNotesRef.current}))
+  
+        dispatch(setBassState({ index: part, bassNoteLocations: updatedBassNotes }));
       }
     }
 
@@ -113,161 +241,37 @@ export default function BassStaff({ renderWidth, part }: BassStaffProps) {
       MOUSE.isDown = false;
     }
 
-    function drawClef(ctx: CanvasRenderingContext2D, location: { x: number, y: number, acc: string }) {
+    if (CANVAS) {
+      CANVAS.addEventListener('mousemove', onMouseMove as any);
+      CANVAS.addEventListener('mousedown', onMouseDown as any);
+      CANVAS.addEventListener('mouseup', onMouseUp as any);
+    }
+    return () => {
+      if (CANVAS) {
+        CANVAS.removeEventListener('mousemove', onMouseMove as any);
+        CANVAS.removeEventListener('mousedown', onMouseDown as any);
+        CANVAS.removeEventListener('mouseup', onMouseUp as any);
+      }
+    };
+  }, [MOUSE]);
+
+  useEffect(() => {
+    function main() {
       const CANVAS = canvasRef.current;
       if (CANVAS) {
-        const aspectRatio = CLEF_IMAGE.width / CLEF_IMAGE.height;
-        const newHeight = CANVAS.height * 0.52;
-        const newWidth = aspectRatio * newHeight;
-
-        ctx.drawImage(CLEF_IMAGE,
-          location.x - newWidth / 2, location.y - newHeight / 2,
-          newWidth, newHeight);
+        animate();
       }
     }
 
-    function drawNote(ctx: CanvasRenderingContext2D, location: { x: number, y: number, acc: string }, bassGrid: number[], bassGroove: number[]) {
+    function animate() {
       const CANVAS = canvasRef.current;
       if (CANVAS) {
-        const spacing = CANVAS.height / 20;
-        ctx.fillStyle = "black";
-        ctx.strokeStyle = "black";
-        ctx.lineWidth = 1;
-
-        const fontSize = 20;
-        ctx.font = `${fontSize}px serif`;
-
-        for (let i = 0; i < bassGrid.length; i++){
-          const isMatch = location.x === bassGrid[i];
-          const groove = bassGroove[i];
-          if (location.x === bassGrid[i] && location.acc === 'flat') {
-            ctx.fillText('♭', location.x + spacing * -3.5, location.y - spacing * 2 + fontSize);
-          }
-          if (location.x === bassGrid[i] && location.acc === 'sharp') {
-            ctx.fillText('#', location.x + spacing * -2.5, location.y - spacing * 1.9 + fontSize );
-          }
-          if (isMatch && groove === 1.5 || isMatch && groove === 0.75) {
-            ctx.beginPath();
-            ctx.arc(location.x + spacing + 8, location.y - 3.8, 2.8, 0, Math.PI * 2);
-            ctx.fill();
-          }
-          if (isMatch && groove <= 2) {
-            ctx.beginPath();
-            ctx.moveTo(location.x + spacing,
-              location.y);
-            ctx.lineTo(location.x + spacing,
-              location.y - spacing * 5);
-            ctx.stroke();
-          }
-          if(location.x === bassGrid[i] && bassGroove[i] <= 0.75){
-            ctx.beginPath();
-            ctx.moveTo(location.x + spacing,
-              location.y - spacing * 5);
-            ctx.bezierCurveTo(
-              location.x + spacing * 2, location.y - spacing * 3,
-              location.x + spacing * 2.5, location.y - spacing * 3,
-              location.x + spacing * 2.5, location.y - spacing * 1);
-            ctx.bezierCurveTo(
-              location.x + spacing * 2.5, location.y - spacing * 2.7,
-              location.x + spacing * 2, location.y - spacing * 2.7,
-              location.x + spacing, location.y - spacing * 4.5);
-            ctx.stroke();
-            ctx.fill();
-          }
-          if(location.x === bassGrid[i] && bassGroove[i] <= 0.25){
-            ctx.beginPath();
-            ctx.moveTo(location.x + spacing, location.y - spacing * 5 + 8);
-            ctx.bezierCurveTo(
-              location.x + spacing * 2, location.y - spacing * 3 + 7,
-              location.x + spacing * 2.5, location.y - spacing * 3 + 7,
-              location.x + spacing * 2.5, location.y - spacing * 1 + 4);
-            ctx.bezierCurveTo(
-              location.x + spacing * 2.5, location.y - spacing * 2.7 + 7,
-              location.x + spacing * 2, location.y - spacing * 2.7 + 7,
-              location.x + spacing, location.y - spacing * 4.5 + 4);
-            ctx.stroke();
-            ctx.fill();
-          }
-        }
-        ctx.beginPath();
-        ctx.save();
-        ctx.translate(location.x, location.y);
-        ctx.rotate(-0.2);
-        ctx.scale(1.05, 0.8);
-        ctx.arc(0, 0, spacing, 0, Math.PI * 2);
-
-        //half to quarter note fill
-        for (let i = 0; i < bassGrid.length; i++) {
-          if(location.x === bassGrid[i] && bassGroove[i] <= 1.5){
-        ctx.fill();
-          }
-        }
-        
-        ctx.stroke();
-        ctx.restore();
+        drawScene();
+        window.requestAnimationFrame(animate);
       }
     }
-
-    function displayChord(ctx: CanvasRenderingContext2D, location: number, bassGrid: number[], chordName: string) {
-      const CANVAS = canvasRef.current;
-      if (CANVAS) {
-        const spacing = CANVAS.height / 20;
-        const fontSize = 20;
-        ctx.fillStyle = "black";
-        ctx.font = `${fontSize}px serif`;
-    
-        for (let i = 0; i < bassGrid.length; i++) {
-          const isMatch = location === bassGrid[i];
-          if (isMatch) {
-            ctx.fillText(chordName, location - spacing, CANVAS.height - 136);
-            // You can adjust the y-coordinate (CANVAS.height - spacing) as needed to place the chord name properly.
-          }
-        }
-      }
-    }
-
-
-    function drawScene() {
-      const CANVAS = canvasRef.current;
-      if (CANVAS) {
-        CANVAS.width = renderWidth; // Set canvas width based on renderWidth prop
-        const ctx = CANVAS.getContext('2d');
-        const spacing = CANVAS.height / 20;
-        if (ctx) {
-          ctx.clearRect(0, 0, CANVAS.width, CANVAS.height);
-          ctx.strokeStyle = 'black';
-          ctx.lineWidth = 1;
-          for (let i = -2; i <= 2; i++) {
-            const y = CANVAS.height / 2 + i * spacing * 2;
-            ctx.beginPath();
-            ctx.moveTo(0, y);
-            ctx.lineTo(renderWidth, y);
-            ctx.stroke();
-          }
-
-          const index = Math.round(MOUSE.y / spacing);
-
-          drawClef(ctx, { x: 45, y: CANVAS.height / 2, acc:'none' });
-
-          bassNotesRef.current.forEach((note) => {
-            drawNote(ctx, note, bassGrid, bassGroove);
-          });
-          chordsRef.current.forEach((chord, i) => {
-            displayChord(ctx, chord, bassGrid, chords[i])
-          })
-
-          const location = {
-            x: mouseX(bassGrid),
-            y: index * spacing,
-            acc: 'none'
-          };
-          drawNote(ctx, location, bassGrid, bassGroove);
-        }
-      }
-    }
-
     main();
-  }, [renderWidth, MOUSE]);
+  }, [renderWidth, bassNoteGrid, bassGroove, chords, chordGrid, bassGrid, MOUSE]);
 
   const [isPlaying, setIsPlaying] = React.useState(false);
 
@@ -275,7 +279,7 @@ export default function BassStaff({ renderWidth, part }: BassStaffProps) {
     if (isPlaying) {
       setIsPlaying(false);
     } else {
-      playBass(bassNotesRef.current, bassGroove, bpm);
+      playBass(bassNoteGrid, bassGroove, bpm);
       setIsPlaying(true);
     }
   };

@@ -128,8 +128,8 @@ export default function DrumMachine({ onRenderWidthChange, part }: DrumMachinePr
       <div className={styles.labelList}>
         <div>Crash</div>
         <div>Ride</div>
-        <div>Hi-Hat O</div>
-        <div>Hi-Hat C</div>
+        <div>Open Hat</div>
+        <div>Closed Hat</div>
         <div>High Tom</div>
         <div>Mid Tom</div>
         <div>Low Tom</div>
