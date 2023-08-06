@@ -1,4 +1,5 @@
 //import midi from 'midi';
+import { tone, chordToneMappings } from "./chords";
 
 const audioContext = new AudioContext();
 
@@ -30,21 +31,6 @@ function playSound(buffer: AudioBuffer, volume: number = 1.0 /*set the volume 0.
 
   // Play the sound
   source.start();
-}
-
-export const tone = {
-  C: [16.35, 32.7, 65.41, 130.81, 261.63, 523.25, 1046.5, 2093.0, 4186.01],
-  Db: [17.32, 34.65, 69.3, 138.59, 277.18, 554.37, 1108.73, 2217.46, 4434.92],
-  D: [18.35, 36.71, 73.42, 146.83, 293.66, 587.33, 1174.66, 2349.32, 4698.64],
-  Eb: [19.45, 38.89, 77.78, 155.56, 311.13, 622.25, 1244.51, 2489.02, 4978.03],
-  E: [20.6, 41.2, 82.41, 164.81, 329.63, 659.26, 1318.51, 2637.02],
-  F: [21.83, 43.65, 87.31, 174.61, 349.23, 698.46, 1396.91, 2793.83],
-  Gb: [23.12, 46.25, 92.5, 185.0, 369.99, 739.99, 1479.98, 2959.96],
-  G: [24.5, 49.0, 98.0, 196.0, 392.0, 783.99, 1567.98, 3135.96],
-  Ab: [25.96, 51.91, 103.83, 207.65, 415.3, 830.61, 1661.22, 3322.44],
-  A: [27.5, 55.0, 110.0, 220.0, 440.0, 880.0, 1760.0, 3520.0],
-  Bb: [29.14, 58.27, 116.54, 233.08, 466.16, 932.33, 1864.66, 3729.31],
-  B: [30.87, 61.74, 123.47, 246.94, 493.88, 987.77, 1975.53, 3951.07],
 }
 
 
@@ -334,127 +320,10 @@ export async function playChords(pattern: string[], groove: number[], bpm: numbe
     }
 
     let chordTones: number[] = [];
-    switch (pattern[i]) {
-      case 'Ab': chordTones = [tone.Ab[4], tone.C[5], tone.Eb[5]]; break;
-      case 'Abmaj7': chordTones = [tone.Ab[4], tone.C[5], tone.Eb[5], tone.G[5]]; break;
-      case 'Ab7': chordTones = [tone.Ab[4], tone.C[5], tone.Eb[5], tone.Gb[4]]; break;
-      case 'Ab9': chordTones = [tone.Ab[4], tone.C[5], tone.Eb[5], tone.Bb[4]]; break;
-      case 'Abm': chordTones = [tone.Ab[4], tone.B[5], tone.Eb[5]]; break;
-      case 'Ab°': chordTones = [tone.Ab[4], tone.B[5], tone.D[5]]; break;
-
-      case 'A': chordTones = [tone.A[4], tone.Db[5], tone.E[5]]; break;
-      case 'Amaj7': chordTones = [tone.A[4], tone.Db[5], tone.E[5], tone.Ab[5]]; break;
-      case 'A7': chordTones = [tone.A[4], tone.Db[5], tone.E[5], tone.G[4]]; break;
-      case 'A9': chordTones = [tone.A[4], tone.Db[5], tone.E[5], tone.B[4]]; break;
-      case 'Am': chordTones = [tone.A[4], tone.C[5], tone.E[5]]; break;
-      case 'A°': chordTones = [tone.A[4], tone.C[5], tone.Eb[5]]; break;
-
-      case 'A#': chordTones = [tone.Bb[4], tone.D[5], tone.F[5]]; break;
-      case 'A#maj7': chordTones = [tone.Bb[4], tone.E[5], tone.F[5], tone.A[5]]; break;
-      case 'A#7': chordTones = [tone.Bb[4], tone.E[5], tone.F[5], tone.Ab[4]]; break;
-      case 'A#9': chordTones = [tone.Bb[4], tone.E[5], tone.F[5], tone.C[4]]; break;
-      case 'A#m': chordTones = [tone.Bb[4], tone.Db[5], tone.F[5]]; break;
-      case 'A#°': chordTones = [tone.Bb[4], tone.Db[5], tone.E[5]]; break;
-
-      case 'Bb': chordTones = [tone.Bb[4], tone.D[5], tone.F[5]]; break;
-      case 'Bbmaj7': chordTones = [tone.Bb[4], tone.E[5], tone.F[5], tone.A[5]]; break;
-      case 'Bb7': chordTones = [tone.Bb[4], tone.E[5], tone.F[5], tone.Ab[4]]; break;
-      case 'Bb9': chordTones = [tone.Bb[4], tone.E[5], tone.F[5], tone.C[4]]; break;
-      case 'Bbm': chordTones = [tone.Bb[4], tone.Db[5], tone.F[5]]; break;
-      case 'Bb°': chordTones = [tone.Bb[4], tone.Db[5], tone.E[5]]; break;
-
-      case 'B': chordTones = [tone.B[4], tone.Eb[5], tone.Gb[5]]; break;
-      case 'Bmaj7': chordTones = [tone.B[4], tone.Eb[5], tone.Gb[5], tone.Bb[5]]; break;
-      case 'B7': chordTones = [tone.B[4], tone.Eb[5], tone.Gb[5], tone.A[4]]; break;
-      case 'B9': chordTones = [tone.B[4], tone.Eb[5], tone.Gb[5], tone.Db[5]]; break;
-      case 'Bm': chordTones = [tone.B[4], tone.D[5], tone.Gb[5]]; break;
-      case 'B°': chordTones = [tone.B[4], tone.D[5], tone.F[5]]; break;
-
-      case 'C': chordTones = [tone.C[4], tone.E[4], tone.G[4]]; break;
-      case 'Cmaj7': chordTones = [tone.C[4], tone.E[4], tone.G[4], tone.B[4]]; break;
-      case 'C7': chordTones = [tone.C[4], tone.E[4], tone.G[4], tone.Bb[3]]; break;
-      case 'C9': chordTones = [tone.C[4], tone.E[4], tone.G[4], tone.D[4]]; break;
-      case 'Cm': chordTones = [tone.C[4], tone.Eb[4], tone.G[4]]; break;
-      case 'C°': chordTones = [tone.C[4], tone.Eb[4], tone.Gb[4]]; break;
-
-      case 'C#': chordTones = [tone.Db[4], tone.F[4], tone.Ab[4]]; break;
-      case 'C#maj7': chordTones = [tone.Db[4], tone.F[4], tone.Ab[4], tone.C[4]]; break;
-      case 'C#7': chordTones = [tone.Db[4], tone.F[4], tone.Ab[4], tone.B[3]]; break;
-      case 'C#9': chordTones = [tone.Db[4], tone.F[4], tone.Ab[4], tone.Eb[4]]; break;
-      case 'C#m': chordTones = [tone.Db[4], tone.E[4], tone.Ab[4]]; break;
-      case 'C#°': chordTones = [tone.Db[4], tone.E[4], tone.G[4]]; break;
-
-      case 'Db': chordTones = [tone.Db[4], tone.F[4], tone.Ab[4]]; break;
-      case 'Dbmaj7': chordTones = [tone.Db[4], tone.F[4], tone.Ab[4], tone.C[4]]; break;
-      case 'Db7': chordTones = [tone.Db[4], tone.F[4], tone.Ab[4], tone.B[3]]; break;
-      case 'Db9': chordTones = [tone.Db[4], tone.F[4], tone.Ab[4], tone.Eb[4]]; break;
-      case 'Dbm': chordTones = [tone.Db[4], tone.E[4], tone.Ab[4]]; break;
-      case 'Db°': chordTones = [tone.Db[4], tone.E[4], tone.G[4]]; break;
-
-      case 'D': chordTones = [tone.D[4], tone.Gb[4], tone.A[4]]; break;
-      case 'Dmaj7': chordTones = [tone.D[4], tone.Gb[4], tone.A[4], tone.Db[5]]; break;
-      case 'D7': chordTones = [tone.D[4], tone.Gb[4], tone.A[4], tone.C[4]]; break;
-      case 'D9': chordTones = [tone.D[4], tone.Gb[4], tone.A[4], tone.E[4]]; break;
-      case 'Dm': chordTones = [tone.D[4], tone.F[4], tone.A[4]]; break;
-      case 'D°': chordTones = [tone.D[4], tone.F[4], tone.Ab[4]]; break;
-
-      case 'D#': chordTones = [tone.Eb[4], tone.G[4], tone.Bb[4]]; break;
-      case 'D#maj7': chordTones = [tone.Eb[4], tone.G[4], tone.Bb[4], tone.D[5]]; break;
-      case 'D#7': chordTones = [tone.Eb[4], tone.G[4], tone.Bb[4], tone.Db[4]]; break;
-      case 'D#9': chordTones = [tone.Eb[4], tone.G[4], tone.Bb[4], tone.F[4]]; break;
-      case 'D#m': chordTones = [tone.Eb[4], tone.Gb[4], tone.Bb[4]]; break;
-      case 'D#°': chordTones = [tone.Eb[4], tone.Gb[4], tone.A[4]]; break;
-
-      case 'Eb': chordTones = [tone.Eb[4], tone.G[4], tone.Bb[4]]; break;
-      case 'Ebmaj7': chordTones = [tone.Eb[4], tone.G[4], tone.Bb[4], tone.D[5]]; break;
-      case 'Eb7': chordTones = [tone.Eb[4], tone.G[4], tone.Bb[4], tone.Db[4]]; break;
-      case 'Eb9': chordTones = [tone.Eb[4], tone.G[4], tone.Bb[4], tone.F[4]]; break;
-      case 'Ebm': chordTones = [tone.Eb[4], tone.Gb[4], tone.Bb[4]]; break;
-      case 'Eb°': chordTones = [tone.Eb[4], tone.Gb[4], tone.A[4]]; break;
-
-      case 'E': chordTones = [tone.E[4], tone.Ab[4], tone.B[4]]; break;
-      case 'Emaj7': chordTones = [tone.E[4], tone.Ab[4], tone.B[4], tone.Eb[5]]; break;
-      case 'E7': chordTones = [tone.E[4], tone.Ab[4], tone.B[4], tone.D[4]]; break;
-      case 'E9': chordTones = [tone.E[4], tone.Ab[4], tone.B[4], tone.Gb[4]]; break;
-      case 'Em': chordTones = [tone.E[4], tone.G[4], tone.B[4]]; break;
-      case 'E°': chordTones = [tone.E[4], tone.G[4], tone.Bb[4]]; break;
-
-      case 'F': chordTones = [tone.F[4], tone.A[4], tone.C[5]]; break;
-      case 'Fmaj7': chordTones = [tone.F[4], tone.A[4], tone.C[5], tone.E[5]]; break;
-      case 'F7': chordTones = [tone.F[4], tone.A[4], tone.C[5], tone.Eb[4]]; break;
-      case 'F9': chordTones = [tone.F[4], tone.A[4], tone.C[5], tone.G[4]]; break;
-      case 'Fm': chordTones = [tone.F[4], tone.Ab[4], tone.C[5]]; break;
-      case 'F°': chordTones = [tone.F[4], tone.Ab[4], tone.Bb[5]]; break;
-
-      case 'F#': chordTones = [tone.Gb[4], tone.Bb[4], tone.Db[5]]; break;
-      case 'F#maj7': chordTones = [tone.Gb[4], tone.Bb[4], tone.Db[5], tone.F[5]]; break;
-      case 'F#7': chordTones = [tone.Gb[4], tone.Bb[4], tone.Db[5], tone.E[4]]; break;
-      case 'F#9': chordTones = [tone.Gb[4], tone.Bb[4], tone.Db[5], tone.Ab[4]]; break;
-      case 'F#m': chordTones = [tone.Gb[4], tone.A[4], tone.Db[5]]; break;
-      case 'F#°': chordTones = [tone.Gb[4], tone.A[4], tone.C[5]]; break;
-
-      case 'Gb': chordTones = [tone.Gb[4], tone.Bb[4], tone.Db[5]]; break;
-      case 'Gbmaj7': chordTones = [tone.Gb[4], tone.Bb[4], tone.Db[5], tone.F[5]]; break;
-      case 'Gb7': chordTones = [tone.Gb[4], tone.Bb[4], tone.Db[5], tone.E[4]]; break;
-      case 'Gb9': chordTones = [tone.Gb[4], tone.Bb[4], tone.Db[5], tone.Ab[4]]; break;
-      case 'Gbm': chordTones = [tone.Gb[4], tone.A[4], tone.Db[5]]; break;
-      case 'Gb°': chordTones = [tone.Gb[4], tone.A[4], tone.C[5]]; break;
-
-      case 'G': chordTones = [tone.G[4], tone.B[5], tone.D[5]]; break;
-      case 'Gmaj7': chordTones = [tone.G[4], tone.B[5], tone.D[5], tone.Gb[5]]; break;
-      case 'G7': chordTones = [tone.G[4], tone.B[5], tone.D[5], tone.F[4]]; break;
-      case 'G9': chordTones = [tone.G[4], tone.B[5], tone.D[5], tone.A[4]]; break;
-      case 'Gm': chordTones = [tone.G[4], tone.Bb[5], tone.D[5]]; break;
-      case 'G°': chordTones = [tone.G[4], tone.Bb[5], tone.Db[5]]; break;
-
-      case 'G#': chordTones = [tone.Ab[4], tone.C[5], tone.Eb[5]]; break;
-      case 'G#maj7': chordTones = [tone.Ab[4], tone.C[5], tone.Eb[5], tone.G[5]]; break;
-      case 'G#7': chordTones = [tone.Ab[4], tone.C[5], tone.Eb[5], tone.Gb[4]]; break;
-      case 'G#9': chordTones = [tone.Ab[4], tone.C[5], tone.Eb[5], tone.Bb[4]]; break;
-      case 'G#m': chordTones = [tone.Ab[4], tone.B[5], tone.Eb[5]]; break;
-      case 'G#°': chordTones = [tone.Ab[4], tone.B[5], tone.D[5]]; break;
-
-      default: chordTones
+    if (chordToneMappings.hasOwnProperty(pattern[i])) {
+      chordTones = chordToneMappings[pattern[i]];
+    } else {
+      console.log('No matching chord tone map')
     }
 
     const duration = groove[i] * beatDuration;
