@@ -321,7 +321,14 @@ export async function playChords(pattern: string[], groove: number[], bpm: numbe
 
     let chordTones: number[] = [];
     if (chordToneMappings.hasOwnProperty(pattern[i])) {
-      chordTones = chordToneMappings[pattern[i]];
+      const availableChordTones = chordToneMappings[pattern[i]];
+      const numberOfTonesToSelect = Math.floor(Math.random() * 3) + 2; // Random number between 2 and 4
+    
+      // Shuffle the availableChordTones array to ensure randomness
+      const shuffledChordTones = availableChordTones.sort(() => Math.random() - 0.5);
+    
+      // Select the first numberOfTonesToSelect tones from the shuffled array
+      chordTones = shuffledChordTones.slice(0, numberOfTonesToSelect);
     } else {
       console.log('No matching chord tone map')
     }

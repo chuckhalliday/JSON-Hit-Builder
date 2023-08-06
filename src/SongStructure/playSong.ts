@@ -26,7 +26,7 @@ export async function playVerse(bpm: number, verseDrumGroove: number[], verseDru
   }
 }
   
-export async function playDrums(bpm: number, partDrumGroove: number[], partDrums: Array<Array<{ index: number; checked: boolean }>>, lamps?: HTMLInputElement[]) {
+export async function playDrums(bpm: number, partDrumGroove: number[], partDrums: Array<Array<{ index: number; checked: boolean }>>, lamps: HTMLInputElement[]) {
   for (let i = 0; i < 1; i++) {
     await Promise.all([
       playBeat(partDrums[0], partDrumGroove, bpm, partDrums, lamps),
