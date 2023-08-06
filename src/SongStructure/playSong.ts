@@ -12,7 +12,7 @@ export async function countIn(bpm: number, initDrums: number[],
 }
 
 export async function playVerse(bpm: number, verseDrumGroove: number[], verseDrums: Array<Array<{ index: number; checked: boolean }>>,
-  verseBassGroove: number[], verseBass: {x: number, y: number, acc: string }[], /*verseChordGroove: number[], verseChords: string*/) {
+  verseBassGroove: number[], verseBass: {x: number, y: number, acc: string }[], verseChordGroove: number[], verseChords: string[]) {
   for (let i = 0; i < 1; i++) {
     await Promise.all([
       playBeat(verseDrums[0], verseDrumGroove, bpm, verseDrums),
@@ -21,7 +21,7 @@ export async function playVerse(bpm: number, verseDrumGroove: number[], verseDru
       playBeat(verseDrums[6], verseDrumGroove, bpm, verseDrums),
       playBeat(verseDrums[8], verseDrumGroove, bpm, verseDrums),
       playBass(verseBass, verseBassGroove, bpm),
-      //playChords(verseChords, verseChordGroove, bpm)
+      playChords(verseChords, verseChordGroove, bpm)
     ])
   }
 }
@@ -60,7 +60,9 @@ export async function playSong(song: SongState) {
       song.songStructure[i].drumGroove,
       song.songStructure[i].drums,
       song.songStructure[i].bassGroove,
-      song.songStructure[i].bassNoteLocations /*, verseChords, verseChordGroove */
+      song.songStructure[i].bassNoteLocations, 
+      song.songStructure[i].chordsGroove,
+      song.songStructure[i].chords 
     );
     sum += 1;
   }
