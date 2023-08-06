@@ -1,6 +1,36 @@
 //import midi from 'midi';
 import { tone, chordToneMappings } from "./chords";
 
+let midi = null; // global MIDIAccess object
+
+function listInputsAndOutputs(midiAccess: MIDIAccess) {
+  console.log("MIDI ready!");
+  midi = midiAccess;
+  for (const entry of midiAccess.inputs) {
+    const input = entry[1];
+    console.log(
+      `Input port [type:'${input.type}']` +
+        ` id:'${input.id}'` +
+        ` manufacturer:'${input.manufacturer}'` +
+        ` name:'${input.name}'` +
+        ` version:'${input.version}'`,
+    );
+  }
+
+  for (const entry of midiAccess.outputs) {
+    const output = entry[1];
+    console.log(
+      `Output port [type:'${output.type}'] id:'${output.id}' manufacturer:'${output.manufacturer}' name:'${output.name}' version:'${output.version}'`,
+    );
+  }
+}
+
+function onMIDIFailure(msg: string) {
+  console.error(`Failed to get MIDI access - ${msg}`);
+}
+
+navigator.requestMIDIAccess().then(listInputsAndOutputs, onMIDIFailure);
+
 const audioContext = new AudioContext();
 
 function loadSoundFile(url: string, callback: (buffer: AudioBuffer) => void) {
@@ -330,7 +360,7 @@ export async function playChords(pattern: string[], groove: number[], bpm: numbe
       // Select the first numberOfTonesToSelect tones from the shuffled array
       chordTones = shuffledChordTones.slice(0, numberOfTonesToSelect);
     } else {
-      console.log('No matching chord tone map')
+      console.log('No matching chord tone map @ chord ' + (i + 1))
     }
 
     const duration = groove[i] * beatDuration;
