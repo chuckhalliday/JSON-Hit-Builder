@@ -105,13 +105,14 @@ export function adjustChordNotes(keyAdjust: number) {
   }
 }
 
+function wait(time: number) {
+  return new Promise(resolve => setTimeout(resolve, time * 1000));
+}
+
 export async function playBeat(pattern: Array<{ index: number; checked: boolean }>, groove: number[], bpm: number, stepsRef: Array<Array<{ index: number; checked: boolean }>>, lamps?: HTMLInputElement[]) {
   const beatDuration = 60 / bpm // duration of one beat in seconds
   const swingRatio = 3/3; // adjust as needed
 
-  function wait(time: number) {
-    return new Promise(resolve => setTimeout(resolve, time * 1000));
-  }
   //const output = new midi.Output();
   //output.openPort(0)
 
@@ -182,55 +183,55 @@ export async function playBass(pattern: {x: number, y: number, acc: string}[], g
   const beatDuration = 60 / bpm // duration of one beat in seconds
   const audioContext = new AudioContext();
 
-  function wait(time: number) {
-    return new Promise(resolve => setTimeout(resolve, time * 1000));
-  }
   //const output = new midi.Output();
   //output.openPort(1)
 
   for (let index = 0; index < pattern.length; index++) {
     let bass = pattern[index].y;
     switch (bass) {
-      case 120: if (pattern[index].acc === 'flat'){
-        bass = tone.Eb[1];
-      } else {
-        bass = tone.E[1];
-      }
-        break
-      case 112.5: if (pattern[index].acc === 'sharp') {
-        bass = tone.Gb[1];
-      } else { 
-        bass = tone.F[1];
-      }
-        break;
+      //E
+      case 120: pattern[index].acc === 'flat' ? bass = tone.Eb[1] : bass = tone.E[1]; break
+      case 67.5: pattern[index].acc === 'flat' ? bass = tone.Eb[2] : bass = tone.E[2]; break
+      //F
+      case 112.5: pattern[index].acc === 'sharp' ? bass = tone.Gb[1] : bass = tone.F[1]; break
+      case 60: pattern[index].acc === 'sharp' ? bass = tone.Gb[2] : bass = tone.F[2]; break
+      //G
       case 105: if (pattern[index].acc === 'sharp') {
         bass = tone.Ab[1];
       } else if (pattern[index].acc === 'flat'){
         bass = tone.Gb[1];
       } else {
         bass = tone.G[1];
-      }
-        break;
+      } break;
+      case 52.5: if (pattern[index].acc === 'sharp') {
+        bass = tone.Ab[2];
+      } else if (pattern[index].acc === 'flat'){
+        bass = tone.Gb[2];
+      } else {
+        bass = tone.G[2];
+      } break;
+      //A
       case 97.5: if (pattern[index].acc === 'sharp') {
         bass = tone.Bb[1];
       } else if (pattern[index].acc === 'flat'){
         bass = tone.Ab[1];
       } else {
         bass = tone.A[1];
-      }
-        break;
-      case 90: if (pattern[index].acc === 'flat'){
-        bass = tone.Bb[1];
+      } break;
+      case 45: if (pattern[index].acc === 'sharp') {
+        bass = tone.Bb[2];
+      } else if (pattern[index].acc === 'flat'){
+        bass = tone.Ab[2];
       } else {
-        bass = tone.B[1];
-      }
-        break;
-      case 82.5: if (pattern[index].acc === 'sharp') {
-        bass = tone.Db[2];
-      } else { 
-        bass = tone.C[2];
-      }
-        break;
+        bass = tone.A[2];
+      } break
+      //B
+      case 90: pattern[index].acc === 'flat' ? bass = tone.Bb[1] : bass = tone.B[1]; break
+      case 37.5: pattern[index].acc === 'flat' ? bass = tone.Bb[2] : bass = tone.B[2]; break
+      //C
+      case 82.5: pattern[index].acc === 'sharp' ? bass = tone.Db[2] : bass = tone.C[2]; break
+      case 30: pattern[index].acc === 'sharp' ? bass = tone.Db[3] : bass = tone.C[3]; break
+      //D
       case 75: if (pattern[index].acc === 'sharp') {
         bass = tone.Eb[2];
       } else if (pattern[index].acc === 'flat'){
@@ -238,50 +239,12 @@ export async function playBass(pattern: {x: number, y: number, acc: string}[], g
       } else {
         bass = tone.D[2];
       }
-        break; 
-      case 67.5: if (pattern[index].acc === 'flat'){
-        bass = tone.Eb[2];
-      } else {
-        bass = tone.E[2];
-      }
         break;
-      case 60: if (pattern[index].acc === 'sharp') {
-        bass = tone.Gb[2];
-      } else { 
-        bass = tone.F[2];
-      }
-        break;
-      case 52.5: if (pattern[index].acc === 'sharp') {
-        bass = tone.Ab[2];
-      } else if (pattern[index].acc === 'flat'){
-        bass = tone.Gb[2];
-      } else {
-        bass = tone.G[2];
-      }
-        break;
-      case 45: if (pattern[index].acc === 'sharp') {
-        bass = tone.Bb[2];
-      } else if (pattern[index].acc === 'flat'){
-        bass = tone.Ab[2];
-      } else {
-        bass = tone.A[2];
-      }
-        break
-      case 37.5: if (pattern[index].acc === 'flat'){
-        bass = tone.Bb[2];
-      } else {
-        bass = tone.B[2];
-      }
-        break;
-      case 30: if (pattern[index].acc === 'sharp') {
-        bass = tone.Db[3];
-      } else { 
-        bass = tone.C[3];
-      }
-        break;
+
       default:
         break;
-    }
+    } 
+    
     const duration = groove[index] * beatDuration
 
     if (bass > 0) {
@@ -355,37 +318,185 @@ export async function playBass(pattern: {x: number, y: number, acc: string}[], g
   }
 }
 
-export async function playChords(pattern: string, groove: number[], bpm: number) {
-  const beatDuration = 60 / bpm // duration of one beat in seconds
-  const swingRatio = 3/3; // adjust as needed
+export async function playChords(pattern: string[], groove: number[], bpm: number) {
+  const beatDuration = 60 / bpm; // duration of one beat in seconds
+  const audioContext = new AudioContext();
 
-  function wait(time: number) {
-    return new Promise(resolve => setTimeout(resolve, time * 1000));
-  }
-  //const output = new midi.Output();
-  //output.openPort(2)
+  const gainNode = audioContext.createGain();
+  const filterNode = audioContext.createBiquadFilter();
+  filterNode.type = 'lowpass'; // Adjust the filter type as needed
+  filterNode.frequency.value = 1000; // Adjust the frequency as needed
 
-  for (let index = 0; index < pattern.length; index++) {
-    const chord = chordTones[pattern[index]];
-
-    const duration = groove[index] * beatDuration
-
-    if (chord) {
-      for (let i = 0; i < chord.length; i++) {
-        let velocity = Math.floor(Math.random() * (75 - 60 + 1) + 60);
-        //output.sendMessage([144, chord[i], velocity]);
-      }
-      await wait(duration);
-      for (let i = 0; i < chord.length; i++) {
-        let release = Math.floor(Math.random() * (70 - 50 + 1) + 50);
-        //output.sendMessage([128, chord[i], release]);
-      }
-    } else if (pattern[index] === '-') {
-      await wait(duration);
+  for (let i = 0; i < pattern.length; i++) {
+    if (pattern[i] === '-') {
+      await wait(groove[i] * beatDuration);
+      continue;
     }
-  }
-} 
 
+    let chordTones: number[] = [];
+    switch (pattern[i]) {
+      case 'Ab': chordTones = [tone.Ab[4], tone.C[5], tone.Eb[5]]; break;
+      case 'Abmaj7': chordTones = [tone.Ab[4], tone.C[5], tone.Eb[5], tone.G[5]]; break;
+      case 'Ab7': chordTones = [tone.Ab[4], tone.C[5], tone.Eb[5], tone.Gb[4]]; break;
+      case 'Ab9': chordTones = [tone.Ab[4], tone.C[5], tone.Eb[5], tone.Bb[4]]; break;
+      case 'Abm': chordTones = [tone.Ab[4], tone.B[5], tone.Eb[5]]; break;
+      case 'Ab°': chordTones = [tone.Ab[4], tone.B[5], tone.D[5]]; break;
+
+      case 'A': chordTones = [tone.A[4], tone.Db[5], tone.E[5]]; break;
+      case 'Amaj7': chordTones = [tone.A[4], tone.Db[5], tone.E[5], tone.Ab[5]]; break;
+      case 'A7': chordTones = [tone.A[4], tone.Db[5], tone.E[5], tone.G[4]]; break;
+      case 'A9': chordTones = [tone.A[4], tone.Db[5], tone.E[5], tone.B[4]]; break;
+      case 'Am': chordTones = [tone.A[4], tone.C[5], tone.E[5]]; break;
+      case 'A°': chordTones = [tone.A[4], tone.C[5], tone.Eb[5]]; break;
+
+      case 'A#': chordTones = [tone.Bb[4], tone.D[5], tone.F[5]]; break;
+      case 'A#maj7': chordTones = [tone.Bb[4], tone.E[5], tone.F[5], tone.A[5]]; break;
+      case 'A#7': chordTones = [tone.Bb[4], tone.E[5], tone.F[5], tone.Ab[4]]; break;
+      case 'A#9': chordTones = [tone.Bb[4], tone.E[5], tone.F[5], tone.C[4]]; break;
+      case 'A#m': chordTones = [tone.Bb[4], tone.Db[5], tone.F[5]]; break;
+      case 'A#°': chordTones = [tone.Bb[4], tone.Db[5], tone.E[5]]; break;
+
+      case 'Bb': chordTones = [tone.Bb[4], tone.D[5], tone.F[5]]; break;
+      case 'Bbmaj7': chordTones = [tone.Bb[4], tone.E[5], tone.F[5], tone.A[5]]; break;
+      case 'Bb7': chordTones = [tone.Bb[4], tone.E[5], tone.F[5], tone.Ab[4]]; break;
+      case 'Bb9': chordTones = [tone.Bb[4], tone.E[5], tone.F[5], tone.C[4]]; break;
+      case 'Bbm': chordTones = [tone.Bb[4], tone.Db[5], tone.F[5]]; break;
+      case 'Bb°': chordTones = [tone.Bb[4], tone.Db[5], tone.E[5]]; break;
+
+      case 'B': chordTones = [tone.B[4], tone.Eb[5], tone.Gb[5]]; break;
+      case 'Bmaj7': chordTones = [tone.B[4], tone.Eb[5], tone.Gb[5], tone.Bb[5]]; break;
+      case 'B7': chordTones = [tone.B[4], tone.Eb[5], tone.Gb[5], tone.A[4]]; break;
+      case 'B9': chordTones = [tone.B[4], tone.Eb[5], tone.Gb[5], tone.Db[5]]; break;
+      case 'Bm': chordTones = [tone.B[4], tone.D[5], tone.Gb[5]]; break;
+      case 'B°': chordTones = [tone.B[4], tone.D[5], tone.F[5]]; break;
+
+      case 'C': chordTones = [tone.C[4], tone.E[4], tone.G[4]]; break;
+      case 'Cmaj7': chordTones = [tone.C[4], tone.E[4], tone.G[4], tone.B[4]]; break;
+      case 'C7': chordTones = [tone.C[4], tone.E[4], tone.G[4], tone.Bb[3]]; break;
+      case 'C9': chordTones = [tone.C[4], tone.E[4], tone.G[4], tone.D[4]]; break;
+      case 'Cm': chordTones = [tone.C[4], tone.Eb[4], tone.G[4]]; break;
+      case 'C°': chordTones = [tone.C[4], tone.Eb[4], tone.Gb[4]]; break;
+
+      case 'C#': chordTones = [tone.Db[4], tone.F[4], tone.Ab[4]]; break;
+      case 'C#maj7': chordTones = [tone.Db[4], tone.F[4], tone.Ab[4], tone.C[4]]; break;
+      case 'C#7': chordTones = [tone.Db[4], tone.F[4], tone.Ab[4], tone.B[3]]; break;
+      case 'C#9': chordTones = [tone.Db[4], tone.F[4], tone.Ab[4], tone.Eb[4]]; break;
+      case 'C#m': chordTones = [tone.Db[4], tone.E[4], tone.Ab[4]]; break;
+      case 'C#°': chordTones = [tone.Db[4], tone.E[4], tone.G[4]]; break;
+
+      case 'Db': chordTones = [tone.Db[4], tone.F[4], tone.Ab[4]]; break;
+      case 'Dbmaj7': chordTones = [tone.Db[4], tone.F[4], tone.Ab[4], tone.C[4]]; break;
+      case 'Db7': chordTones = [tone.Db[4], tone.F[4], tone.Ab[4], tone.B[3]]; break;
+      case 'Db9': chordTones = [tone.Db[4], tone.F[4], tone.Ab[4], tone.Eb[4]]; break;
+      case 'Dbm': chordTones = [tone.Db[4], tone.E[4], tone.Ab[4]]; break;
+      case 'Db°': chordTones = [tone.Db[4], tone.E[4], tone.G[4]]; break;
+
+      case 'D': chordTones = [tone.D[4], tone.Gb[4], tone.A[4]]; break;
+      case 'Dmaj7': chordTones = [tone.D[4], tone.Gb[4], tone.A[4], tone.Db[5]]; break;
+      case 'D7': chordTones = [tone.D[4], tone.Gb[4], tone.A[4], tone.C[4]]; break;
+      case 'D9': chordTones = [tone.D[4], tone.Gb[4], tone.A[4], tone.E[4]]; break;
+      case 'Dm': chordTones = [tone.D[4], tone.F[4], tone.A[4]]; break;
+      case 'D°': chordTones = [tone.D[4], tone.F[4], tone.Ab[4]]; break;
+
+      case 'D#': chordTones = [tone.Eb[4], tone.G[4], tone.Bb[4]]; break;
+      case 'D#maj7': chordTones = [tone.Eb[4], tone.G[4], tone.Bb[4], tone.D[5]]; break;
+      case 'D#7': chordTones = [tone.Eb[4], tone.G[4], tone.Bb[4], tone.Db[4]]; break;
+      case 'D#9': chordTones = [tone.Eb[4], tone.G[4], tone.Bb[4], tone.F[4]]; break;
+      case 'D#m': chordTones = [tone.Eb[4], tone.Gb[4], tone.Bb[4]]; break;
+      case 'D#°': chordTones = [tone.Eb[4], tone.Gb[4], tone.A[4]]; break;
+
+      case 'Eb': chordTones = [tone.Eb[4], tone.G[4], tone.Bb[4]]; break;
+      case 'Ebmaj7': chordTones = [tone.Eb[4], tone.G[4], tone.Bb[4], tone.D[5]]; break;
+      case 'Eb7': chordTones = [tone.Eb[4], tone.G[4], tone.Bb[4], tone.Db[4]]; break;
+      case 'Eb9': chordTones = [tone.Eb[4], tone.G[4], tone.Bb[4], tone.F[4]]; break;
+      case 'Ebm': chordTones = [tone.Eb[4], tone.Gb[4], tone.Bb[4]]; break;
+      case 'Eb°': chordTones = [tone.Eb[4], tone.Gb[4], tone.A[4]]; break;
+
+      case 'E': chordTones = [tone.E[4], tone.Ab[4], tone.B[4]]; break;
+      case 'Emaj7': chordTones = [tone.E[4], tone.Ab[4], tone.B[4], tone.Eb[5]]; break;
+      case 'E7': chordTones = [tone.E[4], tone.Ab[4], tone.B[4], tone.D[4]]; break;
+      case 'E9': chordTones = [tone.E[4], tone.Ab[4], tone.B[4], tone.Gb[4]]; break;
+      case 'Em': chordTones = [tone.E[4], tone.G[4], tone.B[4]]; break;
+      case 'E°': chordTones = [tone.E[4], tone.G[4], tone.Bb[4]]; break;
+
+      case 'F': chordTones = [tone.F[4], tone.A[4], tone.C[5]]; break;
+      case 'Fmaj7': chordTones = [tone.F[4], tone.A[4], tone.C[5], tone.E[5]]; break;
+      case 'F7': chordTones = [tone.F[4], tone.A[4], tone.C[5], tone.Eb[4]]; break;
+      case 'F9': chordTones = [tone.F[4], tone.A[4], tone.C[5], tone.G[4]]; break;
+      case 'Fm': chordTones = [tone.F[4], tone.Ab[4], tone.C[5]]; break;
+      case 'F°': chordTones = [tone.F[4], tone.Ab[4], tone.Bb[5]]; break;
+
+      case 'F#': chordTones = [tone.Gb[4], tone.Bb[4], tone.Db[5]]; break;
+      case 'F#maj7': chordTones = [tone.Gb[4], tone.Bb[4], tone.Db[5], tone.F[5]]; break;
+      case 'F#7': chordTones = [tone.Gb[4], tone.Bb[4], tone.Db[5], tone.E[4]]; break;
+      case 'F#9': chordTones = [tone.Gb[4], tone.Bb[4], tone.Db[5], tone.Ab[4]]; break;
+      case 'F#m': chordTones = [tone.Gb[4], tone.A[4], tone.Db[5]]; break;
+      case 'F#°': chordTones = [tone.Gb[4], tone.A[4], tone.C[5]]; break;
+
+      case 'Gb': chordTones = [tone.Gb[4], tone.Bb[4], tone.Db[5]]; break;
+      case 'Gbmaj7': chordTones = [tone.Gb[4], tone.Bb[4], tone.Db[5], tone.F[5]]; break;
+      case 'Gb7': chordTones = [tone.Gb[4], tone.Bb[4], tone.Db[5], tone.E[4]]; break;
+      case 'Gb9': chordTones = [tone.Gb[4], tone.Bb[4], tone.Db[5], tone.Ab[4]]; break;
+      case 'Gbm': chordTones = [tone.Gb[4], tone.A[4], tone.Db[5]]; break;
+      case 'Gb°': chordTones = [tone.Gb[4], tone.A[4], tone.C[5]]; break;
+
+      case 'G': chordTones = [tone.G[4], tone.B[5], tone.D[5]]; break;
+      case 'Gmaj7': chordTones = [tone.G[4], tone.B[5], tone.D[5], tone.Gb[5]]; break;
+      case 'G7': chordTones = [tone.G[4], tone.B[5], tone.D[5], tone.F[4]]; break;
+      case 'G9': chordTones = [tone.G[4], tone.B[5], tone.D[5], tone.A[4]]; break;
+      case 'Gm': chordTones = [tone.G[4], tone.Bb[5], tone.D[5]]; break;
+      case 'G°': chordTones = [tone.G[4], tone.Bb[5], tone.Db[5]]; break;
+
+      case 'G#': chordTones = [tone.Ab[4], tone.C[5], tone.Eb[5]]; break;
+      case 'G#maj7': chordTones = [tone.Ab[4], tone.C[5], tone.Eb[5], tone.G[5]]; break;
+      case 'G#7': chordTones = [tone.Ab[4], tone.C[5], tone.Eb[5], tone.Gb[4]]; break;
+      case 'G#9': chordTones = [tone.Ab[4], tone.C[5], tone.Eb[5], tone.Bb[4]]; break;
+      case 'G#m': chordTones = [tone.Ab[4], tone.B[5], tone.Eb[5]]; break;
+      case 'G#°': chordTones = [tone.Ab[4], tone.B[5], tone.D[5]]; break;
+
+      default: chordTones
+    }
+
+    const duration = groove[i] * beatDuration;
+
+    const oscillators = chordTones.map(tone => {
+      const osc = audioContext.createOscillator();
+      osc.frequency.value = tone;
+      osc.type = 'sawtooth';
+      return osc;
+    });
+
+    const now = audioContext.currentTime;
+
+    oscillators.forEach(osc => {
+      const envelope = audioContext.createGain();
+      osc.connect(envelope);
+      envelope.connect(gainNode);
+      gainNode.connect(filterNode);
+      filterNode.connect(audioContext.destination);
+
+      envelope.gain.setValueAtTime(0, now);
+      envelope.gain.linearRampToValueAtTime(0.6, now + 0.02); // Attack
+      envelope.gain.linearRampToValueAtTime(0.4, now + 0.04); // Decay
+    });
+
+    oscillators.forEach(osc => {
+      osc.start(now);
+    })
+
+    await wait(duration);
+
+    oscillators.forEach(osc => {
+      const releaseTime = audioContext.currentTime + 0.1; // Adjust the release time as needed
+      osc.stop(releaseTime);
+    });
+  }
+
+  // Disconnect nodes and close the context
+  gainNode.disconnect();
+  filterNode.disconnect();
+  audioContext.close();
+}
 
 
 
