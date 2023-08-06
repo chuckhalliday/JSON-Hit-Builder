@@ -3,7 +3,7 @@ import { tone, chordToneMappings } from "./chords";
 
 let midi = null; // global MIDIAccess object
 
-function listInputsAndOutputs(midiAccess: MIDIAccess) {
+function listInputsAndOutputs(midiAccess: WebMidi.MIDIAccess) {
   console.log("MIDI ready!");
   midi = midiAccess;
   for (const entry of midiAccess.inputs) {
