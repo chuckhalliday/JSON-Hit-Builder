@@ -10,6 +10,28 @@ import { incrementByAmount, setIsPlaying, setMidi, SongState } from './reducers'
 import styles from "./App.module.scss"
 
 
+function listInputsAndOutputs(midiAccess: WebMidi.MIDIAccess) {
+  console.log("MIDI ready!");
+  for (const entry of midiAccess.inputs) {
+    const input = entry[1];
+    console.log(
+      `Input port: name:'${input.name}'`
+    );
+  }
+
+  for (const entry of midiAccess.outputs) {
+    const output = entry[1];
+    console.log(
+      `Output port: name:'${output.name}'`,
+    );
+  }
+}
+
+function onMIDIFailure(msg: string) {
+  console.error(`Failed to get MIDI access - ${msg}`);
+}
+
+
 function App() {
   const [openedParts, setOpenedParts] = useState<{ [key: string]: boolean }>({});
   const [showInfoScreen, setShowInfoScreen] = useState(true);
@@ -63,8 +85,10 @@ function App() {
   const handleMidi = async () => {
     if (midi) {
       dispatch(setMidi({midi: false}));
+      console.log("Midi off")
     } else {
       dispatch(setMidi({midi: true}));
+      navigator.requestMIDIAccess().then(listInputsAndOutputs, onMIDIFailure)
     }
   };
 
