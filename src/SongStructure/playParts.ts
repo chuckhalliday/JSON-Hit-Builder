@@ -1,38 +1,6 @@
 //import midi from 'midi';
 import { tone, chordToneMappings } from "./chords";
 
-let midi: WebMidi.MIDIAccess; // global MIDIAccess object
-
-function listInputsAndOutputs(midiAccess: WebMidi.MIDIAccess) {
-  console.log("MIDI ready!");
-  midi = midiAccess;
-  console.log(midiAccess)
-  for (const entry of midiAccess.inputs) {
-    const input = entry[1];
-    console.log(
-      `Input port [type:'${input.type}']` +
-        ` id:'${input.id}'` +
-        ` manufacturer:'${input.manufacturer}'` +
-        ` name:'${input.name}'` +
-        ` version:'${input.version}'`,
-    );
-  }
-
-  for (const entry of midiAccess.outputs) {
-    const output = entry[1];
-    console.log(output)
-    console.log(
-      `Output port [type:'${output.type}'] id:'${output.id}' manufacturer:'${output.manufacturer}' name:'${output.name}' version:'${output.version}'`,
-    );
-  }
-}
-
-function onMIDIFailure(msg: string) {
-  console.error(`Failed to get MIDI access - ${msg}`);
-}
-
-navigator.requestMIDIAccess().then(listInputsAndOutputs, onMIDIFailure)
-
 const audioContext = new AudioContext();
 
 function loadSoundFile(url: string, callback: (buffer: AudioBuffer) => void) {

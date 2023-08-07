@@ -100,7 +100,6 @@ export function chordLocation(bassLocation: { x: number, y: number, acc: string 
 export function adjustChordString(chordString: string, keyAdjust: number) {
   let transpose: string[] = [];
   let keys: string[] = []
-  console.log(chordString)
   for (let i = 0; i < chordString.length; i++) {
       const sharpKeys = [-10, -8, -6, -5, -3, -1, 0, 2, 4, 6, 7, 9, 11];
       const flatKeys = [-12, -11, -9, -7, -4, -2, 1, 3, 5, 8, 10, 12]
