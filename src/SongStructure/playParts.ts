@@ -1,4 +1,3 @@
-//import midi from 'midi';
 import { tone, chordToneMappings } from "./chords";
 
 const audioContext = new AudioContext();
@@ -147,8 +146,7 @@ export async function playBeat(midi: boolean, pattern: Array<{ index: number; ch
       if (pattern === stepsRef[0] && pattern[index].checked) {
         if(!midi) {
           loadSoundFile("../kick.mp3", (buffer: AudioBuffer) => {
-          playSound(buffer, 0.7);
-
+          playSound(buffer, velocity/100);
           });
         } else {
           triggerMidi('1', 36, velocity, duration, release)
@@ -157,7 +155,7 @@ export async function playBeat(midi: boolean, pattern: Array<{ index: number; ch
       } else if (pattern === stepsRef[1]&& pattern[index].checked) {
         if(!midi) {
           loadSoundFile("../snare.mp3", (buffer: AudioBuffer) => {
-          playSound(buffer, 0.4);
+          playSound(buffer, velocity/100);
         });
         } else {
           triggerMidi('1', 38, velocity, duration, release)
@@ -166,7 +164,7 @@ export async function playBeat(midi: boolean, pattern: Array<{ index: number; ch
       } else if (pattern === stepsRef[5] && pattern[index].checked) {
         if(!midi){
           loadSoundFile("../hihatC.mp3", (buffer: AudioBuffer) => {
-          playSound(buffer, 0.4);
+          playSound(buffer, velocity/100);
         })
         } else {
           triggerMidi('1', 42, velocity, duration, release)
@@ -175,7 +173,7 @@ export async function playBeat(midi: boolean, pattern: Array<{ index: number; ch
       } else if (pattern === stepsRef[6] && pattern[index].checked) {
         if(!midi){
           loadSoundFile("../hihatO.mp3", (buffer: AudioBuffer) => {
-          playSound(buffer, 0.5);
+          playSound(buffer, velocity/100);
         });
         } else {
           triggerMidi('1', 46, velocity, duration, release)
@@ -184,7 +182,7 @@ export async function playBeat(midi: boolean, pattern: Array<{ index: number; ch
       } else if (pattern === stepsRef[8] && pattern[index].checked) {
         if(!midi){
           loadSoundFile("../crash.mp3", (buffer: AudioBuffer) => {
-          playSound(buffer, 0.5);
+          playSound(buffer, velocity/100);
         });
         } else {
           triggerMidi('1', 49, velocity, duration, release)
