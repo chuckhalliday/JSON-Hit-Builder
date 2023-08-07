@@ -33,42 +33,6 @@ function onMIDIFailure(msg: string) {
 
 navigator.requestMIDIAccess().then(listInputsAndOutputs, onMIDIFailure)
 
-navigator.requestMIDIAccess()
-.then(function(access) {
-  // Get the outputs
-  var outputs = access.outputs.values();
-  
-  // Find the desired output device (IAC driver 1)
-  var outputDevice: WebMidi.MIDIOutput | null = null;
-  for (var output of outputs) {
-    if (output.name === 'IAC Driver Bus 1') {
-      outputDevice = output;
-      break;
-    }
-  }
-  
-  // Check if the output device was found
-  if (!outputDevice) {
-    console.log("Output device 'IAC Driver 1' not found.");
-    return;
-  }
-  
-  // Create MIDI message
-  var channel = 0; // MIDI channels are 0-based, so 35 represents channel 36
-  var note = 36; // MIDI note number (C4)
-  var velocity = 100; // Velocity (0-127)
-  
-  var message = [0x90 + channel, note, velocity]; // Note On message
-  
-  // Send the MIDI message
-  outputDevice.send(message);
-  
-  // You can also use a timeout to send a Note Off message after some time
-})
-.catch(function(error) {
-  console.log("MIDI access request failed:", error);
-});
-
 const audioContext = new AudioContext();
 
 function loadSoundFile(url: string, callback: (buffer: AudioBuffer) => void) {
@@ -163,17 +127,48 @@ function wait(time: number) {
   return new Promise(resolve => setTimeout(resolve, time * 1000));
 }
 
-export async function playBeat(pattern: Array<{ index: number; checked: boolean }>, groove: number[], bpm: number, stepsRef: Array<Array<{ index: number; checked: boolean }>>, lamps?: HTMLInputElement[]) {
+async function triggerMidi(bus: string, note: number, velocity: number, duration: number, release: number) {
+  try {
+    const access = await navigator.requestMIDIAccess();
+    const outputs = access.outputs.values();
+    let outputDevice: WebMidi.MIDIOutput | null = null;
+
+    for (const output of outputs) {
+      if (output.name === `IAC Driver Bus ${bus}`) {
+        outputDevice = output;
+        break;
+      }
+    }
+
+    if (!outputDevice) {
+      console.log("Output device 'IAC Driver Bus 1' not found.");
+      return;
+    }
+
+    const startMessage = [0x90, note, velocity];
+    const stopMessage = [0x80 , note, release]
+
+    outputDevice.send(startMessage);
+    await wait(duration);
+    outputDevice.send(stopMessage)
+  } catch (error) {
+    console.log("MIDI access request failed:", error);
+  }
+}
+
+export async function playBeat(midi: boolean, pattern: Array<{ index: number; checked: boolean; accent?: boolean }>, groove: number[], bpm: number, stepsRef: Array<Array<{ index: number; checked: boolean }>>, lamps?: HTMLInputElement[]) {
   const beatDuration = 60 / bpm // duration of one beat in seconds
   const swingRatio = 3/3; // adjust as needed
 
-  //const output = new midi.Output();
-
-  //output.openPort(0)
-
   for (let index = 0; index < groove.length; index++) {
-    //const drum = drumHits[pattern[index]];
-    //const release = Math.floor(Math.random() * (70 - 50 + 1) + 50);
+    let velocity = Math.floor(Math.random() * (70 - 50 + 1) + 50);
+    if (pattern[index].accent) {
+      velocity = 90;
+      if (Math.random() < 0.17) {  // 1 in 6 chance
+        velocity = Math.floor(Math.random() * (120 - 100 + 1) + 100);
+      }
+    }
+    const release = Math.floor(Math.random() * (70 - 50 + 1) + 50);
     const isEvenSixteenth = index % 4 === 0 || index % 4 === 2;
     const duration = isEvenSixteenth
       ? groove[index] * beatDuration * swingRatio
@@ -182,59 +177,58 @@ export async function playBeat(pattern: Array<{ index: number; checked: boolean 
         lamps[index].checked = true;
       }
       if (pattern === stepsRef[0] && pattern[index].checked) {
-        loadSoundFile("../kick.mp3", (buffer: AudioBuffer) => {
+        if(!midi) {
+          loadSoundFile("../kick.mp3", (buffer: AudioBuffer) => {
           playSound(buffer, 0.7);
-        });
+
+          });
+        } else {
+          triggerMidi('1', 36, velocity, duration, release)
+        }
         await wait(duration)
-        //output.sendMessage([128, drum, release])
       } else if (pattern === stepsRef[1]&& pattern[index].checked) {
-        loadSoundFile("../snare.mp3", (buffer: AudioBuffer) => {
+        if(!midi) {
+          loadSoundFile("../snare.mp3", (buffer: AudioBuffer) => {
           playSound(buffer, 0.4);
         });
+        } else {
+          triggerMidi('1', 38, velocity, duration, release)
+        }
         await wait(duration)
-        //output.sendMessage([128, drum, release])
       } else if (pattern === stepsRef[5] && pattern[index].checked) {
-        loadSoundFile("../hihatC.mp3", (buffer: AudioBuffer) => {
+        if(!midi){
+          loadSoundFile("../hihatC.mp3", (buffer: AudioBuffer) => {
           playSound(buffer, 0.4);
-        });
+        })
+        } else {
+          triggerMidi('1', 42, velocity, duration, release)
+        }
         await wait(duration)
-        //output.sendMessage([128, drum, release])
       } else if (pattern === stepsRef[6] && pattern[index].checked) {
-        loadSoundFile("../hihatO.mp3", (buffer: AudioBuffer) => {
+        if(!midi){
+          loadSoundFile("../hihatO.mp3", (buffer: AudioBuffer) => {
           playSound(buffer, 0.5);
         });
+        } else {
+          triggerMidi('1', 46, velocity, duration, release)
+        }
         await wait(duration)
-        //output.sendMessage([128, drum, release])
       } else if (pattern === stepsRef[8] && pattern[index].checked) {
-        loadSoundFile("../crash.mp3", (buffer: AudioBuffer) => {
+        if(!midi){
+          loadSoundFile("../crash.mp3", (buffer: AudioBuffer) => {
           playSound(buffer, 0.5);
         });
+        } else {
+          triggerMidi('1', 49, velocity, duration, release)
+        }
         await wait(duration)
-        //output.sendMessage([128, drum, release])
       }else {
         await wait(duration);
       }
-    /*if (drum) {
-      let velocity = Math.floor(Math.random() * (70 - 50 + 1) + 50);
-      if (pattern[index] === pattern[index].toUpperCase()) {
-        velocity = 90;
-        if (Math.random() < 0.17) {  // 1 in 6 chance
-          velocity = Math.floor(Math.random() * (120 - 100 + 1) + 100);
-        }
-      }
-      //output.sendMessage([144, drum, velocity])
-      loadSoundFile(drum, (buffer: AudioBuffer) => {
-        playSound(buffer);
-      });
-      await wait(duration)
-      //output.sendMessage([128, drum, release])
-    } else if (pattern[index] === '-') {
-      await wait(duration);
-    } */
   } 
 }
 
-export async function playBass(pattern: {x: number, y: number, acc: string}[], groove: number[], bpm: number) {
+export async function playBass(midi: boolean, pattern: {x: number, y: number, acc: string}[], groove: number[], bpm: number) {
   const beatDuration = 60 / bpm // duration of one beat in seconds
   const audioContext = new AudioContext();
 
@@ -373,7 +367,7 @@ export async function playBass(pattern: {x: number, y: number, acc: string}[], g
   }
 }
 
-export async function playChords(pattern: string[], groove: number[], bpm: number) {
+export async function playChords(midi: boolean, pattern: string[], groove: number[], bpm: number) {
   const beatDuration = 60 / bpm; // duration of one beat in seconds
   const audioContext = new AudioContext();
 
