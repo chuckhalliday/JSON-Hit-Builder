@@ -1,11 +1,12 @@
 //import midi from 'midi';
 import { tone, chordToneMappings } from "./chords";
 
-let midi = null; // global MIDIAccess object
+let midi: WebMidi.MIDIAccess; // global MIDIAccess object
 
 function listInputsAndOutputs(midiAccess: WebMidi.MIDIAccess) {
   console.log("MIDI ready!");
   midi = midiAccess;
+  console.log(midiAccess)
   for (const entry of midiAccess.inputs) {
     const input = entry[1];
     console.log(
@@ -19,6 +20,7 @@ function listInputsAndOutputs(midiAccess: WebMidi.MIDIAccess) {
 
   for (const entry of midiAccess.outputs) {
     const output = entry[1];
+    console.log(output)
     console.log(
       `Output port [type:'${output.type}'] id:'${output.id}' manufacturer:'${output.manufacturer}' name:'${output.name}' version:'${output.version}'`,
     );
@@ -29,7 +31,43 @@ function onMIDIFailure(msg: string) {
   console.error(`Failed to get MIDI access - ${msg}`);
 }
 
-navigator.requestMIDIAccess().then(listInputsAndOutputs, onMIDIFailure);
+navigator.requestMIDIAccess().then(listInputsAndOutputs, onMIDIFailure)
+
+navigator.requestMIDIAccess()
+.then(function(access) {
+  // Get the outputs
+  var outputs = access.outputs.values();
+  
+  // Find the desired output device (IAC driver 1)
+  var outputDevice: WebMidi.MIDIOutput | null = null;
+  for (var output of outputs) {
+    if (output.name === 'IAC Driver Bus 1') {
+      outputDevice = output;
+      break;
+    }
+  }
+  
+  // Check if the output device was found
+  if (!outputDevice) {
+    console.log("Output device 'IAC Driver 1' not found.");
+    return;
+  }
+  
+  // Create MIDI message
+  var channel = 0; // MIDI channels are 0-based, so 35 represents channel 36
+  var note = 36; // MIDI note number (C4)
+  var velocity = 100; // Velocity (0-127)
+  
+  var message = [0x90 + channel, note, velocity]; // Note On message
+  
+  // Send the MIDI message
+  outputDevice.send(message);
+  
+  // You can also use a timeout to send a Note Off message after some time
+})
+.catch(function(error) {
+  console.log("MIDI access request failed:", error);
+});
 
 const audioContext = new AudioContext();
 
@@ -130,6 +168,7 @@ export async function playBeat(pattern: Array<{ index: number; checked: boolean 
   const swingRatio = 3/3; // adjust as needed
 
   //const output = new midi.Output();
+
   //output.openPort(0)
 
   for (let index = 0; index < groove.length; index++) {
