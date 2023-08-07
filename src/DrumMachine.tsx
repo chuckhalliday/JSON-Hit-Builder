@@ -14,6 +14,7 @@ export default function DrumMachine({ onRenderWidthChange, part }: DrumMachinePr
   const dispatch = useDispatch()
 
   const bpm = useSelector((state: { song: SongState }) => state.song.bpm);
+  const midi = useSelector((state: { song: SongState }) => state.song.midi)
   const drums = useSelector((state: { song: SongState }) => state.song.songStructure[part].drums);
   const steps = useSelector((state: { song: SongState }) => state.song.songStructure[part].stepIds);
   const drumGroove = useSelector((state: { song: SongState }) => state.song.songStructure[part].drumGroove);
@@ -87,7 +88,7 @@ export default function DrumMachine({ onRenderWidthChange, part }: DrumMachinePr
     if (isPlaying) {
       setIsPlaying(false);
     } else {
-     playDrums(bpm, drumGroove, drumHits, lampsRef.current);
+     playDrums(bpm, midi, drumGroove, drumHits, lampsRef.current);
       setIsPlaying(true);
     }
   };

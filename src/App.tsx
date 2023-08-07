@@ -5,7 +5,7 @@ import BassStaff from "./BassStaff";
 import Piano from './Piano';
 import { useSelector, useDispatch } from "react-redux"
 import { playSong } from './SongStructure/playSong';
-import { incrementByAmount, setIsPlaying, SongState } from './reducers';
+import { incrementByAmount, setIsPlaying, setMidi, SongState } from './reducers';
 
 import styles from "./App.module.scss"
 
@@ -15,6 +15,7 @@ function App() {
   const [showInfoScreen, setShowInfoScreen] = useState(true);
 
   const isPlaying = useSelector((state: { song: SongState }) => state.song.isPlaying)
+  const midi = useSelector((state: { song: SongState }) => state.song.midi)
   const song = useSelector((state: { song: SongState }) => state.song)
   const bpm = useSelector((state: { song: { bpm: number } }) => state.song.bpm);
 
@@ -59,6 +60,14 @@ function App() {
     }
   };
 
+  const handleMidi = async () => {
+    if (midi) {
+      dispatch(setMidi({midi: false}));
+    } else {
+      dispatch(setMidi({midi: true}));
+    }
+  };
+
   return (
     <div className={styles.rowContainer}>
       <div className={styles.key}>Key of : {song.key}</div>
@@ -96,6 +105,9 @@ function App() {
       <div className={styles.controls}>
       <button onClick={handleStartClick} className={styles.button}>
           {isPlaying ? "Pause" : "Play Song"}
+        </button>
+      <button onClick={handleMidi} className={styles.button}>
+          {midi ? "Use Osc" : "Use Midi"}
         </button>
         <label className={styles.fader}>
           <span>BPM:{bpm}</span>

@@ -18,6 +18,7 @@ export default function BassStaff({ renderWidth, part }: BassStaffProps) {
   const dispatch = useDispatch()
 
   const bpm = useSelector((state: { song: { bpm: number } }) => state.song.bpm);
+  const midi = useSelector((state: { song: SongState }) => state.song.midi)
 
   const bassGrid = useSelector((state: { song: SongState }) => state.song.songStructure[part].bassGrid);
   const bassNoteGrid = useSelector((state: { song: SongState }) => state.song.songStructure[part].bassNoteLocations);
@@ -279,7 +280,7 @@ export default function BassStaff({ renderWidth, part }: BassStaffProps) {
     if (isPlaying) {
       setIsPlaying(false);
     } else {
-      playBass(bassNoteGrid, bassGroove, bpm);
+      playBass(midi, bassNoteGrid, bassGroove, bpm);
       setIsPlaying(true);
     }
   };
