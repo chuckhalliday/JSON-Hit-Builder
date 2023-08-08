@@ -34,6 +34,7 @@ function onMIDIFailure(msg: string) {
 
 function App() {
   const [openedParts, setOpenedParts] = useState<{ [key: string]: boolean }>({});
+  const [currentPart, setCurrentPart] = useState<number>(0); // Track current open part
   const [showInfoScreen, setShowInfoScreen] = useState(true);
 
   const isPlaying = useSelector((state: { song: SongState }) => state.song.isPlaying)
@@ -41,7 +42,7 @@ function App() {
   const song = useSelector((state: { song: SongState }) => state.song)
   const bpm = useSelector((state: { song: { bpm: number } }) => state.song.bpm);
 
-  //const lampsRef = React.useRef<HTMLInputElement[]>([]);
+  const lampsRef = React.useRef<HTMLInputElement[]>([]);
 
   const dispatch = useDispatch()
 
@@ -57,8 +58,12 @@ function App() {
     }
 
     setOpenedParts(updatedOpenedParts);
-    const anyPartOpen = Object.values(updatedOpenedParts).some((isOpen) => isOpen);
-    setShowInfoScreen(!anyPartOpen);
+    
+    if (updatedOpenedParts[key]) {
+      setCurrentPart(parseInt(key));
+    } else {
+      setCurrentPart(-1);
+    }
   };
 
   const [renderWidth, setRenderWidth] = useState(0);
@@ -67,12 +72,16 @@ function App() {
     setRenderWidth(width);
   };
 
+  const playThrough = async () => {
+    playSong(song, setCurrentPart, handlePartOpen, lampsRef.current)
+  }
 
   useEffect(() => {
     if (isPlaying) {
-      playSong(song)
+      playThrough()
     }
   }, [isPlaying]);
+
 
  const handleStartClick = async () => {
     if (isPlaying) {
@@ -100,28 +109,29 @@ function App() {
           const key = `${index}`;
           const isOpen = openedParts[key];
 
-          songParts.push(
+          return (
             <div key={key} className={styles.parts}>
-              <button onClick={() => handlePartOpen(key)}
-              className={isOpen ? `${styles.openButton}` : ''}>
+              <button
+                onClick={() => handlePartOpen(key)}
+                className={isOpen ? `${styles.openButton}` : ''}
+              >
                 {songProps.type.charAt(0)}
               </button>
               <Piano />
-              {isOpen && (
+              {isOpen && currentPart === index && (
                 <div className={styles.openedPart}>
                   <h3>{songProps.type} ({songProps.repeat})</h3>
-                  <BassStaff renderWidth={renderWidth}
-                  part={index}/>
+                  <BassStaff renderWidth={renderWidth} part={index} />
                   <DrumMachine
                     onRenderWidthChange={handleRenderWidthChange}
                     part={index}
+                    lampsRef={lampsRef}
                   />
                 </div>
               )}
             </div>
           );
-        return songParts;
-      })}
+        })}
       <div className={styles.info}>
       {showInfoScreen && <Info />}
       </div>
