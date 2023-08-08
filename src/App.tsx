@@ -74,7 +74,12 @@ function App() {
 
   useEffect(() => {
     if (isPlaying && lampsRef.current.length > 0) {
-      playSong(song, setCurrentPart, handlePartOpen, lampsRef.current)
+      const playOnce = async () => {
+        await playSong(song, setCurrentPart, handlePartOpen, lampsRef.current);
+        dispatch(setIsPlaying({ isPlaying: false }));
+      };
+  
+      playOnce();
     }
   }, [isPlaying]);
 
