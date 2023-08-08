@@ -12,10 +12,10 @@ export async function countIn(bpm: number, midi: boolean, initDrums: number[],
 }
 
 export async function playVerse(bpm: number, midi: boolean, verseDrumGroove: number[], verseDrums: Array<Array<{ index: number; checked: boolean, accent?: boolean }>>,
-  verseBassGroove: number[], verseBass: {x: number, y: number, acc: string }[], verseChordGroove: number[], verseChords: string[]) {
+  verseBassGroove: number[], verseBass: {x: number, y: number, acc: string }[], verseChordGroove: number[], verseChords: string[], lamps: HTMLInputElement[]) {
   for (let i = 0; i < 1; i++) {
     await Promise.all([
-      playBeat(midi, verseDrums[0], verseDrumGroove, bpm, verseDrums),
+      playBeat(midi, verseDrums[0], verseDrumGroove, bpm, verseDrums, lamps),
       playBeat(midi, verseDrums[1], verseDrumGroove, bpm, verseDrums),
       playBeat(midi, verseDrums[5], verseDrumGroove, bpm, verseDrums),
       playBeat(midi, verseDrums[6], verseDrumGroove, bpm, verseDrums),
@@ -38,7 +38,7 @@ export async function playDrums(bpm: number, midi: boolean, partDrumGroove: numb
   }
 }
 
-export async function playSong(song: SongState) {
+export async function playSong(song: SongState, setCurrentPart: React.Dispatch<React.SetStateAction<number>>, handlePartOpen: (key: string) => void, lampsRef: HTMLInputElement[]) {
   let tempo = song.bpm - 60;
   //const output = new midi.Output()
   //output.openPort(3)
@@ -48,6 +48,7 @@ export async function playSong(song: SongState) {
   //output.sendMessage([144, 16, 1])
   //await countIn(song.bpm, song.songStructure[0].drumGroove, song.songStructure[0].drums)
   //output.sendMessage([176, 50, tempo]);
+  handlePartOpen(`0`);
 
   for (let i = 0; i < song.songStructure.length; i++) {
     let sum = 18;
@@ -63,8 +64,16 @@ export async function playSong(song: SongState) {
       song.songStructure[i].bassGroove,
       song.songStructure[i].bassNoteLocations, 
       song.songStructure[i].chordsGroove,
-      song.songStructure[i].chords 
+      song.songStructure[i].chords,
+      lampsRef 
     );
+    const nextPartIndex = i + 1;
+    if (nextPartIndex < song.songStructure.length) {
+      setCurrentPart(nextPartIndex);
+      handlePartOpen(`${nextPartIndex}`);
+    } else {
+    // Handle what happens when the last part has finished
+    }
     sum += 1;
   }
 

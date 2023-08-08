@@ -1,15 +1,20 @@
 import React, { useEffect, useRef } from "react";
 import { playDrums } from "./SongStructure/playSong";
-import { setDrumState, SongState } from "./reducers";
+import { setDrumState, setIsPlaying, SongState } from "./reducers";
 import { useDispatch, useSelector } from "react-redux";
 import styles from "./DrumMachine.module.scss";
 
 interface DrumMachineProps {
   onRenderWidthChange: any;
-  part: number
-};
+  part: number;
+  lampsRef: React.MutableRefObject<HTMLInputElement[]>;
+}
 
-export default function DrumMachine({ onRenderWidthChange, part }: DrumMachineProps) {
+export default function DrumMachine({
+  onRenderWidthChange,
+  part,
+  lampsRef,
+}: DrumMachineProps) {
   const [isPlaying, setIsPlaying] = React.useState(false);
   const dispatch = useDispatch()
 
@@ -48,8 +53,6 @@ export default function DrumMachine({ onRenderWidthChange, part }: DrumMachinePr
   }
 
 
-
-  const lampsRef = React.useRef<HTMLInputElement[]>([]);
   const machineRef = useRef<HTMLDivElement>(null);
   
 
@@ -77,6 +80,7 @@ export default function DrumMachine({ onRenderWidthChange, part }: DrumMachinePr
   const trackIds = [...Array(tracks.length).keys()];
   //Array of beats
   const stepIds = [...steps.keys()]
+
 
   const handleStartClick = async () => {
     const drumHits: Array<Array<{ index: number; checked: boolean }>> = stepsRef.current.map((row) =>
