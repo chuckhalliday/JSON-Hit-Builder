@@ -71,11 +71,10 @@ export async function playSong(song: SongState, setCurrentPart: React.Dispatch<R
       setCurrentPart(nextPartIndex);
       handlePartOpen(`${nextPartIndex}`);
     } else {
-    // Handle what happens when the last part has finished
+    console.log("End")
     }
     sum += 1;
   }
-
   // Stop recording
   //output.sendMessage([144, 16, 1])
 }
