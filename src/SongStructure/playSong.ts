@@ -48,7 +48,6 @@ export async function playSong(song: SongState, setCurrentPart: React.Dispatch<R
   //output.sendMessage([144, 16, 1])
   //await countIn(song.bpm, song.songStructure[0].drumGroove, song.songStructure[0].drums)
   //output.sendMessage([176, 50, tempo]);
-  handlePartOpen(`0`);
 
   for (let i = 0; i < song.songStructure.length; i++) {
     let sum = 18;
