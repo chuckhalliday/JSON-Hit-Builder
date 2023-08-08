@@ -72,13 +72,9 @@ function App() {
     setRenderWidth(width);
   };
 
-  const playThrough = async () => {
-    playSong(song, setCurrentPart, handlePartOpen, lampsRef.current)
-  }
-
   useEffect(() => {
-    if (isPlaying) {
-      playThrough()
+    if (isPlaying && lampsRef.current.length > 0) {
+      playSong(song, setCurrentPart, handlePartOpen, lampsRef.current)
     }
   }, [isPlaying]);
 
@@ -87,6 +83,9 @@ function App() {
     if (isPlaying) {
       dispatch(setIsPlaying({isPlaying: false}));
     } else {
+      if (!openedParts[0]) {
+        handlePartOpen(`0`)
+      }
       dispatch(setIsPlaying({isPlaying: true}));
     }
   };
