@@ -204,10 +204,12 @@ export async function playBass(midi: boolean, pattern: {x: number, y: number, ac
   //const output = new midi.Output();
   //output.openPort(1)
 
-  if(!midi) {
-    for (let index = 0; index < pattern.length; index++) {
-      const duration = groove[index] * beatDuration
-      let bass = pattern[index].y;
+  for (let index = 0; index < pattern.length; index++) {
+    const duration = groove[index] * beatDuration
+    let bass = pattern[index].y;
+
+    if(!midi) {
+
       switch (bass) {
         //E
         case 120: pattern[index].acc === 'flat' ? bass = tone.Eb[1] : bass = tone.E[1]; break
@@ -327,14 +329,9 @@ export async function playBass(midi: boolean, pattern: {x: number, y: number, ac
         gainNode.disconnect();
         filterNode.disconnect();
       } else if (bass <= 0) {
-        console.log(duration)
         await wait(duration);
       }
-    }
-  } else {
-    for (let index = 0; index < pattern.length; index++) {
-      const duration = groove[index] * beatDuration
-      let bass = pattern[index].y;
+    } else {
       switch (bass) {
         //E
         case 120: pattern[index].acc === 'flat' ? bass = midiTone.Eb[1] : bass = midiTone.E[1]; break
@@ -390,7 +387,6 @@ export async function playBass(midi: boolean, pattern: {x: number, y: number, ac
         triggerMidi('2', bass, duration, velocity, release)
         await wait(duration) 
       } else if (bass <= 0) {
-        console.log(duration)
         await wait(duration);
       }
     }
@@ -481,14 +477,15 @@ export async function playChords(midi: boolean, pattern: string[], groove: numbe
   
         // Select the first numberOfTonesToSelect tones from the shuffled array
         chordTones = shuffledChordTones.slice(0, numberOfTonesToSelect);
+        chordTones.map(note => {
+          triggerMidi('3', note, duration, velocity, release)
+        })
+        await wait(duration)
       } else {
-      console.log('No matching chord tone map @ chord ' + (i + 1))
+        console.log('No matching chord tone map @ chord ' + (i + 1))
+        await wait(duration)
       }
-      console.log(chordTones)
-      chordTones.map(note => {
-        triggerMidi('3', note, duration, velocity, release)
-      })
-      await wait(duration)
+
     }
   }
 }
