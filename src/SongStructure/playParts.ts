@@ -357,7 +357,6 @@ export async function playChords(midi: boolean, pattern: string[], groove: numbe
         const availableChordTones = chordToneMappings[pattern[i]];
         const numberOfTonesToSelect = Math.floor(Math.random() * 3) + 2; // Random number between 2 and 4
     
-        // Shuffle the availableChordTones array to ensure randomness
         const shuffledChordTones = availableChordTones.sort(() => Math.random() - 0.5);
     
         // Select the first numberOfTonesToSelect tones from the shuffled array
