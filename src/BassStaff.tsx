@@ -26,9 +26,6 @@ export default function BassStaff({ renderWidth, part }: BassStaffProps) {
   const chords = useSelector((state: { song: SongState }) => state.song.songStructure[part].chords);
   const chordGrid = useSelector((state: { song: SongState }) => state.song.songStructure[part].chordsLocation);
 
-/*  const NOTES = ["G4", "F4", "E4", "D4", "C4", "B3", "A3", "G3", "F3", "E3", "D3",
-    "C3", "B2", "A2", "G2", "F2", "E2", "D2", "C2", "B1", "A1"]; */
-
   const MOUSE = {
     x: -10,
     y: -10,
@@ -158,7 +155,6 @@ export default function BassStaff({ renderWidth, part }: BassStaffProps) {
         const isMatch = location === bassGrid[i];
         if (isMatch) {
           ctx.fillText(chordName, location - spacing, CANVAS.height - 136);
-          // You can adjust the y-coordinate (CANVAS.height - spacing) as needed to place the chord name properly.
         }
       }
     }

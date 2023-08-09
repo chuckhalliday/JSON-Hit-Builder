@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react'
+import React, { useState, useEffect } from 'react'
 import Info from './Info';
 import DrumMachine from "./DrumMachine";
 import BassStaff from "./BassStaff";

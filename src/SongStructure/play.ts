@@ -5,7 +5,6 @@ adjustBassString, bassString1B, bassString1C, bassString2C, bassString3C, bassSt
 import { createChords, chordString, adjustChordString } from "./chords.js";
 import { melodyGroove, melodyString } from "./melody.js";
 import { setKey, findKey } from './key.js';
-import { adjustBassNotes, adjustChordNotes } from './playParts.js';
 import { generateSongStructure } from './songStructure.js';
 
 const primaryBass: number[] = primaryGroove();
@@ -117,32 +116,16 @@ const drumBridge: { index: number; checked: boolean; accent?: boolean }[][] = dr
 
 let keyAdjust: number = setKey()
 let key: string = findKey(bassV, keyAdjust)
-adjustBassNotes(keyAdjust)
-adjustChordNotes(keyAdjust)
-
-//Transpose bass strings and format for reading
 
 
 let bassVA = adjustBassString(bassV, keyAdjust)
-let spacedChordsV = "";
-for (let i = 0; i < chordsV.length; i++) {
-  spacedChordsV += chordsV[i] + "  ";
-}
-let chordsVA = adjustChordString(spacedChordsV, keyAdjust)
+let chordsVA = adjustChordString(chordsV, keyAdjust)
 
 let bassCA = adjustBassString(bassC, keyAdjust)
-let spacedChordsC = "";
-for (let i = 0; i < chordsC.length; i++) {
-  spacedChordsC += chordsC[i] + "  ";
-}
-let chordsCA = adjustChordString(spacedChordsC, keyAdjust)
+let chordsCA = adjustChordString(chordsC, keyAdjust)
 
 let bassBA = adjustBassString(bassB, keyAdjust)
-let spacedChordsB = "";
-for (let i = 0; i < chordsB.length; i++) {
-  spacedChordsB += chordsB[i] + "  ";
-}
-let chordsBA = adjustChordString(spacedChordsB, keyAdjust)
+let chordsBA = adjustChordString(chordsB, keyAdjust)
 
 const songtime: number = Math.round(Math.random() * (240 - 210) + 210);
 const bpm: number = Math.round(Math.random() * (140 - 100) + 100);
@@ -155,235 +138,6 @@ const songStructure = generateSongStructure(partsLength, bassVA, initBass, bassC
   drumChorus, chorusDrums,
   drumBridge, bridgeDrums,
   chordsVA, initChords, chordsCA, chorusChords, chordsBA, bridgeChords) 
-
-  // Bass groove cleaned up for easy reading in console
-/*let line = "";
-let sum = 0;
-let barCount = 0;
-
-console.log(`Chord Groove:`)
-
-for (let i = 0; i < initChords.length; i++) {
-  sum += initChords[i];
-  line += initChords[i] + ", ";
-  if (Math.abs(sum / 2 - Math.round(sum / 2)) <= 0.005) {
-    line += "| ";
-  }
-  if (sum >= 7.9 && sum <= 8.1) {
-    barCount += 1
-    console.log(`Bar ` + barCount + `: ` + line);
-    line = "";
-    sum = 0;
-  } else if (sum >= 7.4) {
-    barCount += 1
-    console.log(`Bar ` + barCount + `: ` + line);
-    line = "";
-    sum = 0;
-  } else if (sum >= 6.9) {
-    barCount += 1
-    console.log(`Bar ` + barCount + `: ` + line);
-    line = "";
-    sum = 0;
-  }
-}
-if (sum > 0) {
-  barCount += 1
-  console.log(`Bar (` + barCount + `): ` + line);
-  line = "";
-  sum = 0;
-}
-barCount = 0
-
-for (let i = 0; i < chorusChords.length; i++) {
-  sum += chorusChords[i];
-  line += chorusChords[i] + ", ";
-  if (Math.abs(sum / 2 - Math.round(sum / 2)) <= 0.005) {
-    line += "| ";
-  }
-  if (sum >= 7.9 && sum <= 8.1) {
-    barCount += 1
-    console.log(`Bar ` + barCount + `: ` + line);
-    line = "";
-    sum = 0;
-  } else if (sum >= 7.4) {
-    barCount += 1
-    console.log(`Bar ` + barCount + `: ` + line);
-    line = "";
-    sum = 0;
-  } else if (sum >= 6.9) {
-    barCount += 1
-    console.log(`Bar ` + barCount + `: ` + line);
-    line = "";
-    sum = 0;
-  }
-}
-if (sum > 0) {
-  barCount += 1
-  console.log(`Bar (` + barCount + `): ` + line);
-  line = "";
-  sum = 0;
-}
-barCount = 0
-
-for (let i = 0; i < bridgeChords.length; i++) {
-  sum += bridgeChords[i];
-  line += bridgeChords[i] + ", ";
-  if (Math.abs(sum / 2 - Math.round(sum / 2)) <= 0.005) {
-    line += "| ";
-  }
-  if (sum >= 7.9 && sum <= 8.1) {
-    barCount += 1
-    console.log(`Bar ` + barCount + `: ` + line);
-    line = "";
-    sum = 0;
-  } else if (sum >= 7.4) {
-    barCount += 1
-    console.log(`Bar ` + barCount + `: ` + line);
-    line = "";
-    sum = 0;
-  } else if (sum >= 6.9) {
-    barCount += 1
-    console.log(`Bar ` + barCount + `: ` + line);
-    line = "";
-    sum = 0;
-  }
-}
-if (sum > 0) {
-  barCount += 1
-  console.log(`Bar (` + barCount + `): ` + line);
-  line = "";
-  sum = 0;
-}
-barCount = 0
-
-console.log(`
-Bass Groove:`)
-
-for (let i = 0; i < initBass.length; i++) {
-  sum += initBass[i];
-  line += initBass[i] + ", ";
-  if (Math.abs(sum / 2 - Math.round(sum / 2)) <= 0.005) {
-    line += "| ";
-  }
-  if (sum >= 7.9 && sum <= 8.1) {
-    barCount += 1
-    console.log(`Bar ` + barCount + `: ` + line);
-    line = "";
-    sum = 0;
-  }
-}
-barCount = 0
-
-for (let i = 0; i < chorusBass.length; i++) {
-  sum += chorusBass[i];
-  line += chorusBass[i] + ", ";
-  if (Math.abs(sum / 2 - Math.round(sum / 2)) <= 0.005) {
-    line += "| ";
-  }
-  if (sum >= 7.9 && sum <= 8.1) {
-    barCount += 1
-    console.log(`Bar ` + barCount + `: ` + line);
-    line = "";
-    sum = 0;
-  }
-}
-barCount = 0
-
-for (let i = 0; i < initBass.length; i++) {
-  sum += bridgeBass[i];
-  line += bridgeBass[i] + ", ";
-  if (Math.abs(sum / 2 - Math.round(sum / 2)) <= 0.005) {
-    line += "| ";
-  }
-  if (sum >= 7.9 && sum <= 8.1) {
-    barCount += 1
-    console.log(`Bar ` + barCount + `: ` + line);
-    line = "";
-    sum = 0;
-  }
-}
-barCount = 0
-
-// Drum groove cleaned up for easy reading in console
-
-console.log(`
-Drum Groove:`)
-
-for (let i = 0; i < initDrums.length; i++) {
-  sum += initDrums[i];
-  line += initDrums[i] + ", ";
-  if (Math.abs(sum / 2 - Math.round(sum / 2)) <= 0.005) {
-    line += "| ";
-  }
-  if (sum >= 7.9 && sum <= 8.1) {
-    barCount += 1
-    console.log(`Bar ` + barCount + `: ` + line);
-    line = "";
-    sum = 0;
-  }
-}
-barCount = 0
-
-for (let i = 0; i < chorusDrums.length; i++) {
-  sum += chorusDrums[i];
-  line += chorusDrums[i] + ", ";
-  if (Math.abs(sum / 2 - Math.round(sum / 2)) <= 0.005) {
-    line += "| ";
-  }
-  if (sum >= 7.9 && sum <= 8.1) {
-    barCount += 1
-    console.log(`Bar ` + barCount + `: ` + line);
-    line = "";
-    sum = 0;
-  }
-}
-barCount = 0
-
-for (let i = 0; i < bridgeDrums.length; i++) {
-  sum += bridgeDrums[i];
-  line += bridgeDrums[i] + ", ";
-  if (Math.abs(sum / 2 - Math.round(sum / 2)) <= 0.005) {
-    line += "| ";
-  }
-  if (sum >= 7.9 && sum <= 8.1) {
-    barCount += 1
-    console.log(`Bar ` + barCount + `: ` + line);
-    line = "";
-    sum = 0;
-  }
-}
-barCount = 0
-
-
-
-console.log(`
-Tempo: ` + bpm)
-console.log(`Runtime: ` + Math.floor(songtime / 60) + `:` + songtime % 60 + `
-`)
-console.log(`
-Key: ` + key + `
-`)
-
-// Song parts
-songStructure.forEach(part => {
-    console.log(`${part.type}: ${part.repeat}x
-    Chords: ${part.chords}
-
-    Bass:   ${part.bass}
-    
-    Misc:   ${part.flair}
-    HiHat:  ${part.hiHat}
-    Snare:  ${part.snare}
-    Kick:   ${part.kick}
-    `);
-  }); 
-
-/*playSong(songStructure, bpm, initDrums, initBass, initChords, 
-  chorusDrums, chorusBass, chorusChords, bridgeDrums, bridgeBass, bridgeChords, 
-  bassDrumV, snareDrumV, hiHatV, flairV, bassV, chordsV, 
-  bassDrumC, snareDrumC, hiHatC, flairC, bassC, chordsC, 
-  bassDrumB, snareDrumB, hiHatB, flairB, bassB, chordsB);
-*/
 
 let totalSteps: number = 0
 for (let i = 0; i < songStructure.length; i++) {
