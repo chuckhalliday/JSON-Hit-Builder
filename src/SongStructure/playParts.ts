@@ -1,4 +1,4 @@
-import { tone, midiTone, chordToneMappings, chordMidiMappings } from "./chords";
+import { tone, midiTone, chordToneMappings, chordMidiMappings } from "./tone";
 
 const audioContext = new AudioContext();
 
