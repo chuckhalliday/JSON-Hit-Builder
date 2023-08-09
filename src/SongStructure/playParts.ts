@@ -32,64 +32,6 @@ function playSound(buffer: AudioBuffer, volume: number = 1.0 /*set the volume 0.
   source.start();
 }
 
-
-//midi
-const drumHits: Record<string, any> = {
-    'x': 36, 'X': 36,  // kick drum
-    'y': 40, 'Y': 40,  // snare drum
-    'v': 42, 'V': 42,  // closed hi-hat
-    'w': 46, 'W': 46,  // open hi-hat
-    'r': 51, 'R': 51,  // ride cymbal
-    'q': 39, 'Q': 39,  // bell
-    'z': 49, 'Z': 49,  // crash cymbal
-    'u': 47, 'U': 47,  // high tom
-    't': 45, 'T': 45,  // mid tom
-    's': 43, 'S': 43   // low tom
-};
-
-  
-const bassNotes: Record<string, number> = {
-    'o': 41, 'O': 42,   // F, F#
-    'p': 43, 'P': 44,   // G, G#
-    'a': 45, 'A': 46,  // All capitals are sharp
-    'b': 47,
-    'c': 48, 'C': 49,
-    'd': 50, 'D': 51,
-    'e': 52,
-    'f': 53, 'F': 54,
-    'g': 55, 'G': 56,
-};
-
-let chordTones: Record<string, number[]> = {
-  '6': [45, 48, 52],       // Am
-  '7': [47, 50, 53],      // Bdim
-  '1': [48, 52, 55, 60],  // C
-  '2': [50, 53, 57],     // Dm
-  '3': [52, 55, 59],      // Em
-  '4': [53, 57, 60],      // F
-  '5': [55, 59, 62],      // G 
-  '8': [52, 56, 59],      // E
-  '9': [48, 52, 58, 62],  // C9
-  '0': [53, 56, 60],       // Fm
-  '!': [48, 52, 55, 59],   //Cmaj7
-  '@': [50, 53, 57, 60],   // Dm7
-  '#': [52, 55, 59, 62],   // Em7
-  '$': [50, 53, 57, 60],   //F7
-  '%': [52, 55, 59, 62],   //G7
-}
-
-export function adjustBassNotes(keyAdjust: number) {
-    for (let key in bassNotes) {
-        bassNotes[key] = bassNotes[key] + keyAdjust;
-    }
-}
-
-export function adjustChordNotes(keyAdjust: number) {
-  for (let [key, value] of Object.entries(chordTones)) {
-    chordTones[key] = value.map(note => note + keyAdjust);
-  }
-}
-
 function wait(time: number) {
   return new Promise(resolve => setTimeout(resolve, time * 1000));
 }
