@@ -1,4 +1,4 @@
-import { tone, chordToneMappings } from "./chords";
+import { tone, midiTone, chordToneMappings, chordMidiMappings } from "./chords";
 
 const audioContext = new AudioContext();
 
@@ -94,7 +94,7 @@ function wait(time: number) {
   return new Promise(resolve => setTimeout(resolve, time * 1000));
 }
 
-async function triggerMidi(bus: string, note: number, velocity: number, duration: number, release: number) {
+async function triggerMidi(bus: string, note: number, duration: number, velocity: number, release: number) {
   try {
     const access = await navigator.requestMIDIAccess();
     const outputs = access.outputs.values();
@@ -149,7 +149,7 @@ export async function playBeat(midi: boolean, pattern: Array<{ index: number; ch
           playSound(buffer, velocity/100);
           });
         } else {
-          triggerMidi('1', 36, velocity, duration, release)
+          triggerMidi('1', 36, duration, velocity, release)
         }
         await wait(duration)
       } else if (pattern === stepsRef[1]&& pattern[index].checked) {
@@ -158,7 +158,7 @@ export async function playBeat(midi: boolean, pattern: Array<{ index: number; ch
           playSound(buffer, velocity/100);
         });
         } else {
-          triggerMidi('1', 38, velocity, duration, release)
+          triggerMidi('1', 38, duration, velocity, release)
         }
         await wait(duration)
       } else if (pattern === stepsRef[5] && pattern[index].checked) {
@@ -167,7 +167,7 @@ export async function playBeat(midi: boolean, pattern: Array<{ index: number; ch
           playSound(buffer, velocity/100);
         })
         } else {
-          triggerMidi('1', 42, velocity, duration, release)
+          triggerMidi('1', 42, duration, velocity, release)
         }
         await wait(duration)
       } else if (pattern === stepsRef[6] && pattern[index].checked) {
@@ -176,7 +176,7 @@ export async function playBeat(midi: boolean, pattern: Array<{ index: number; ch
           playSound(buffer, velocity/100);
         });
         } else {
-          triggerMidi('1', 46, velocity, duration, release)
+          triggerMidi('1', 46, duration, velocity, release)
         }
         await wait(duration)
       } else if (pattern === stepsRef[8] && pattern[index].checked) {
@@ -185,7 +185,7 @@ export async function playBeat(midi: boolean, pattern: Array<{ index: number; ch
           playSound(buffer, velocity/100);
         });
         } else {
-          triggerMidi('1', 49, velocity, duration, release)
+          triggerMidi('1', 49, duration, velocity, release)
         }
         await wait(duration)
       }else {
@@ -198,137 +198,201 @@ export async function playBass(midi: boolean, pattern: {x: number, y: number, ac
   const beatDuration = 60 / bpm // duration of one beat in seconds
   const audioContext = new AudioContext();
 
+  let velocity = Math.floor(Math.random() * (70 - 50 + 1) + 50);
+  const release = Math.floor(Math.random() * (70 - 50 + 1) + 50);
+
   //const output = new midi.Output();
   //output.openPort(1)
 
-  for (let index = 0; index < pattern.length; index++) {
-    let bass = pattern[index].y;
-    switch (bass) {
-      //E
-      case 120: pattern[index].acc === 'flat' ? bass = tone.Eb[1] : bass = tone.E[1]; break
-      case 67.5: pattern[index].acc === 'flat' ? bass = tone.Eb[2] : bass = tone.E[2]; break
-      //F
-      case 112.5: pattern[index].acc === 'sharp' ? bass = tone.Gb[1] : bass = tone.F[1]; break
-      case 60: pattern[index].acc === 'sharp' ? bass = tone.Gb[2] : bass = tone.F[2]; break
-      //G
-      case 105: if (pattern[index].acc === 'sharp') {
-        bass = tone.Ab[1];
-      } else if (pattern[index].acc === 'flat'){
-        bass = tone.Gb[1];
-      } else {
-        bass = tone.G[1];
-      } break;
-      case 52.5: if (pattern[index].acc === 'sharp') {
-        bass = tone.Ab[2];
-      } else if (pattern[index].acc === 'flat'){
-        bass = tone.Gb[2];
-      } else {
-        bass = tone.G[2];
-      } break;
-      //A
-      case 97.5: if (pattern[index].acc === 'sharp') {
-        bass = tone.Bb[1];
-      } else if (pattern[index].acc === 'flat'){
-        bass = tone.Ab[1];
-      } else {
-        bass = tone.A[1];
-      } break;
-      case 45: if (pattern[index].acc === 'sharp') {
-        bass = tone.Bb[2];
-      } else if (pattern[index].acc === 'flat'){
-        bass = tone.Ab[2];
-      } else {
-        bass = tone.A[2];
-      } break
-      //B
-      case 90: pattern[index].acc === 'flat' ? bass = tone.Bb[1] : bass = tone.B[1]; break
-      case 37.5: pattern[index].acc === 'flat' ? bass = tone.Bb[2] : bass = tone.B[2]; break
-      //C
-      case 82.5: pattern[index].acc === 'sharp' ? bass = tone.Db[2] : bass = tone.C[2]; break
-      case 30: pattern[index].acc === 'sharp' ? bass = tone.Db[3] : bass = tone.C[3]; break
-      //D
-      case 75: if (pattern[index].acc === 'sharp') {
-        bass = tone.Eb[2];
-      } else if (pattern[index].acc === 'flat'){
-        bass = tone.Db[2];
-      } else {
-        bass = tone.D[2];
+  if(!midi) {
+    for (let index = 0; index < pattern.length; index++) {
+      const duration = groove[index] * beatDuration
+      let bass = pattern[index].y;
+      switch (bass) {
+        //E
+        case 120: pattern[index].acc === 'flat' ? bass = tone.Eb[1] : bass = tone.E[1]; break
+        case 67.5: pattern[index].acc === 'flat' ? bass = tone.Eb[2] : bass = tone.E[2]; break
+        //F
+        case 112.5: pattern[index].acc === 'sharp' ? bass = tone.Gb[1] : bass = tone.F[1]; break
+        case 60: pattern[index].acc === 'sharp' ? bass = tone.Gb[2] : bass = tone.F[2]; break
+        //G
+        case 105: if (pattern[index].acc === 'sharp') {
+            bass = tone.Ab[1];
+          } else if (pattern[index].acc === 'flat'){
+            bass = tone.Gb[1];
+          } else {
+            bass = tone.G[1];
+          } break;
+        case 52.5: if (pattern[index].acc === 'sharp') {
+            bass = tone.Ab[2];
+          } else if (pattern[index].acc === 'flat'){
+            bass = tone.Gb[2];
+          } else {
+            bass = tone.G[2];
+          } break;
+        //A
+        case 97.5: if (pattern[index].acc === 'sharp') {
+            bass = tone.Bb[1];
+          } else if (pattern[index].acc === 'flat'){
+            bass = tone.Ab[1];
+          } else {
+            bass = tone.A[1];
+          } break;
+        case 45: if (pattern[index].acc === 'sharp') {
+            bass = tone.Bb[2];
+          } else if (pattern[index].acc === 'flat'){
+            bass = tone.Ab[2];
+          } else {
+            bass = tone.A[2];
+          } break
+        //B
+        case 90: pattern[index].acc === 'flat' ? bass = tone.Bb[1] : bass = tone.B[1]; break
+        case 37.5: pattern[index].acc === 'flat' ? bass = tone.Bb[2] : bass = tone.B[2]; break
+        //C
+        case 82.5: pattern[index].acc === 'sharp' ? bass = tone.Db[2] : bass = tone.C[2]; break
+        case 30: pattern[index].acc === 'sharp' ? bass = tone.Db[3] : bass = tone.C[3]; break
+        //D
+        case 75: if (pattern[index].acc === 'sharp') {
+            bass = tone.Eb[2];
+          } else if (pattern[index].acc === 'flat'){
+            bass = tone.Db[2];
+          } else {
+            bass = tone.D[2];
+          } break;
+
+      } 
+
+      if (bass > 0) {
+        //let velocity = Math.floor(Math.random() * (75 - 60 + 1) + 60);
+        //let release = Math.floor(Math.random() * (70 - 50 + 1) + 50);
+
+        //output.sendMessage([144, bass, velocity])
+        //await wait(duration)
+        //output.sendMessage([128, bass, release])
+        const osc = audioContext.createOscillator();
+        const gainNode = audioContext.createGain();
+        const filterNode = audioContext.createBiquadFilter();
+
+        const fundamentalFreq = bass;
+
+        const harmonics = [1.5, 2, 3]; // Additional harmonics
+        const harmonicGains = [0.2, 0.1, 0.05]; // Gain values for harmonics
+
+        osc.type = "sawtooth"; // Use a sine waveform
+        osc.frequency.value = fundamentalFreq;
+
+        osc.connect(gainNode);
+        gainNode.connect(filterNode);
+        filterNode.connect(audioContext.destination);
+
+        // Add additional harmonics
+        for (let i = 0; i < harmonics.length; i++) {
+          const harmonicOsc = audioContext.createOscillator();
+          harmonicOsc.type = "sine";
+          harmonicOsc.frequency.value = fundamentalFreq * harmonics[i];
+          const harmonicGainNode = audioContext.createGain();
+          harmonicGainNode.gain.value = harmonicGains[i];
+          harmonicOsc.connect(harmonicGainNode);
+          harmonicGainNode.connect(filterNode);
+          harmonicOsc.start(audioContext.currentTime);
+          harmonicOsc.stop(audioContext.currentTime + duration);
+        }
+
+        const attackTime = 0.01; // Adjust the attack time as needed
+        const releaseTime = 0.05; // Adjust the release time as needed
+
+        gainNode.gain.setValueAtTime(0, audioContext.currentTime);
+        gainNode.gain.linearRampToValueAtTime(0.2, audioContext.currentTime + attackTime);
+        gainNode.gain.linearRampToValueAtTime(0, audioContext.currentTime + duration - releaseTime);
+
+        filterNode.type = "lowpass"; // Apply a low-pass filter
+        filterNode.frequency.value = 800; // Adjust the cutoff frequency as needed
+
+        const distortion = audioContext.createWaveShaper();
+        const distortionAmount = 30; // Adjust distortion amount as needed
+        const curve = new Float32Array(65536);
+        for (let i = 0; i < 65536; i++) {
+          const x = (i - 32768) / 32768;
+          curve[i] = Math.tanh(x * distortionAmount);
+        }
+        distortion.curve = curve;
+        gainNode.connect(distortion);
+        distortion.connect(filterNode);
+
+        osc.start(audioContext.currentTime);
+        await wait(duration);
+        osc.stop(audioContext.currentTime + releaseTime);
+
+        osc.disconnect();
+        gainNode.disconnect();
+        filterNode.disconnect();
+      } else if (bass <= 0) {
+        console.log(duration)
+        await wait(duration);
       }
-        break;
-
-      default:
-        break;
-    } 
-    
-    const duration = groove[index] * beatDuration
-
-    if (bass > 0) {
-      //let velocity = Math.floor(Math.random() * (75 - 60 + 1) + 60);
-      //let release = Math.floor(Math.random() * (70 - 50 + 1) + 50);
-
-      //output.sendMessage([144, bass, velocity])
-      //await wait(duration)
-      //output.sendMessage([128, bass, release])
-      const osc = audioContext.createOscillator();
-      const gainNode = audioContext.createGain();
-      const filterNode = audioContext.createBiquadFilter();
-
-      const fundamentalFreq = bass;
-
-      const harmonics = [1.5, 2, 3]; // Additional harmonics
-      const harmonicGains = [0.2, 0.1, 0.05]; // Gain values for harmonics
-
-      osc.type = "sawtooth"; // Use a sine waveform
-      osc.frequency.value = fundamentalFreq;
-
-      osc.connect(gainNode);
-      gainNode.connect(filterNode);
-      filterNode.connect(audioContext.destination);
-
-      // Add additional harmonics
-      for (let i = 0; i < harmonics.length; i++) {
-        const harmonicOsc = audioContext.createOscillator();
-        harmonicOsc.type = "sine";
-        harmonicOsc.frequency.value = fundamentalFreq * harmonics[i];
-        const harmonicGainNode = audioContext.createGain();
-        harmonicGainNode.gain.value = harmonicGains[i];
-        harmonicOsc.connect(harmonicGainNode);
-        harmonicGainNode.connect(filterNode);
-        harmonicOsc.start(audioContext.currentTime);
-        harmonicOsc.stop(audioContext.currentTime + duration);
+    }
+  } else {
+    for (let index = 0; index < pattern.length; index++) {
+      const duration = groove[index] * beatDuration
+      let bass = pattern[index].y;
+      switch (bass) {
+        //E
+        case 120: pattern[index].acc === 'flat' ? bass = midiTone.Eb[1] : bass = midiTone.E[1]; break
+        case 67.5: pattern[index].acc === 'flat' ? bass = midiTone.Eb[2] : bass = midiTone.E[2]; break
+        //F
+        case 112.5: pattern[index].acc === 'sharp' ? bass = midiTone.Gb[1] : bass = midiTone.F[1]; break
+        case 60: pattern[index].acc === 'sharp' ? bass = midiTone.Gb[2] : bass = midiTone.F[2]; break
+        //G
+        case 105: if (pattern[index].acc === 'sharp') {
+            bass = midiTone.Ab[1];
+          } else if (pattern[index].acc === 'flat'){
+            bass = midiTone.Gb[1];
+          } else {
+            bass = midiTone.G[1];
+          } break;
+        case 52.5: if (pattern[index].acc === 'sharp') {
+            bass = midiTone.Ab[2];
+          } else if (pattern[index].acc === 'flat'){
+            bass = midiTone.Gb[2];
+          } else {
+            bass = midiTone.G[2];
+          } break;
+        //A
+        case 97.5: if (pattern[index].acc === 'sharp') {
+            bass = midiTone.Bb[1];
+          } else if (pattern[index].acc === 'flat'){
+            bass = midiTone.Ab[1];
+          } else {
+            bass = midiTone.A[1];
+          } break;
+        case 45: if (pattern[index].acc === 'sharp') {
+            bass = midiTone.Bb[2];
+          } else if (pattern[index].acc === 'flat'){
+            bass = midiTone.Ab[2];
+          } else {
+            bass = midiTone.A[2];
+          } break
+        //B
+        case 90: pattern[index].acc === 'flat' ? bass = midiTone.Bb[1] : bass = midiTone.B[1]; break
+        case 37.5: pattern[index].acc === 'flat' ? bass = midiTone.Bb[2] : bass = midiTone.B[2]; break
+        //C
+        case 82.5: pattern[index].acc === 'sharp' ? bass = midiTone.Db[2] : bass = midiTone.C[2]; break
+        case 30: pattern[index].acc === 'sharp' ? bass = midiTone.Db[3] : bass = midiTone.C[3]; break
+        //D
+        case 75: if (pattern[index].acc === 'sharp') {
+            bass = midiTone.Eb[2];
+          } else if (pattern[index].acc === 'flat'){
+            bass = midiTone.Db[2];
+          } else {
+            bass = midiTone.D[2];
+          } break;
+      } if (bass > 0) {
+        triggerMidi('2', bass, duration, velocity, release)
+        await wait(duration) 
+      } else if (bass <= 0) {
+        console.log(duration)
+        await wait(duration);
       }
-
-      const attackTime = 0.01; // Adjust the attack time as needed
-      const releaseTime = 0.05; // Adjust the release time as needed
-
-      gainNode.gain.setValueAtTime(0, audioContext.currentTime);
-      gainNode.gain.linearRampToValueAtTime(0.2, audioContext.currentTime + attackTime);
-      gainNode.gain.linearRampToValueAtTime(0, audioContext.currentTime + duration - releaseTime);
-
-      filterNode.type = "lowpass"; // Apply a low-pass filter
-      filterNode.frequency.value = 800; // Adjust the cutoff frequency as needed
-
-      const distortion = audioContext.createWaveShaper();
-      const distortionAmount = 30; // Adjust distortion amount as needed
-      const curve = new Float32Array(65536);
-      for (let i = 0; i < 65536; i++) {
-        const x = (i - 32768) / 32768;
-        curve[i] = Math.tanh(x * distortionAmount);
-      }
-      distortion.curve = curve;
-      gainNode.connect(distortion);
-      distortion.connect(filterNode);
-
-      osc.start(audioContext.currentTime);
-      await wait(duration);
-      osc.stop(audioContext.currentTime + releaseTime);
-
-      osc.disconnect();
-      gainNode.disconnect();
-      filterNode.disconnect();
-    } else if (bass <= 0) {
-      console.log(duration)
-      await wait(duration);
     }
   }
 }
@@ -341,30 +405,30 @@ export async function playChords(midi: boolean, pattern: string[], groove: numbe
   const filterNode = audioContext.createBiquadFilter();
   filterNode.type = 'lowpass'; // Adjust the filter type as needed
   filterNode.frequency.value = 1000; // Adjust the frequency as needed
+  let chordTones: number[] = [];
+  let velocity = Math.floor(Math.random() * (70 - 50 + 1) + 50);
+  const release = Math.floor(Math.random() * (70 - 50 + 1) + 50);
 
-  for (let i = 0; i < pattern.length; i++) {
-    if (pattern[i] === '-') {
-      await wait(groove[i] * beatDuration);
-      continue;
-    }
-
-    let chordTones: number[] = [];
-    if (chordToneMappings.hasOwnProperty(pattern[i])) {
-      const availableChordTones = chordToneMappings[pattern[i]];
-      const numberOfTonesToSelect = Math.floor(Math.random() * 3) + 2; // Random number between 2 and 4
+  if (!midi) {
+    for (let i = 0; i < pattern.length; i++) {
+      const duration = groove[i] * beatDuration;
+      if (pattern[i] === '-') {
+        await wait(duration);
+        continue;
+      } else if (chordToneMappings.hasOwnProperty(pattern[i])) {
+        const availableChordTones = chordToneMappings[pattern[i]];
+        const numberOfTonesToSelect = Math.floor(Math.random() * 3) + 2; // Random number between 2 and 4
     
-      // Shuffle the availableChordTones array to ensure randomness
-      const shuffledChordTones = availableChordTones.sort(() => Math.random() - 0.5);
+        // Shuffle the availableChordTones array to ensure randomness
+        const shuffledChordTones = availableChordTones.sort(() => Math.random() - 0.5);
     
-      // Select the first numberOfTonesToSelect tones from the shuffled array
-      chordTones = shuffledChordTones.slice(0, numberOfTonesToSelect);
-    } else {
-      console.log('No matching chord tone map @ chord ' + (i + 1))
-    }
+        // Select the first numberOfTonesToSelect tones from the shuffled array
+        chordTones = shuffledChordTones.slice(0, numberOfTonesToSelect);
+      } else {
+        console.log('No matching chord tone map @ chord ' + (i + 1))
+      }
 
-    const duration = groove[i] * beatDuration;
-
-    const oscillators = chordTones.map(tone => {
+      const oscillators = chordTones.map(tone => {
       const osc = audioContext.createOscillator();
       osc.frequency.value = tone;
       osc.type = 'sawtooth';
@@ -401,8 +465,33 @@ export async function playChords(midi: boolean, pattern: string[], groove: numbe
   gainNode.disconnect();
   filterNode.disconnect();
   audioContext.close();
-}
 
+  } else {
+    for (let i = 0; i < pattern.length; i++) {
+      const duration = groove[i] * beatDuration;
+      if (pattern[i] === '-') {
+        await wait(duration);
+        continue;
+      } else if (chordMidiMappings.hasOwnProperty(pattern[i])) {
+        const availableChordTones = chordMidiMappings[pattern[i]];
+        const numberOfTonesToSelect = Math.floor(Math.random() * 3) + 2; // Random number between 2 and 4
+  
+        // Shuffle the availableChordTones array to ensure randomness
+        const shuffledChordTones = availableChordTones.sort(() => Math.random() - 0.5);
+  
+        // Select the first numberOfTonesToSelect tones from the shuffled array
+        chordTones = shuffledChordTones.slice(0, numberOfTonesToSelect);
+      } else {
+      console.log('No matching chord tone map @ chord ' + (i + 1))
+      }
+      console.log(chordTones)
+      chordTones.map(note => {
+        triggerMidi('3', note, duration, velocity, release)
+      })
+      await wait(duration)
+    }
+  }
+}
 
 
 
