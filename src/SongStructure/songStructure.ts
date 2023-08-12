@@ -21,6 +21,7 @@ chordsVA: string[], chordsGrooveV: number[], chordsCA: string[], chordsGrooveC: 
         y: number;
         acc: string;
     }[];
+    measureLines: number[];
     drums: { index: number; checked: boolean; accent?: boolean }[][]
     drumGroove: number[];
     stepIds: number[];
@@ -44,10 +45,12 @@ chordsVA: string[], chordsGrooveV: number[], chordsCA: string[], chordsGrooveC: 
   let bassSum: number = bassGrooveV[0]
   let drumSum: number = 0
   let bassIndex: number = 1
+  let measureLines: number[] = []
   for (let i = 0; i < drumGrooveV.length; i++) {
     drumSum+= drumGrooveV[i]
     if (drumSum >= 3.93 && drumSum <= 4.07 || drumSum >= 7.93 && drumSum <= 8.07) {
       gridX += 78
+      measureLines.push(gridX - 42)
     } else if (Math.abs(Math.round(drumSum) - drumSum) <= 0.005) {
       gridX += 48
     } else {
@@ -63,6 +66,7 @@ chordsVA: string[], chordsGrooveV: number[], chordsCA: string[], chordsGrooveC: 
     bassIndex++
     }
   }
+  console.log(measureLines)
 
   const bassGrid = bassArray
 
@@ -71,7 +75,7 @@ chordsVA: string[], chordsGrooveV: number[], chordsCA: string[], chordsGrooveC: 
 
   for (let i = 0; i < randomPartLength; i++) {
   verseCount++
-  songStructure.push({ type: 'Verse', repeat: verseCount, bass: bassVA, bassGroove: bassGrooveV, bassGrid: bassGrid, bassNoteLocations: bassNoteLocations,
+  songStructure.push({ type: 'Verse', repeat: verseCount, bass: bassVA, bassGroove: bassGrooveV, bassGrid: bassGrid, bassNoteLocations: bassNoteLocations, measureLines: measureLines,
   drums: drumVerse, drumGroove: drumGrooveV, stepIds: [], chords: chordsVA, chordsGroove: chordsGrooveB, chordsLocation: chordLocations });
   }
   remainingParts -= randomPartLength;
@@ -112,10 +116,12 @@ chordsVA: string[], chordsGrooveV: number[], chordsCA: string[], chordsGrooveC: 
     let bassSum: number = partBassGroove[0]
     let drumSum: number = 0
     let bassIndex: number = 1
+    let measureLines: number[] = []
     for (let i = 0; i < partDrumsGroove.length; i++) {
       drumSum+= partDrumsGroove[i]
       if (drumSum >= 3.93 && drumSum <= 4.07 || drumSum >= 7.93 && drumSum <= 8.07) {
         gridX += 78
+        measureLines.push(gridX - 42)
       } else if (Math.abs(Math.round(drumSum) - drumSum) <= 0.005) {
         gridX += 48
       } else {
@@ -150,7 +156,7 @@ chordsVA: string[], chordsGrooveV: number[], chordsCA: string[], chordsGrooveC: 
       } else {
         repeat = 0
       }
-    songStructure.push({ type: randomPartType, repeat: repeat, bass: partBass, bassGroove: partBassGroove, bassGrid: bassGrid, bassNoteLocations: bassNoteLocations,
+    songStructure.push({ type: randomPartType, repeat: repeat, bass: partBass, bassGroove: partBassGroove, bassGrid: bassGrid, bassNoteLocations: bassNoteLocations, measureLines: measureLines,
       drums: partDrums, drumGroove: partDrumsGroove, stepIds: [], chords: partChords, chordsGroove: partChordsGroove, chordsLocation: chordLocations });
     }
     remainingParts -= randomPartLength;

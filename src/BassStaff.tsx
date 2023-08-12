@@ -25,6 +25,7 @@ export default function BassStaff({ renderWidth, part }: BassStaffProps) {
   const bassGroove = useSelector((state: { song: SongState}) => state.song.songStructure[part].bassGroove);
   const chords = useSelector((state: { song: SongState }) => state.song.songStructure[part].chords);
   const chordGrid = useSelector((state: { song: SongState }) => state.song.songStructure[part].chordsLocation);
+  const measureLines = useSelector((state: { song: SongState }) => state.song.songStructure[part].measureLines);
 
   const MOUSE = {
     x: -10,
@@ -110,18 +111,23 @@ export default function BassStaff({ renderWidth, part }: BassStaffProps) {
           ctx.fill();
         }
         if(location.x === bassGrid[i] && bassGroove[i] <= 0.25){
-          ctx.beginPath();
-          ctx.moveTo(location.x + spacing, location.y - spacing * 5 + 8);
-          ctx.bezierCurveTo(
-            location.x + spacing * 2, location.y - spacing * 3 + 7,
-            location.x + spacing * 2.5, location.y - spacing * 3 + 7,
-            location.x + spacing * 2.5, location.y - spacing * 1 + 4);
-          ctx.bezierCurveTo(
-            location.x + spacing * 2.5, location.y - spacing * 2.7 + 7,
-            location.x + spacing * 2, location.y - spacing * 2.7 + 7,
-            location.x + spacing, location.y - spacing * 4.5 + 4);
-          ctx.stroke();
-          ctx.fill();
+          if (location.y >= 0) {
+            ctx.beginPath();
+            ctx.moveTo(location.x + spacing, location.y - spacing * 5 + 8);
+            ctx.bezierCurveTo(
+              location.x + spacing * 2, location.y - spacing * 3 + 7,
+              location.x + spacing * 2.5, location.y - spacing * 3 + 7,
+              location.x + spacing * 2.5, location.y - spacing * 1 + 4);
+            ctx.bezierCurveTo(
+              location.x + spacing * 2.5, location.y - spacing * 2.7 + 7,
+              location.x + spacing * 2, location.y - spacing * 2.7 + 7,
+              location.x + spacing, location.y - spacing * 4.5 + 4);
+            ctx.stroke();
+            ctx.fill();
+          } else {
+          ctx.fillText('7', location.x - 10, 62 + fontSize);
+          ctx.fillText('7', location.x - 9, 57 + fontSize);
+          }
         }
       }
       ctx.beginPath();
@@ -131,10 +137,26 @@ export default function BassStaff({ renderWidth, part }: BassStaffProps) {
       ctx.scale(1.05, 0.8);
       ctx.arc(0, 0, spacing, 0, Math.PI * 2);
 
+    /*  for (let i = 0; i < bassGrid.length; i++) {
+        if (location.x === bassGrid[i] && bassGroove[i] > 0.75 && location.y <= 0) {
+          ctx.beginPath();
+          ctx.moveTo(location.x + spacing,
+            75);
+          ctx.lineTo(location.x + spacing,
+            82);
+          ctx.lineTo(location.x - spacing,
+            82);
+          ctx.lineTo(location.x - spacing,
+            75);
+          ctx.stroke()
+          ctx.fill();
+        }
+      } */
+
       //half to quarter note fill
       for (let i = 0; i < bassGrid.length; i++) {
         if(location.x === bassGrid[i] && bassGroove[i] <= 1.5){
-      ctx.fill();
+          ctx.fill();
         }
       }
       
@@ -176,6 +198,12 @@ export default function BassStaff({ renderWidth, part }: BassStaffProps) {
           ctx.beginPath();
           ctx.moveTo(0, y);
           ctx.lineTo(renderWidth, y);
+          ctx.stroke();
+        }
+        for (let i = 0; i < measureLines.length; i++){
+          ctx.beginPath();
+          ctx.moveTo(measureLines[i], 45);
+          ctx.lineTo(measureLines[i], 105);
           ctx.stroke();
         }
 
@@ -252,6 +280,16 @@ export default function BassStaff({ renderWidth, part }: BassStaffProps) {
     };
   }, [MOUSE]);
 
+  const [isPlaying, setIsPlaying] = React.useState(false);
+
+  const handleStartClick = async () => {
+    if (isPlaying) {
+      setIsPlaying(false);
+    } else {
+      playBass(midi, bassNoteGrid, bassGroove, bpm);
+      setIsPlaying(true);
+    }
+  };
   useEffect(() => {
     function main() {
       const CANVAS = canvasRef.current;
@@ -269,18 +307,6 @@ export default function BassStaff({ renderWidth, part }: BassStaffProps) {
     }
     main();
   }, [renderWidth, bassNoteGrid, bassGroove, chords, chordGrid, bassGrid, MOUSE]);
-
-  const [isPlaying, setIsPlaying] = React.useState(false);
-
-  const handleStartClick = async () => {
-    if (isPlaying) {
-      setIsPlaying(false);
-    } else {
-      playBass(midi, bassNoteGrid, bassGroove, bpm);
-      setIsPlaying(true);
-    }
-  };
-
 
   return ( 
     <div>
