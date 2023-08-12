@@ -88,12 +88,63 @@ export default function BassStaff({ renderWidth, part }: BassStaffProps) {
           ctx.fill();
         }
         if (isMatch && groove <= 2) {
+          if (location.y < 0 && groove === 2) {
+            ctx.beginPath();
+            ctx.moveTo(location.x + spacing,
+              75);
+            ctx.lineTo(location.x + spacing,
+              68);
+            ctx.lineTo(location.x - spacing,
+              68);
+            ctx.lineTo(location.x - spacing,
+              75);
+            ctx.stroke()
+            ctx.fill();
+          } else if (location.y < 0 && groove >= 1) {
+            ctx.beginPath();
+            ctx.moveTo(location.x - 5, 51);
+            ctx.lineTo(location.x + 5, 66);
+            ctx.lineTo(location.x + 1, 75);
+            ctx.lineTo(location.x + 7, 87);
+            ctx.quadraticCurveTo(location.x - 6, 83, location.x + 4, 98)
+            ctx.quadraticCurveTo(location.x - 15, 79, location.x + 4, 83)
+            ctx.lineTo(location.x - 5, 69)
+            ctx.quadraticCurveTo(location.x + 5, 68, location.x - 5, 52)
+            ctx.fillStyle = "black";
+            ctx.fill();
+            ctx.stroke();
+            if (groove === 1.5) {
+              ctx.beginPath();
+              ctx.arc(location.x + 12, 70, 2.8, 0, Math.PI * 2);
+              ctx.fill();
+            }
+          } else if (location.y < 0 && groove >= 0.5) {
+            ctx.beginPath();
+            ctx.moveTo(location.x - 2, 88);
+            ctx.lineTo(location.x + 8, 65);
+            ctx.stroke();
+            
+            ctx.beginPath();
+            ctx.arc(location.x - 6, 67, 3.5, 0, Math.PI * 2);
+            ctx.fill();
+            
+            ctx.beginPath();
+            ctx.moveTo(location.x - 8, 69);
+            ctx.quadraticCurveTo(location.x - 5, 72, location.x + 8, 65);
+            ctx.stroke();
+            if (groove === 0.75) {
+              ctx.beginPath();
+              ctx.arc(location.x + 14, 67, 2.8, 0, Math.PI * 2);
+              ctx.fill();
+            }
+          } else {
           ctx.beginPath();
           ctx.moveTo(location.x + spacing,
             location.y);
           ctx.lineTo(location.x + spacing,
             location.y - spacing * 5);
           ctx.stroke();
+          }
         }
         if(location.x === bassGrid[i] && bassGroove[i] <= 0.75){
           ctx.beginPath();
@@ -130,25 +181,22 @@ export default function BassStaff({ renderWidth, part }: BassStaffProps) {
             ctx.lineTo(location.x + 8, 65);
             ctx.stroke();
             
-            // Draw the dot
             ctx.beginPath();
-            ctx.arc(location.x - 6, 67, 3.5, 0, Math.PI * 2); // Increased radius to 3
+            ctx.arc(location.x - 6, 67, 3.5, 0, Math.PI * 2);
             ctx.fill();
             
-            // Draw the curved connecting line
             ctx.beginPath();
             ctx.moveTo(location.x - 8, 69);
-            ctx.quadraticCurveTo(location.x - 5, 72, location.x + 8, 65); // Adjust control point as needed
+            ctx.quadraticCurveTo(location.x - 5, 72, location.x + 8, 65);
             ctx.stroke();
             
             ctx.beginPath();
-            ctx.arc(location.x - 9, 82, 3.5, 0, Math.PI * 2); // Increased radius to 3
+            ctx.arc(location.x - 9, 82, 3.5, 0, Math.PI * 2);
             ctx.fill();
             
-            // Draw the curved connecting line
             ctx.beginPath();
             ctx.moveTo(location.x - 10, 83);
-            ctx.quadraticCurveTo(location.x - 8, 87, location.x + 2, 81); // Adjust control point as needed
+            ctx.quadraticCurveTo(location.x - 8, 87, location.x + 2, 81);
             ctx.stroke();
           }
         }
@@ -159,22 +207,6 @@ export default function BassStaff({ renderWidth, part }: BassStaffProps) {
       ctx.rotate(-0.2);
       ctx.scale(1.05, 0.8);
       ctx.arc(0, 0, spacing, 0, Math.PI * 2);
-
-    /*  for (let i = 0; i < bassGrid.length; i++) {
-        if (location.x === bassGrid[i] && bassGroove[i] > 0.75 && location.y <= 0) {
-          ctx.beginPath();
-          ctx.moveTo(location.x + spacing,
-            75);
-          ctx.lineTo(location.x + spacing,
-            82);
-          ctx.lineTo(location.x - spacing,
-            82);
-          ctx.lineTo(location.x - spacing,
-            75);
-          ctx.stroke()
-          ctx.fill();
-        }
-      } */
 
       //half to quarter note fill
       for (let i = 0; i < bassGrid.length; i++) {
