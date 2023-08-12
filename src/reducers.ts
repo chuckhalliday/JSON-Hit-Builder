@@ -17,6 +17,7 @@ export interface SongState {
             y: number;
             acc: string;
         }[];
+        measureLines: number[];
         drums: {
             index: number;
             checked: boolean;
