@@ -206,7 +206,7 @@ export async function playBass(midi: boolean, pattern: {x: number, y: number, ac
 
       } 
 
-      if (bass > 0) {
+      if (bass >= 30) {
         //let velocity = Math.floor(Math.random() * (75 - 60 + 1) + 60);
         //let release = Math.floor(Math.random() * (70 - 50 + 1) + 50);
 
