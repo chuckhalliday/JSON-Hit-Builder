@@ -204,15 +204,18 @@ export async function playBass(midi: boolean, pattern: {x: number, y: number, ac
             bass = tone.D[2];
           } break;
 
-      } 
+        default: bass = 0
 
-      if (bass >= 30) {
+      }
         //let velocity = Math.floor(Math.random() * (75 - 60 + 1) + 60);
         //let release = Math.floor(Math.random() * (70 - 50 + 1) + 50);
 
         //output.sendMessage([144, bass, velocity])
         //await wait(duration)
         //output.sendMessage([128, bass, release])
+        if (bass <= 0) {
+          await wait(duration);
+        } else {
         const osc = audioContext.createOscillator();
         const gainNode = audioContext.createGain();
         const filterNode = audioContext.createBiquadFilter();
@@ -270,10 +273,8 @@ export async function playBass(midi: boolean, pattern: {x: number, y: number, ac
         osc.disconnect();
         gainNode.disconnect();
         filterNode.disconnect();
-      } else if (bass <= 0) {
-        await wait(duration);
       }
-    } else {
+      } else {
       switch (bass) {
         //E
         case 120: pattern[index].acc === 'flat' ? bass = midiTone.Eb[1] : bass = midiTone.E[1]; break
@@ -325,14 +326,16 @@ export async function playBass(midi: boolean, pattern: {x: number, y: number, ac
           } else {
             bass = midiTone.D[2];
           } break;
-      } if (bass > 0) {
+        default: bass = 0
+        if (bass <= 0) {
+          await wait(duration);
+        } else {
         triggerMidi('2', bass, duration, velocity, release)
         await wait(duration) 
-      } else if (bass <= 0) {
-        await wait(duration);
       }
     }
   }
+}
 }
 
 export async function playChords(midi: boolean, pattern: string[], groove: number[], bpm: number) {
@@ -430,6 +433,3 @@ export async function playChords(midi: boolean, pattern: string[], groove: numbe
     }
   }
 }
-
-
-
