@@ -125,8 +125,31 @@ export default function BassStaff({ renderWidth, part }: BassStaffProps) {
             ctx.stroke();
             ctx.fill();
           } else {
-          ctx.fillText('7', location.x - 10, 62 + fontSize);
-          ctx.fillText('7', location.x - 9, 57 + fontSize);
+            ctx.beginPath();
+            ctx.moveTo(location.x - 5, 103);
+            ctx.lineTo(location.x + 8, 65);
+            ctx.stroke();
+            
+            // Draw the dot
+            ctx.beginPath();
+            ctx.arc(location.x - 6, 67, 3.5, 0, Math.PI * 2); // Increased radius to 3
+            ctx.fill();
+            
+            // Draw the curved connecting line
+            ctx.beginPath();
+            ctx.moveTo(location.x - 8, 69);
+            ctx.quadraticCurveTo(location.x - 5, 72, location.x + 8, 65); // Adjust control point as needed
+            ctx.stroke();
+            
+            ctx.beginPath();
+            ctx.arc(location.x - 9, 82, 3.5, 0, Math.PI * 2); // Increased radius to 3
+            ctx.fill();
+            
+            // Draw the curved connecting line
+            ctx.beginPath();
+            ctx.moveTo(location.x - 10, 83);
+            ctx.quadraticCurveTo(location.x - 8, 87, location.x + 2, 81); // Adjust control point as needed
+            ctx.stroke();
           }
         }
       }
