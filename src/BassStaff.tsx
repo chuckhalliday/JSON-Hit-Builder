@@ -76,6 +76,7 @@ export default function BassStaff({ renderWidth, part }: BassStaffProps) {
       for (let i = 0; i < bassGrid.length; i++){
         const isMatch = location.x === bassGrid[i];
         const groove = bassGroove[i];
+        if (location.y >= 30) {
         if (location.x === bassGrid[i] && location.acc === 'flat') {
           ctx.fillText('♭', location.x + spacing * -3.5, location.y - spacing * 2 + fontSize);
         }
@@ -87,8 +88,9 @@ export default function BassStaff({ renderWidth, part }: BassStaffProps) {
           ctx.arc(location.x + spacing + 8, location.y - 3.8, 2.8, 0, Math.PI * 2);
           ctx.fill();
         }
+      }
         if (isMatch && groove <= 2) {
-          if (location.y < 0 && groove === 2) {
+          if (location.y < 30 && groove === 2) {
             ctx.beginPath();
             ctx.moveTo(location.x + spacing,
               75);
@@ -100,7 +102,7 @@ export default function BassStaff({ renderWidth, part }: BassStaffProps) {
               75);
             ctx.stroke()
             ctx.fill();
-          } else if (location.y < 0 && groove >= 1) {
+          } else if (location.y < 30 && groove >= 1) {
             ctx.beginPath();
             ctx.moveTo(location.x - 5, 51);
             ctx.lineTo(location.x + 5, 66);
@@ -118,7 +120,7 @@ export default function BassStaff({ renderWidth, part }: BassStaffProps) {
               ctx.arc(location.x + 12, 70, 2.8, 0, Math.PI * 2);
               ctx.fill();
             }
-          } else if (location.y < 0 && groove >= 0.5) {
+          } else if (location.y < 30 && groove >= 0.5) {
             ctx.beginPath();
             ctx.moveTo(location.x - 2, 88);
             ctx.lineTo(location.x + 8, 65);
@@ -137,7 +139,7 @@ export default function BassStaff({ renderWidth, part }: BassStaffProps) {
               ctx.arc(location.x + 14, 67, 2.8, 0, Math.PI * 2);
               ctx.fill();
             }
-          } else {
+          } else if (location.y >= 30) {
           ctx.beginPath();
           ctx.moveTo(location.x + spacing,
             location.y);
@@ -146,7 +148,7 @@ export default function BassStaff({ renderWidth, part }: BassStaffProps) {
           ctx.stroke();
           }
         }
-        if(location.x === bassGrid[i] && bassGroove[i] <= 0.75){
+        if(location.x === bassGrid[i] && bassGroove[i] <= 0.75 && location.y >= 30){
           ctx.beginPath();
           ctx.moveTo(location.x + spacing,
             location.y - spacing * 5);
@@ -161,7 +163,7 @@ export default function BassStaff({ renderWidth, part }: BassStaffProps) {
           ctx.stroke();
           ctx.fill();
         }
-        if(location.x === bassGrid[i] && bassGroove[i] <= 0.25){
+        if(location.x === bassGrid[i] && bassGroove[i] <= 0.25 && location.y >= 30){
           if (location.y >= 0) {
             ctx.beginPath();
             ctx.moveTo(location.x + spacing, location.y - spacing * 5 + 8);
@@ -201,16 +203,18 @@ export default function BassStaff({ renderWidth, part }: BassStaffProps) {
           }
         }
       }
+      if (location.y >= 30) {
       ctx.beginPath();
       ctx.save();
       ctx.translate(location.x, location.y);
       ctx.rotate(-0.2);
       ctx.scale(1.05, 0.8);
       ctx.arc(0, 0, spacing, 0, Math.PI * 2);
+      }
 
       //half to quarter note fill
       for (let i = 0; i < bassGrid.length; i++) {
-        if(location.x === bassGrid[i] && bassGroove[i] <= 1.5){
+        if(location.x === bassGrid[i] && bassGroove[i] <= 1.5 && location.y >= 30){
           ctx.fill();
         }
       }
