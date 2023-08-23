@@ -66,6 +66,7 @@ chordsVA: string[], chordsGrooveV: number[], chordsCA: string[], chordsGrooveC: 
     bassIndex++
     }
   }
+  console.log(measureLines)
 
   const bassGrid = bassArray
 
