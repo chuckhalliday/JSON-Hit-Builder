@@ -10,7 +10,7 @@ describe('primaryGroove', () => {
 
   it('should only contain values from the randomValues array', () => {
     const groove = primaryGroove();
-    const randomValues = [0.5, 1, 1.5, 2, 0.25, 0.75];
+    const randomValues = [0.25, 0.5, 0.75, 1, 1.5, 2];
 
     const containsInvalidValues = groove.some(value => !randomValues.includes(value));
     expect(containsInvalidValues).toBe(false);
