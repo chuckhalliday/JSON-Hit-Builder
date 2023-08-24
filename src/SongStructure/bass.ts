@@ -21,46 +21,7 @@ export function primaryGroove() {
   return initBass;
 }
 
-export function drawBass(bass: string[], bassGrid: number[]) {
-  let bassNoteLocations: { x: number, y: number, acc: string }[] = [];
-  
-  for (let i = 0; i < bassGrid.length; i++) {
-    let noteLocation: {x: number, y: number, acc: string } = { x: 0, y: 0, acc: 'none' } // Create a new object for each iteration
-  
-      noteLocation.x = bassGrid[i];
-      if (bass[i] === 'G' || bass[i] === 'G#' || bass[i] === 'Gb') {
-        noteLocation.y = 52.5;
-      } else if (bass[i] === 'F' || bass[i] === 'F#') {
-        noteLocation.y = 60;
-      } else if (bass[i] === 'E' || bass[i] === 'Eb') {
-        noteLocation.y = 67.5;
-      } else if (bass[i] === 'D' || bass[i] === 'D#' || bass[i] === 'Db') {
-        noteLocation.y = 75;
-      } else if (bass[i] === 'C' || bass[i] === 'C#') {
-        noteLocation.y = 82.5;
-      } else if (bass[i] === 'B' || bass[i] === 'Bb') {
-        noteLocation.y = 90;
-      } else if (bass[i] === 'A' || bass[i] === 'A#' || bass[i] === 'Ab') {
-        noteLocation.y = 97.5;
-      } else {
-        noteLocation.y = -20
-      }
-      if (bass[i] === 'A#' || bass[i] === 'C#' || bass[i] === 'D#' || bass[i] === 'F#' || bass[i] === 'G#') {
-        noteLocation.acc = 'sharp';
-      } else if (bass[i] === 'Ab' || bass[i] === 'Bb' || bass[i] === 'Db' || bass[i] === 'Eb' || bass[i] === 'Gb') {
-        noteLocation.acc = 'flat';
-      } else {
-        noteLocation.acc = 'none'
-      }
-  
-      bassNoteLocations.push(noteLocation);
-    }
-  
-    return bassNoteLocations;
-  }
-
 const a_c: string = Math.random() < 0.5 ? "a" : "c";
-
 const dVals = ["o", "a", "c", "f"];
 let dAcc = dVals[Math.floor(Math.random() * dVals.length)];
 const eVals = ["p", "d", "g", "b"];
@@ -80,9 +41,7 @@ let bAcc = bVals[Math.floor(Math.random() * bVals.length)];
 
 
 export function bassString1V(bassGroove: number[]) {
-  let bass: string[] = [];
-  let sum = 0;
-
+  let bass: string[] = [a_c];
 
   let possibleBassValues: string[];
   if (a_c === "c") {
@@ -96,17 +55,12 @@ export function bassString1V(bassGroove: number[]) {
   let acc1 = possibleBassValues[Math.floor(Math.random() * possibleBassValues.length)];
   let acc2 = possibleBassValues[Math.floor(Math.random() * possibleBassValues.length)];
 
-  for (let i = 0; i < bassGroove.length; i++) {
+  for (let i = 1; i < bassGroove.length; i++) {
     if (bassGroove[i] <= 0.25) {
       bass.push("-");
     } else {
-      if (sum <= 2 || sum >= 4 && sum <= 6) {
-        bass.push(a_c);
-      } else {
-        bass.push(Math.random() < 0.5 ? a_c : (Math.random() < 0.5 ? acc1 : acc2));
-      }
+      bass.push(Math.random() < 0.5 ? a_c : (Math.random() < 0.5 ? acc1 : acc2));
     }
-    sum += bassGroove[i];
   }
   return bass;
 }
@@ -453,64 +407,83 @@ export function adjustBassString(bassString: string[], keyAdjust: number) {
   }
 
     switch (bassString[i]) {
-      case "a":
-        transpose.push(keys[12 + keyAdjust]);
+      case "a": transpose.push(keys[12 + keyAdjust]);
         break;
-      case "A":
-        transpose.push(keys[13 + keyAdjust]);
+      case "A": transpose.push(keys[13 + keyAdjust]);
         break;
-      case "b":
-        transpose.push(keys[14 + keyAdjust]);
+      case "b": transpose.push(keys[14 + keyAdjust]);
         break;
-      case "c":
-        transpose.push(keys[15 + keyAdjust]);
+      case "c": transpose.push(keys[15 + keyAdjust]);
         break;
-      case "C":
-        transpose.push(keys[16 + keyAdjust]);
+      case "C": transpose.push(keys[16 + keyAdjust]);
         break;
-      case "d":
-        transpose.push(keys[17 + keyAdjust]);
+      case "d": transpose.push(keys[17 + keyAdjust]);
         break;
-      case "D":
-        transpose.push(keys[18 + keyAdjust]);
+      case "D": transpose.push(keys[18 + keyAdjust]);
         break;
-      case "e":
-        transpose.push(keys[19 + keyAdjust]);
+      case "e": transpose.push(keys[19 + keyAdjust]);
         break;
-      case "f":
-        transpose.push(keys[20 + keyAdjust]);
+      case "f": transpose.push(keys[20 + keyAdjust]);
         break;
-      case "F":
-        transpose.push(keys[21 + keyAdjust]);
+      case "F": transpose.push(keys[21 + keyAdjust]);
         break;
-      case "g":
-        transpose.push(keys[22 + keyAdjust]);
+      case "g": transpose.push(keys[22 + keyAdjust]);
         break;
-      case "G":
-        transpose.push(keys[23 + keyAdjust]);
+      case "G": transpose.push(keys[23 + keyAdjust]);
         break;
-      case "o":
-        transpose.push(keys[20 + keyAdjust]);
+      case "o": transpose.push(keys[20 + keyAdjust]);
         break;
-      case "O":
-        transpose.push(keys[21 + keyAdjust]);
+      case "O": transpose.push(keys[21 + keyAdjust]);
         break;
-      case "p":
-        transpose.push(keys[22 + keyAdjust]);
+      case "p": transpose.push(keys[22 + keyAdjust]);
         break;
-      case "P":
-        transpose.push(keys[23 + keyAdjust]);
+      case "P": transpose.push(keys[23 + keyAdjust]);
         break;
-      case "-":
-        transpose.push("-");
+      case "-": transpose.push("-");
         break;
-      case "|":
-        transpose.push("|");
+      case "|": transpose.push("|");
         break;
-      case " ":
-        transpose.push(" ");
+      case " ": transpose.push(" ");
         break;
     }
   }
   return transpose;
 }
+
+export function drawBass(bass: string[], bassGrid: number[]) {
+  let bassNoteLocations: { x: number, y: number, acc: string }[] = [];
+  
+  for (let i = 0; i < bassGrid.length; i++) {
+    let noteLocation: {x: number, y: number, acc: string } = { x: 0, y: 0, acc: 'none' } // Create a new object for each iteration
+  
+      noteLocation.x = bassGrid[i];
+      if (bass[i] === 'G' || bass[i] === 'G#' || bass[i] === 'Gb') {
+        noteLocation.y = 52.5;
+      } else if (bass[i] === 'F' || bass[i] === 'F#') {
+        noteLocation.y = 60;
+      } else if (bass[i] === 'E' || bass[i] === 'Eb') {
+        noteLocation.y = 67.5;
+      } else if (bass[i] === 'D' || bass[i] === 'D#' || bass[i] === 'Db') {
+        noteLocation.y = 75;
+      } else if (bass[i] === 'C' || bass[i] === 'C#') {
+        noteLocation.y = 82.5;
+      } else if (bass[i] === 'B' || bass[i] === 'Bb') {
+        noteLocation.y = 90;
+      } else if (bass[i] === 'A' || bass[i] === 'A#' || bass[i] === 'Ab') {
+        noteLocation.y = 97.5;
+      } else {
+        noteLocation.y = -20
+      }
+      if (bass[i] === 'A#' || bass[i] === 'C#' || bass[i] === 'D#' || bass[i] === 'F#' || bass[i] === 'G#') {
+        noteLocation.acc = 'sharp';
+      } else if (bass[i] === 'Ab' || bass[i] === 'Bb' || bass[i] === 'Db' || bass[i] === 'Eb' || bass[i] === 'Gb') {
+        noteLocation.acc = 'flat';
+      } else {
+        noteLocation.acc = 'none'
+      }
+  
+      bassNoteLocations.push(noteLocation);
+    }
+  
+    return bassNoteLocations;
+  }

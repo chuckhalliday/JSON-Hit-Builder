@@ -163,8 +163,8 @@ export default function BassStaff({ renderWidth, part }: BassStaffProps) {
           ctx.stroke();
           ctx.fill();
         }
-        if(location.x === bassGrid[i] && bassGroove[i] <= 0.25 && location.y >= 30){
-          if (location.y >= 0) {
+        if(location.x === bassGrid[i] && bassGroove[i] <= 0.25){
+          if (location.y >= 30) {
             ctx.beginPath();
             ctx.moveTo(location.x + spacing, location.y - spacing * 5 + 8);
             ctx.bezierCurveTo(
