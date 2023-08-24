@@ -40,7 +40,7 @@ chordsVA: string[], chordsGrooveV: number[], chordsCA: string[], chordsGrooveC: 
 
   const randomPartLength = Math.min(remainingParts, Math.floor(Math.random() * 3) + 1);
 
-  let bassArray: number[]=[115]
+  let bassArray: number[]=[-10, 115]
   let gridX: number = 115
   let bassSum: number = bassGrooveV[0]
   let drumSum: number = 0
@@ -110,7 +110,7 @@ chordsVA: string[], chordsGrooveV: number[], chordsCA: string[], chordsGrooveC: 
 
     const randomPartLength = Math.min(remainingParts, Math.floor(Math.random() * 3) + 1);
 
-    let bassArray: number[]=[115]
+    let bassArray: number[]=[-10, 115]
     let gridX: number = 115
     let bassSum: number = partBassGroove[0]
     let drumSum: number = 0

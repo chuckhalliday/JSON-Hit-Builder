@@ -73,9 +73,9 @@ export default function BassStaff({ renderWidth, part }: BassStaffProps) {
       const fontSize = 20;
       ctx.font = `${fontSize}px serif`;
 
-      for (let i = 0; i < bassGrid.length; i++){
+      for (let i = 1; i < bassGrid.length; i++){
         const isMatch = location.x === bassGrid[i];
-        const groove = bassGroove[i];
+        const groove = bassGroove[i - 1];
         if (location.y >= 30) {
         if (location.x === bassGrid[i] && location.acc === 'flat') {
           ctx.fillText('♭', location.x + spacing * -3.5, location.y - spacing * 2 + fontSize);
@@ -148,7 +148,7 @@ export default function BassStaff({ renderWidth, part }: BassStaffProps) {
           ctx.stroke();
           }
         }
-        if(location.x === bassGrid[i] && bassGroove[i] <= 0.75 && location.y >= 30){
+        if(location.x === bassGrid[i] && bassGroove[i - 1] <= 0.75 && location.y >= 30){
           ctx.beginPath();
           ctx.moveTo(location.x + spacing,
             location.y - spacing * 5);
@@ -163,7 +163,7 @@ export default function BassStaff({ renderWidth, part }: BassStaffProps) {
           ctx.stroke();
           ctx.fill();
         }
-        if(location.x === bassGrid[i] && bassGroove[i] <= 0.25){
+        if(location.x === bassGrid[i] && bassGroove[i - 1] <= 0.25){
           if (location.y >= 30) {
             ctx.beginPath();
             ctx.moveTo(location.x + spacing, location.y - spacing * 5 + 8);
@@ -213,8 +213,8 @@ export default function BassStaff({ renderWidth, part }: BassStaffProps) {
       }
 
       //half to quarter note fill
-      for (let i = 0; i < bassGrid.length; i++) {
-        if(location.x === bassGrid[i] && bassGroove[i] <= 1.5 && location.y >= 30){
+      for (let i = 1; i < bassGrid.length; i++) {
+        if(location.x === bassGrid[i] && bassGroove[i - 1] <= 1.5 && location.y >= 30){
           ctx.fill();
         }
       }
@@ -232,7 +232,7 @@ export default function BassStaff({ renderWidth, part }: BassStaffProps) {
       ctx.fillStyle = "black";
       ctx.font = `${fontSize}px serif`;
   
-      for (let i = 0; i < bassGrid.length; i++) {
+      for (let i = 1; i < bassGrid.length; i++) {
         const isMatch = location === bassGrid[i];
         if (isMatch) {
           ctx.fillText(chordName, location - spacing, CANVAS.height - 136);
