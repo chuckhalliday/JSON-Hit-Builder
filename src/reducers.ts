@@ -6,6 +6,7 @@ export interface SongState {
     bpm: number,
     key: string,
     midi: boolean,
+    selectedBeat: number [],
     songStructure: {
         type: string;
         repeat: number;
@@ -36,6 +37,7 @@ const initialState: SongState = {
     bpm: songVariables.bpm,
     key: songVariables.key,
     midi: false,
+    selectedBeat: [0, 0],
     songStructure: songVariables.songStructure
 };
 
@@ -59,6 +61,10 @@ const song = createSlice({
         console.log(action);
         state.songStructure[action.payload.index].drums[action.payload.drumPart][action.payload.drumStep] = action.payload.drums;
       },
+      setCurrentBeat: (state, action: PayloadAction<number[]>) => {
+        console.log(action);
+        state.selectedBeat = action.payload;
+      },
       incrementByAmount: (state, action: PayloadAction<string>) => {
         console.log(action);
         state.bpm = parseFloat(action.payload);
@@ -66,5 +72,5 @@ const song = createSlice({
     },
   });
 
-export const { setIsPlaying, setMidi, setBassState, setDrumState, incrementByAmount } = song.actions;
+export const { setIsPlaying, setMidi, setBassState, setDrumState, setCurrentBeat, incrementByAmount } = song.actions;
 export default song;

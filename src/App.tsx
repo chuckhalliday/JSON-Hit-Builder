@@ -4,7 +4,7 @@ import DrumMachine from "./DrumMachine";
 import BassStaff from "./BassStaff";
 import Piano from './Piano';
 import { useSelector, useDispatch } from "react-redux"
-import { playSong } from './SongStructure/playSong';
+import { playVerse } from './SongStructure/playSong';
 import { incrementByAmount, setIsPlaying, setMidi, SongState } from './reducers';
 
 import styles from "./App.module.scss"
@@ -46,6 +46,45 @@ function App() {
 
   const dispatch = useDispatch()
 
+  async function playSong(song: SongState) {
+    let tempo = song.bpm - 60;
+    //const output = new midi.Output()
+    //output.openPort(3)
+  
+    //Start recording
+  
+    //output.sendMessage([144, 16, 1])
+    //await countIn(song.bpm, song.songStructure[0].drumGroove, song.songStructure[0].drums)
+    //output.sendMessage([176, 50, tempo]);
+    for (let i = song.selectedBeat[0]; i < song.songStructure.length; i++) {
+      let sum = 18;
+      //Drop locators
+      //output.sendMessage([144, 17, 1])
+      //output.sendMessage([176, sum, 1])
+      await playVerse(
+        song.bpm,
+        song.midi,
+        song.songStructure[i].drumGroove,
+        song.songStructure[i].drums,
+        song.songStructure[i].bassGroove,
+        song.songStructure[i].bassNoteLocations, 
+        song.songStructure[i].chordsGroove,
+        song.songStructure[i].chords,
+        lampsRef.current
+      );
+      const nextPartIndex = i + 1;
+      if (nextPartIndex < song.songStructure.length) {
+        setCurrentPart(nextPartIndex);
+        handlePartOpen(`${nextPartIndex}`);
+      } else {
+      console.log("End")
+      }
+      sum += 1;
+    }
+    // Stop recording
+    //output.sendMessage([144, 16, 1])
+  }
+
   const handlePartOpen = (key: string) => {
     const updatedOpenedParts: { [key: string]: boolean } = {};
 
@@ -75,7 +114,7 @@ function App() {
   useEffect(() => {
     if (isPlaying && lampsRef.current.length > 0) {
       const playOnce = async () => {
-        await playSong(song, setCurrentPart, handlePartOpen, lampsRef.current);
+        await playSong(song);
         dispatch(setIsPlaying({ isPlaying: false }));
       };
   
@@ -84,12 +123,12 @@ function App() {
   }, [isPlaying]);
 
 
- const handleStartClick = async () => {
+ const handleStartClick = () => {
     if (isPlaying) {
       dispatch(setIsPlaying({isPlaying: false}));
     } else {
       if (!openedParts[0]) {
-        handlePartOpen(`0`)
+        handlePartOpen(`${song.selectedBeat[0]}`)
       }
       dispatch(setIsPlaying({isPlaying: true}));
     }

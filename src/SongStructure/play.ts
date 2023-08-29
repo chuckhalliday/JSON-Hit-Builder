@@ -9,9 +9,9 @@ import { generateSongStructure } from './songStructure.js';
 
 const primaryBass: number[] = primaryGroove();
 const primaryBass2: number[] = primaryGroove();
-const bassPart1: number[] = Math.random() < 0.9 ? primaryBass : primaryBass2;
-const bassPart2: number[] = Math.random() < 0.5 ? primaryBass : primaryBass2;
-const bassPart3: number[] = Math.random() < 0.9 ? primaryBass : primaryBass2;
+const bassPart1: number[] = primaryBass
+const bassPart2: number[] = Math.random() < 0.4 ? primaryBass : primaryBass2;
+const bassPart3: number[] = Math.random() < 0.8 ? primaryBass : primaryBass2;
 const bassPart4: number[] = Math.random() < 0.3 ? primaryBass : primaryBass2;
 const initBass: number[] = bassPart1.concat(bassPart2, bassPart3, bassPart4);
 const chorusBass: number[] = bassPart2.concat(bassPart1, bassPart4, bassPart3)
@@ -23,9 +23,9 @@ const primaryDrums: number[] = createDrums(primaryBass);
 const primaryDrums2: number[] = createDrums(primaryBass2);
 const drumTrips1: number[] = subdivideArray(primaryDrums);
 const drumTrips2: number[] = subdivideArray(primaryDrums2);
-const drumPart1: number[] = bassPart1 === primaryBass ? (Math.random() < 0.8 ? primaryDrums : drumTrips1) : (Math.random() < 0.8 ? primaryDrums2 : drumTrips2);
-const drumPart2: number[] = bassPart2 === primaryBass ? (Math.random() < 0.4 ? primaryDrums : drumTrips1) : (Math.random() < 0.4 ? primaryDrums2 : drumTrips2);
-const drumPart3: number[] = bassPart3 === primaryBass ? (Math.random() < 0.7 ? primaryDrums : drumTrips1) : (Math.random() < 0.7 ? primaryDrums2 : drumTrips2);
+const drumPart1: number[] = Math.random() < 0.8 ? primaryDrums : drumTrips1
+const drumPart2: number[] = bassPart2 === primaryBass ? (Math.random() < 0.5 ? primaryDrums : drumTrips1) : (Math.random() < 0.5 ? primaryDrums2 : drumTrips2);
+const drumPart3: number[] = bassPart3 === primaryBass ? (Math.random() < 0.8 ? primaryDrums : drumTrips1) : (Math.random() < 0.8 ? primaryDrums2 : drumTrips2);
 const drumPart4: number[] = bassPart4 === primaryBass ? (Math.random() < 0.5 ? primaryDrums : drumTrips1) : (Math.random() < 0.5 ? primaryDrums2 : drumTrips2);
 const initDrums: number[] = drumPart1.concat(drumPart2, drumPart3, drumPart4);
 const chorusDrums: number[] = drumPart2.concat(drumPart1, drumPart4, drumPart3)
