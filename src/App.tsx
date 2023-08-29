@@ -5,7 +5,7 @@ import BassStaff from "./BassStaff";
 import Piano from './Piano';
 import { useSelector, useDispatch } from "react-redux"
 import { playVerse } from './SongStructure/playSong';
-import { incrementByAmount, setIsPlaying, setMidi, SongState } from './reducers';
+import { incrementByAmount, setIsPlaying, setMidi, SongState, setCurrentBeat } from './reducers';
 
 import styles from "./App.module.scss"
 
@@ -41,12 +41,13 @@ function App() {
   const midi = useSelector((state: { song: SongState }) => state.song.midi)
   const song = useSelector((state: { song: SongState }) => state.song)
   const bpm = useSelector((state: { song: { bpm: number } }) => state.song.bpm);
+  let verse = song.selectedBeat[0]
 
   const lampsRef = React.useRef<HTMLInputElement[]>([]);
 
   const dispatch = useDispatch()
 
-  async function playSong(song: SongState) {
+  async function playSong(song: SongState, verse: number) {
     let tempo = song.bpm - 60;
     //const output = new midi.Output()
     //output.openPort(3)
@@ -56,31 +57,29 @@ function App() {
     //output.sendMessage([144, 16, 1])
     //await countIn(song.bpm, song.songStructure[0].drumGroove, song.songStructure[0].drums)
     //output.sendMessage([176, 50, tempo]);
-    for (let i = song.selectedBeat[0]; i < song.songStructure.length; i++) {
-      let sum = 18;
       //Drop locators
       //output.sendMessage([144, 17, 1])
       //output.sendMessage([176, sum, 1])
       await playVerse(
         song.bpm,
         song.midi,
-        song.songStructure[i].drumGroove,
-        song.songStructure[i].drums,
-        song.songStructure[i].bassGroove,
-        song.songStructure[i].bassNoteLocations, 
-        song.songStructure[i].chordsGroove,
-        song.songStructure[i].chords,
+        song.songStructure[verse].drumGroove,
+        song.songStructure[verse].drums,
+        song.songStructure[verse].bassGroove,
+        song.songStructure[verse].bassNoteLocations, 
+        song.songStructure[verse].chordsGroove,
+        song.songStructure[verse].chords,
         lampsRef.current
       );
-      const nextPartIndex = i + 1;
-      if (nextPartIndex < song.songStructure.length) {
-        setCurrentPart(nextPartIndex);
-        handlePartOpen(`${nextPartIndex}`);
+      verse++
+      if (verse < song.songStructure.length) {
+        dispatch(setCurrentBeat([verse, 0]))
+        setCurrentPart(verse);
+        handlePartOpen(`${verse}`); 
       } else {
+      dispatch(setIsPlaying({ isPlaying: false }))
       console.log("End")
       }
-      sum += 1;
-    }
     // Stop recording
     //output.sendMessage([144, 16, 1])
   }
@@ -112,22 +111,17 @@ function App() {
   };
 
   useEffect(() => {
-    if (isPlaying && lampsRef.current.length > 0) {
-      const playOnce = async () => {
-        await playSong(song);
-        dispatch(setIsPlaying({ isPlaying: false }));
-      };
-  
-      playOnce();
+     if (isPlaying) {
+      playSong(song, verse);
     }
-  }, [isPlaying]);
+  }, [isPlaying, verse]);
 
 
  const handleStartClick = () => {
     if (isPlaying) {
       dispatch(setIsPlaying({isPlaying: false}));
     } else {
-      if (!openedParts[0]) {
+      if (!openedParts[0] && !openedParts[song.selectedBeat[0]]) {
         handlePartOpen(`${song.selectedBeat[0]}`)
       }
       dispatch(setIsPlaying({isPlaying: true}));
