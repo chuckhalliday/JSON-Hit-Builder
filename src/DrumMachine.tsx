@@ -1,6 +1,6 @@
 import React, { useEffect, useRef } from "react";
 import { playDrums } from "./SongStructure/playSong";
-import { setDrumState, setIsPlaying, SongState } from "./reducers";
+import { setDrumState, setIsPlaying, SongState, setCurrentBeat } from "./reducers";
 import { useDispatch, useSelector } from "react-redux";
 import styles from "./DrumMachine.module.scss";
 
@@ -126,6 +126,23 @@ export default function DrumMachine({
       onRenderWidthChange(width);
     }
   }, [onRenderWidthChange]);
+
+  useEffect(() => {
+    function handleLampChange(event: any) {
+      const lampId = parseInt(event.target.id);
+      dispatch(setCurrentBeat([part, lampId]))
+    }
+
+    lampsRef.current.forEach((lamp) => {
+      lamp.addEventListener('change', handleLampChange);
+    });
+
+    return () => {
+      lampsRef.current.forEach((lamp) => {
+        lamp.removeEventListener('change', handleLampChange);
+      });
+    };
+  }, []);
   
   return (
     <div className={styles.machine} ref={machineRef}>
@@ -156,8 +173,7 @@ export default function DrumMachine({
               <input
                 type="radio"
                 name="lamp"
-                id={'lamp' + '-' + stepId}
-                disabled
+                id={stepId.toString()}
                 ref={(elm) => {
                   if (!elm) return;
                   lampsRef.current[stepId] = elm;

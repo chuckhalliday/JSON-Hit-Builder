@@ -1,4 +1,6 @@
 import { primaryGroove } from './bass'
+import { createDrums } from './drums'
+import { createChords } from './chords';
 
 describe('primaryGroove', () => {
   it('should return an array with total duration equal to or less than 8', () => {
@@ -28,5 +30,39 @@ describe('primaryGroove', () => {
         fail('Measure sum is not a multiple of 2');
       }
     }
+  });
+});
+
+describe('createDrums', () => {
+  it('handles edge case of empty input', () => {
+    const bassGroove: number[] = [];
+    const result = createDrums(bassGroove);
+    expect(result).toEqual([]);
+  });
+  it('produces an array that sums to equal the input array', () => {
+    const bassGroove: number[] = [0.5, 0.25, 0.25, 1, 0.5];
+    const result = createDrums(bassGroove);
+
+    const inputSum = bassGroove.reduce((sum, value) => sum + value, 0);
+    const outputSum = result.reduce((sum, value) => sum + value, 0);
+
+    expect(outputSum).toEqual(inputSum);
+  });
+});
+
+describe('createChords', () => {
+  it('handles edge case of empty input', () => {
+    const bassGroove: number[] = [];
+    const result = createChords(bassGroove);
+    expect(result).toEqual([]);
+  });
+  it('produces an array that sums to equal the input array', () => {
+    const bassGroove: number[] = [0.5, 0.25, 0.25, 1.5, 0.5];
+    const result = createChords(bassGroove);
+
+    const inputSum = bassGroove.reduce((sum, value) => sum + value, 0);
+    const outputSum = result.reduce((sum, value) => sum + value, 0);
+
+    expect(outputSum).toEqual(inputSum);
   });
 });
