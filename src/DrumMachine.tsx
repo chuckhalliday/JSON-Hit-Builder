@@ -18,13 +18,14 @@ export default function DrumMachine({
   const [isPlaying, setIsPlaying] = React.useState(false);
   const dispatch = useDispatch()
 
-  const bpm = useSelector((state: { song: SongState }) => state.song.bpm);
-  const midi = useSelector((state: { song: SongState }) => state.song.midi)
-  const drums = useSelector((state: { song: SongState }) => state.song.songStructure[part].drums);
-  const steps = useSelector((state: { song: SongState }) => state.song.songStructure[part].stepIds);
-  const drumGroove = useSelector((state: { song: SongState }) => state.song.songStructure[part].drumGroove);
+  const song = useSelector((state: { song: SongState }) => state.song);
+  const bpm = song.bpm
+  const start = song.selectedBeat[0]
+  const midi = song.midi
+  const drums = song.songStructure[part].drums
+  const steps = song.songStructure[part].stepIds
+  const drumGroove = song.songStructure[part].drumGroove
   const numOfSteps = drumGroove.length
-
 
     const stepsRef = React.useRef<HTMLInputElement[][]>(
       Array.from({ length: drums.length }, () =>
@@ -92,7 +93,7 @@ export default function DrumMachine({
     if (isPlaying) {
       setIsPlaying(false);
     } else {
-     playDrums(bpm, midi, drumGroove, drumHits, lampsRef.current);
+     playDrums(bpm, midi, start, drumGroove, drumHits, lampsRef.current);
       setIsPlaying(true);
     }
   };
@@ -129,8 +130,40 @@ export default function DrumMachine({
 
   useEffect(() => {
     function handleLampChange(event: any) {
-      const lampId = parseInt(event.target.id);
-      dispatch(setCurrentBeat([part, lampId]))
+      const lampId: number = parseInt(event.target.id);
+      const getPosition = () => {
+        let drumPosition: number = 0
+        let bassPosition: number = 0
+        let chordPosition: number = 0
+        let drumSum = 0
+        let bassSum = song.songStructure[part].bassGroove[0]
+        let chordSum = song.songStructure[part].chordsGroove[0]
+        let bassIndex = 1
+        let chordIndex = 1
+
+        for (let i=0; i < lampId; i++){
+          drumSum+=song.songStructure[part].drumGroove[i]
+          drumSum = parseFloat(drumSum.toFixed(2))
+          if (drumSum === chordSum && bassSum === chordSum) {
+            drumPosition = i + 1
+            bassPosition = bassIndex
+            chordPosition = chordIndex
+          }
+          if (drumSum === chordSum) {
+            chordSum+= song.songStructure[part].chordsGroove[chordIndex]
+            chordSum = parseFloat(chordSum.toFixed(2))
+            chordIndex++
+          }
+          if (drumSum === bassSum) {
+            bassSum+= song.songStructure[part].bassGroove[bassIndex]
+            bassSum = parseFloat(bassSum.toFixed(2))
+            bassIndex++
+          }
+        }
+        return [drumPosition, bassPosition, chordPosition]
+      }
+      const position: number[] = getPosition()
+      dispatch(setCurrentBeat([part, position[0], position[1], position[2]]))
     }
 
     lampsRef.current.forEach((lamp) => {

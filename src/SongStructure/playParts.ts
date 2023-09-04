@@ -65,11 +65,11 @@ async function triggerMidi(bus: string, note: number, duration: number, velocity
   }
 }
 
-export async function playBeat(midi: boolean, pattern: Array<{ index: number; checked: boolean; accent?: boolean }>, groove: number[], bpm: number, stepsRef: Array<Array<{ index: number; checked: boolean }>>, lamps?: HTMLInputElement[]) {
+export async function playBeat(midi: boolean, beat: number, pattern: Array<{ index: number; checked: boolean; accent?: boolean }>, groove: number[], bpm: number, stepsRef: Array<Array<{ index: number; checked: boolean }>>, lamps?: HTMLInputElement[]) {
   const beatDuration = 60 / bpm // duration of one beat in seconds
   const swingRatio = 3/3; // adjust as needed
 
-  for (let index = 0; index < groove.length; index++) {
+  for (let index = beat; index < groove.length; index++) {
     let velocity = Math.floor(Math.random() * (70 - 50 + 1) + 50);
     if (pattern[index].accent) {
       velocity = 90;
@@ -136,7 +136,7 @@ export async function playBeat(midi: boolean, pattern: Array<{ index: number; ch
   } 
 }
 
-export async function playBass(midi: boolean, pattern: {x: number, y: number, acc: string}[], groove: number[], bpm: number) {
+export async function playBass(midi: boolean, beat: number, pattern: {x: number, y: number, acc: string}[], groove: number[], bpm: number) {
   const beatDuration = 60 / bpm // duration of one beat in seconds
   const audioContext = new AudioContext();
 
@@ -146,7 +146,7 @@ export async function playBass(midi: boolean, pattern: {x: number, y: number, ac
   //const output = new midi.Output();
   //output.openPort(1)
 
-  for (let index = 0; index < pattern.length; index++) {
+  for (let index = beat; index < pattern.length; index++) {
     const duration = groove[index] * beatDuration
     let bass = pattern[index].y;
 
@@ -338,7 +338,7 @@ export async function playBass(midi: boolean, pattern: {x: number, y: number, ac
 }
 }
 
-export async function playChords(midi: boolean, pattern: string[], groove: number[], bpm: number) {
+export async function playChords(midi: boolean, beat: number, pattern: string[], groove: number[], bpm: number) {
   const beatDuration = 60 / bpm; // duration of one beat in seconds
   const audioContext = new AudioContext();
 
@@ -351,7 +351,7 @@ export async function playChords(midi: boolean, pattern: string[], groove: numbe
   const release = Math.floor(Math.random() * (70 - 50 + 1) + 50);
 
   if (!midi) {
-    for (let i = 0; i < pattern.length; i++) {
+    for (let i = beat; i < pattern.length; i++) {
       const duration = groove[i] * beatDuration;
       if (pattern[i] === '-') {
         await wait(duration);
@@ -407,7 +407,7 @@ export async function playChords(midi: boolean, pattern: string[], groove: numbe
   audioContext.close();
 
   } else {
-    for (let i = 0; i < pattern.length; i++) {
+    for (let i = beat; i < pattern.length; i++) {
       const duration = groove[i] * beatDuration;
       if (pattern[i] === '-') {
         await wait(duration);

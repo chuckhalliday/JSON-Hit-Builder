@@ -17,15 +17,17 @@ export default function BassStaff({ renderWidth, part }: BassStaffProps) {
   CLEF_IMAGE.src = "/BassClef.png";
   const dispatch = useDispatch()
 
-  const bpm = useSelector((state: { song: { bpm: number } }) => state.song.bpm);
-  const midi = useSelector((state: { song: SongState }) => state.song.midi)
+  const song = useSelector((state: { song: SongState }) => state.song);
+  const bpm = song.bpm
+  const midi = song.midi
+  const beat = song.selectedBeat[1]
 
-  const bassGrid = useSelector((state: { song: SongState }) => state.song.songStructure[part].bassGrid);
-  const bassNoteGrid = useSelector((state: { song: SongState }) => state.song.songStructure[part].bassNoteLocations);
-  const bassGroove = useSelector((state: { song: SongState}) => state.song.songStructure[part].bassGroove);
-  const chords = useSelector((state: { song: SongState }) => state.song.songStructure[part].chords);
-  const chordGrid = useSelector((state: { song: SongState }) => state.song.songStructure[part].chordsLocation);
-  const measureLines = useSelector((state: { song: SongState }) => state.song.songStructure[part].measureLines);
+  const bassGrid = song.songStructure[part].bassGrid
+  const bassNoteGrid = song.songStructure[part].bassNoteLocations
+  const bassGroove = song.songStructure[part].bassGroove
+  const chords = song.songStructure[part].chords
+  const chordGrid = song.songStructure[part].chordsLocation
+  const measureLines = song.songStructure[part].measureLines
 
   const MOUSE = {
     x: -10,
@@ -345,7 +347,7 @@ export default function BassStaff({ renderWidth, part }: BassStaffProps) {
     if (isPlaying) {
       setIsPlaying(false);
     } else {
-      playBass(midi, bassNoteGrid, bassGroove, bpm);
+      playBass(midi, beat, bassNoteGrid, bassGroove, bpm);
       setIsPlaying(true);
     }
   };
