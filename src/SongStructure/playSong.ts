@@ -12,7 +12,7 @@ export async function countIn(bpm: number, midi: boolean, beat: number, initDrum
 }
 
 export async function playVerse(bpm: number, midi: boolean, drumBeat: number, bassBeat: number, chordBeat: number, verseDrumGroove: number[], verseDrums: Array<Array<{ index: number; checked: boolean, accent?: boolean }>>,
-  verseBassGroove: number[], verseBass: {x: number, y: number, acc: string }[], verseChordGroove: number[], verseChords: string[], lamps: HTMLInputElement[]) {
+  verseBassGroove: number[], verseBass: {x: number, y: number, acc: string }[], verseChordGroove: number[], verseChords: string[], verseChordTones: { oscTones: number[][], midiTones: number[][]}, lamps: HTMLInputElement[]) {
   for (let i = 0; i < 1; i++) {
     await Promise.all([
       playBeat(midi, drumBeat, verseDrums[0], verseDrumGroove, bpm, verseDrums, lamps),
@@ -21,7 +21,7 @@ export async function playVerse(bpm: number, midi: boolean, drumBeat: number, ba
       playBeat(midi, drumBeat, verseDrums[6], verseDrumGroove, bpm, verseDrums),
       playBeat(midi, drumBeat, verseDrums[8], verseDrumGroove, bpm, verseDrums),
       playBass(midi, bassBeat, verseBass, verseBassGroove, bpm),
-      playChords(midi, chordBeat, verseChords, verseChordGroove, bpm)
+      playChords(midi, chordBeat, verseChords, verseChordTones, verseChordGroove, bpm)
     ])
   }
 }

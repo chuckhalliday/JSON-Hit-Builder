@@ -1,5 +1,5 @@
 import { drawBass } from "./bass";
-import { chordLocation } from "./chords";
+import { chordLocation, createChordTones } from "./chords";
 
 export function generateSongStructure(partsLength: number, bassVA: string[], bassGrooveV: number[], bassCA: string[], bassGrooveC: number[], bassBA: string[], bassGrooveB: number[], 
 drumVerse: { index: number; checked: boolean; accent?: boolean }[][], drumGrooveV: number[],
@@ -26,6 +26,10 @@ chordsVA: string[], chordsGrooveV: number[], chordsCA: string[], chordsGrooveC: 
     drumGroove: number[];
     stepIds: number[];
     chords: string[];
+    chordTones: {
+      oscTones: number[][],
+      midiTones: number[][]
+    }
     chordsGroove: number[];
     chordsLocation: number[];
 }[] = [];
@@ -75,7 +79,7 @@ chordsVA: string[], chordsGrooveV: number[], chordsCA: string[], chordsGrooveC: 
   for (let i = 0; i < randomPartLength; i++) {
   verseCount++
   songStructure.push({ type: 'Verse', repeat: verseCount, bass: bassVA, bassGroove: bassGrooveV, bassGrid: bassGrid, bassNoteLocations: bassNoteLocations, measureLines: measureLines,
-  drums: drumVerse, drumGroove: drumGrooveV, stepIds: [], chords: chordsVA, chordsGroove: chordsGrooveB, chordsLocation: chordLocations });
+  drums: drumVerse, drumGroove: drumGrooveV, stepIds: [], chords: chordsVA, chordTones: createChordTones(chordsVA), chordsGroove: chordsGrooveB, chordsLocation: chordLocations });
   }
   remainingParts -= randomPartLength;
   lastPartType = 'Verse'
@@ -156,7 +160,7 @@ chordsVA: string[], chordsGrooveV: number[], chordsCA: string[], chordsGrooveC: 
         repeat = 0
       }
     songStructure.push({ type: randomPartType, repeat: repeat, bass: partBass, bassGroove: partBassGroove, bassGrid: bassGrid, bassNoteLocations: bassNoteLocations, measureLines: measureLines,
-      drums: partDrums, drumGroove: partDrumsGroove, stepIds: [], chords: partChords, chordsGroove: partChordsGroove, chordsLocation: chordLocations });
+      drums: partDrums, drumGroove: partDrumsGroove, stepIds: [], chords: partChords, chordTones: createChordTones(partChords), chordsGroove: partChordsGroove, chordsLocation: chordLocations });
     }
     remainingParts -= randomPartLength;
     lastPartType = randomPartType;
