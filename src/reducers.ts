@@ -37,7 +37,7 @@ const initialState: SongState = {
     bpm: songVariables.bpm,
     key: songVariables.key,
     midi: false,
-    selectedBeat: [0, 0],
+    selectedBeat: [0, 0, 0, 0],
     songStructure: songVariables.songStructure
 };
 

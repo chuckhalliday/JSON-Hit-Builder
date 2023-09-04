@@ -37,17 +37,20 @@ function App() {
   const [currentPart, setCurrentPart] = useState<number>(0); // Track current open part
   const [showInfoScreen, setShowInfoScreen] = useState(true);
 
-  const isPlaying = useSelector((state: { song: SongState }) => state.song.isPlaying)
-  const midi = useSelector((state: { song: SongState }) => state.song.midi)
   const song = useSelector((state: { song: SongState }) => state.song)
-  const bpm = useSelector((state: { song: { bpm: number } }) => state.song.bpm);
+  const bpm = song.bpm
+  const isPlaying = song.isPlaying
+  const midi = song.midi
   let verse = song.selectedBeat[0]
+  let drumBeat = song.selectedBeat[1];
+  let bassBeat = song.selectedBeat[2]
+  let chordBeat = song.selectedBeat[3]
 
   const lampsRef = React.useRef<HTMLInputElement[]>([]);
 
   const dispatch = useDispatch()
 
-  async function playSong(song: SongState, verse: number) {
+  async function playSong(song: SongState, verse: number, drumBeat: number, bassBeat: number, chordBeat: number) {
     let tempo = song.bpm - 60;
     //const output = new midi.Output()
     //output.openPort(3)
@@ -63,6 +66,9 @@ function App() {
       await playVerse(
         song.bpm,
         song.midi,
+        drumBeat,
+        bassBeat,
+        chordBeat,
         song.songStructure[verse].drumGroove,
         song.songStructure[verse].drums,
         song.songStructure[verse].bassGroove,
@@ -73,7 +79,7 @@ function App() {
       );
       verse++
       if (verse < song.songStructure.length) {
-        dispatch(setCurrentBeat([verse, 0]))
+        dispatch(setCurrentBeat([verse, 0, 0, 0]))
         setCurrentPart(verse);
         handlePartOpen(`${verse}`); 
       } else {
@@ -112,7 +118,7 @@ function App() {
 
   useEffect(() => {
      if (isPlaying) {
-      playSong(song, verse);
+      playSong(song, verse, drumBeat, bassBeat, chordBeat);
     }
   }, [isPlaying, verse]);
 
