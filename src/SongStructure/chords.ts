@@ -71,18 +71,13 @@ for (let i = 0; i < bassGroove.length; i++) {
       } else {
         chords += "-"
       }
-      console.log(bassSum)
-      console.log(chordSum)
-      console.log(chords)
       chordSum += chordsGroove[arr1Index]
-      console.log('chord ' + chordsGroove[arr1Index] + " = " + chordSum)
       chordSum = parseFloat(chordSum.toFixed(2))
       arr1Index ++
     } else {
       chordSum = chordSum
     }
     bassSum += bassGroove[i];
-    console.log('bass ' + bassGroove[i])
     bassSum = parseFloat(bassSum.toFixed(2))
   }
     return chords;

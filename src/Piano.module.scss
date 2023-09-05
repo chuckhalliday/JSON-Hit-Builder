@@ -26,11 +26,6 @@
     accent-color: blue;
   }
 
-  .blackCheck {
-    transform: translateY(-200%);
-    accent-color: blue;
-  }
-  
   .pianoKeysBlack {
     width: 4%;
     height: 65px;
@@ -51,6 +46,10 @@
     z-index: -1;
   }
 
+  .blackCheck {
+    transform: translateY(-200%);
+    accent-color: blue;
+  }
 
   
   
