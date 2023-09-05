@@ -40,12 +40,8 @@ let arr1Index = 0;
 let bass = bassString
 
 for (let i = 0; i < bassGroove.length; i++) {
-  
   const note = bass[i];
-  
     if (bassSum === chordSum) {
-      chordSum += chordsGroove[arr1Index]
-      arr1Index ++
       if (Number.isInteger(bassSum / 2)) {
         if (note === "c") {
           chords += cmajCmaj7;
@@ -71,12 +67,23 @@ for (let i = 0; i < bassGroove.length; i++) {
           chords += "-"
         } else {
           chords += "-"
-        }
+        }      
       } else {
         chords += "-"
       }
+      console.log(bassSum)
+      console.log(chordSum)
+      console.log(chords)
+      chordSum += chordsGroove[arr1Index]
+      console.log('chord ' + chordsGroove[arr1Index] + " = " + chordSum)
+      chordSum = parseFloat(chordSum.toFixed(2))
+      arr1Index ++
+    } else {
+      chordSum = chordSum
     }
     bassSum += bassGroove[i];
+    console.log('bass ' + bassGroove[i])
+    bassSum = parseFloat(bassSum.toFixed(2))
   }
     return chords;
 }
@@ -160,7 +167,7 @@ export function createChordTones(chordString: string[]) {
   const chordTones: { oscTones: number[][], midiTones: number[][] } = { oscTones: [], midiTones: [] }
 
   for (let i = 0; i < chordString.length; i++) {
-    if (chordString[i] === '') {
+    if (chordString[i] === '-') {
       chordTones.oscTones.push([]);
       chordTones.midiTones.push([]);
     } else if (chordToneMappings.hasOwnProperty(chordString[i]) && chordMidiMappings.hasOwnProperty(chordString[i])) {
@@ -180,6 +187,9 @@ export function createChordTones(chordString: string[]) {
       chordTones.oscTones.push(shuffledOscTones.slice(0, numberOfTones))
       chordTones.midiTones.push(shuffledMidiTones.slice(0, numberOfTones))
 
+    } else {
+      chordTones.oscTones.push([]);
+      chordTones.midiTones.push([]);
     }
   }
   return chordTones

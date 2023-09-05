@@ -79,7 +79,7 @@ chordsVA: string[], chordsGrooveV: number[], chordsCA: string[], chordsGrooveC: 
   for (let i = 0; i < randomPartLength; i++) {
   verseCount++
   songStructure.push({ type: 'Verse', repeat: verseCount, bass: bassVA, bassGroove: bassGrooveV, bassGrid: bassGrid, bassNoteLocations: bassNoteLocations, measureLines: measureLines,
-  drums: drumVerse, drumGroove: drumGrooveV, stepIds: [], chords: chordsVA, chordTones: createChordTones(chordsVA), chordsGroove: chordsGrooveB, chordsLocation: chordLocations });
+  drums: drumVerse, drumGroove: drumGrooveV, stepIds: [], chords: chordsVA, chordTones: createChordTones(chordsVA), chordsGroove: chordsGrooveV, chordsLocation: chordLocations });
   }
   remainingParts -= randomPartLength;
   lastPartType = 'Verse'
