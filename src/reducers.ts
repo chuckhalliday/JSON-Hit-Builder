@@ -8,28 +8,28 @@ export interface SongState {
     midi: boolean,
     selectedBeat: number [],
     songStructure: {
-        type: string;
-        repeat: number;
-        bass: string[];
-        bassGroove: number[];
-        bassGrid: number[];
-        bassNoteLocations: {
-            x: number;
-            y: number;
-            acc: string;
-        }[];
-        measureLines: number[];
-        drums: {
-            index: number;
-            checked: boolean;
-            accent?: boolean;
-        }[][];
-        drumGroove: number[];
-        stepIds: number[];
-        chords: string[];
-        chordsGroove: number[];
-        chordsLocation: number[];
-    }[]  
+      type: string;
+      repeat: number;
+      bass: string[];
+      bassGroove: number[];
+      bassGrid: number[];
+      bassNoteLocations: {
+          x: number;
+          y: number;
+          acc: string;
+      }[];
+      measureLines: number[];
+      drums: { index: number; checked: boolean; accent?: boolean }[][]
+      drumGroove: number[];
+      stepIds: number[];
+      chords: string[];
+      chordTones: {
+        oscTones: number[][],
+        midiTones: number[][]
+      }
+      chordsGroove: number[];
+      chordsLocation: number[];
+  }[]  
 }
 
 const initialState: SongState = {

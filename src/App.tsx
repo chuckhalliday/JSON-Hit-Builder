@@ -75,6 +75,7 @@ function App() {
         song.songStructure[verse].bassNoteLocations, 
         song.songStructure[verse].chordsGroove,
         song.songStructure[verse].chords,
+        song.songStructure[verse].chordTones,
         lampsRef.current
       );
       verse++

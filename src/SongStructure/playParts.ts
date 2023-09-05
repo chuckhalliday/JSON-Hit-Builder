@@ -338,7 +338,7 @@ export async function playBass(midi: boolean, beat: number, pattern: {x: number,
 }
 }
 
-export async function playChords(midi: boolean, beat: number, pattern: string[], groove: number[], bpm: number) {
+export async function playChords(midi: boolean, beat: number, pattern: string[], chords: { oscTones: number[][], midiTones: number[][]}, groove: number[], bpm: number) {
   const beatDuration = 60 / bpm; // duration of one beat in seconds
   const audioContext = new AudioContext();
 
@@ -356,16 +356,8 @@ export async function playChords(midi: boolean, beat: number, pattern: string[],
       if (pattern[i] === '-') {
         await wait(duration);
         continue;
-      } else if (chordToneMappings.hasOwnProperty(pattern[i])) {
-        const availableChordTones = chordToneMappings[pattern[i]];
-        const numberOfTonesToSelect = Math.floor(Math.random() * 3) + 2; // Random number between 2 and 4
-    
-        const shuffledChordTones = availableChordTones.sort(() => Math.random() - 0.5);
-    
-        // Select the first numberOfTonesToSelect tones from the shuffled array
-        chordTones = shuffledChordTones.slice(0, numberOfTonesToSelect);
       } else {
-        console.log('No matching chord tone map @ chord ' + (i + 1))
+        chordTones = chords.oscTones[i]
       }
 
       const oscillators = chordTones.map(tone => {
@@ -412,21 +404,11 @@ export async function playChords(midi: boolean, beat: number, pattern: string[],
       if (pattern[i] === '-') {
         await wait(duration);
         continue;
-      } else if (chordMidiMappings.hasOwnProperty(pattern[i])) {
-        const availableChordTones = chordMidiMappings[pattern[i]];
-        const numberOfTonesToSelect = Math.floor(Math.random() * 3) + 2; // Random number between 2 and 4
-  
-        // Shuffle the availableChordTones array to ensure randomness
-        const shuffledChordTones = availableChordTones.sort(() => Math.random() - 0.5);
-  
-        // Select the first numberOfTonesToSelect tones from the shuffled array
-        chordTones = shuffledChordTones.slice(0, numberOfTonesToSelect);
+      } else {
+        chordTones = chords.midiTones[i]
         chordTones.map(note => {
           triggerMidi('3', note, duration, velocity, release)
         })
-        await wait(duration)
-      } else {
-        console.log('No matching chord tone map @ chord ' + (i + 1))
         await wait(duration)
       }
 
