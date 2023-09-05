@@ -61,6 +61,22 @@ const song = createSlice({
         console.log(action);
         state.songStructure[action.payload.index].drums[action.payload.drumPart][action.payload.drumStep] = action.payload.drums;
       },
+      setChordState: (state, action: PayloadAction<{ part: number, beat: number, midi: number, osc: number, checked: boolean }>) => {
+        console.log(action);
+        if (action.payload.checked) {
+          state.songStructure[action.payload.part].chordTones.midiTones[action.payload.beat].push(action.payload.midi) 
+          state.songStructure[action.payload.part].chordTones.oscTones[action.payload.beat].push(action.payload.osc)
+        } else {
+          const midiIndex = state.songStructure[action.payload.part].chordTones.midiTones[action.payload.beat].indexOf(action.payload.midi);
+          if (midiIndex !== -1) {
+            state.songStructure[action.payload.part].chordTones.midiTones[action.payload.beat].splice(midiIndex, 1);
+          }
+          const oscIndex = state.songStructure[action.payload.part].chordTones.oscTones[action.payload.beat].indexOf(action.payload.osc);
+          if (oscIndex !== -1) {
+            state.songStructure[action.payload.part].chordTones.oscTones[action.payload.beat].splice(oscIndex, 1);
+          }
+        }
+      },
       setCurrentBeat: (state, action: PayloadAction<number[]>) => {
         console.log(action);
         state.selectedBeat = action.payload;
@@ -72,5 +88,5 @@ const song = createSlice({
     },
   });
 
-export const { setIsPlaying, setMidi, setBassState, setDrumState, setCurrentBeat, incrementByAmount } = song.actions;
+export const { setIsPlaying, setMidi, setBassState, setDrumState, setChordState, setCurrentBeat, incrementByAmount } = song.actions;
 export default song;
