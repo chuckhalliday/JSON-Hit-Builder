@@ -41,7 +41,6 @@ async function triggerMidi(bus: string, note: number, duration: number, velocity
     const access = await navigator.requestMIDIAccess();
     const outputs = access.outputs.values();
     let outputDevice: WebMidi.MIDIOutput | null = null;
-
     for (const output of outputs) {
       if (output.name === `IAC Driver Bus ${bus}`) {
         outputDevice = output;
@@ -56,7 +55,6 @@ async function triggerMidi(bus: string, note: number, duration: number, velocity
 
     const startMessage = [0x90, note, velocity];
     const stopMessage = [0x80 , note, release]
-
     outputDevice.send(startMessage);
     await wait(duration);
     outputDevice.send(stopMessage)
@@ -326,7 +324,8 @@ export async function playBass(midi: boolean, beat: number, pattern: {x: number,
           } else {
             bass = midiTone.D[2];
           } break;
-        default: bass = 0
+        default:
+        }
         if (bass <= 0) {
           await wait(duration);
         } else {
@@ -335,7 +334,6 @@ export async function playBass(midi: boolean, beat: number, pattern: {x: number,
       }
     }
   }
-}
 }
 
 export async function playChords(midi: boolean, beat: number, pattern: string[], chords: { oscTones: number[][], midiTones: number[][]}, groove: number[], bpm: number) {
