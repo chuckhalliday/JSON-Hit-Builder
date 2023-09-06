@@ -22,8 +22,9 @@
 
   .whiteCheck {
     margin-top: 42px;
-    margin-left: 14px;
+    transform: translateX(70%);
     accent-color: blue;
+    z-index: 1;
   }
 
   .pianoKeysBlack {
@@ -43,12 +44,13 @@
     height: 100%;
     width: 100%;
     background-image: linear-gradient(45deg, #444, #000);
-    z-index: -1;
+    z-index: 5;
   }
 
   .blackCheck {
     transform: translateY(-200%);
     accent-color: blue;
+    z-index: 1;
   }
 
   

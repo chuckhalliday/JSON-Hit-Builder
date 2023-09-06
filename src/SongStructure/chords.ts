@@ -23,7 +23,7 @@ export function createChords(bassGroove: number[]) {
   return chordArray
 }
 
-export function chordString(chordsGroove: number[], bassGroove: number[], bassString: string[]) {
+export function chordArray(chordsGroove: number[], bassGroove: number[], bassString: string[]) {
 
 const cmajCmaj7 = Math.random() < 0.9 ? "1" : "!";
 const dmin7C9 = Math.random() < 0.8 ? "@" : "9";
@@ -101,7 +101,7 @@ export function chordLocation(bassLocation: { x: number, y: number, acc: string 
 }
 
 
-export function adjustChordString(chordString: string, keyAdjust: number) {
+export function adjustChordArray(chordString: string, keyAdjust: number) {
   let transpose: string[] = [];
   let keys: string[] = []
   for (let i = 0; i < chordString.length; i++) {
