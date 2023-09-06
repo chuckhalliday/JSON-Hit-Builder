@@ -1,5 +1,7 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
-import { songVariables } from "./SongStructure/play";
+import generateSong from "./SongStructure/generateSong";
+
+const songVariables = generateSong()
 
 export interface SongState {
     isPlaying: boolean,

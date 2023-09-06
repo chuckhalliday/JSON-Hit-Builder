@@ -6,8 +6,7 @@ export function primaryGroove() {
   const randomValues = [0.5, 1, 1.5, 2, 0.5, 1, 1.5, 2, 0.5, 1, 1.5, 2, 0.5, 1, 1.5, 2, 0.5, 1, 1.5, 2, 0.5, 1, 1.5, 2, 0.25, 0.75];
 
   while (measureSum < 8) {
-    const random =
-      randomValues[Math.floor(Math.random() * randomValues.length)];
+    const random = randomValues[Math.floor(Math.random() * randomValues.length)];
     if (beatSum + random <= 2) {
       initBass.push(random);
       beatSum += random;
@@ -40,7 +39,7 @@ const bVals = ["e", "g", "p", "b"];
 let bAcc = bVals[Math.floor(Math.random() * bVals.length)];
 
 
-export function bassString1V(bassGroove: number[]) {
+export function bassArray1V(bassGroove: number[]) {
   let bass: string[] = [a_c];
 
   let possibleBassValues: string[];
@@ -65,7 +64,7 @@ export function bassString1V(bassGroove: number[]) {
   return bass;
 }
 
-export function bassString2V(bassGroove: number[], bassLine1V: string[]) {
+export function bassArray2V(bassGroove: number[], bassLine1V: string[]) {
   let bass: string[] = [];
   let sum = 0;
   let possibleBassValues;
@@ -108,7 +107,7 @@ export function bassString2V(bassGroove: number[], bassLine1V: string[]) {
   return bass;
 }
 
-export function bassString3V(bassGroove: number[], bassLine2V: string[]) {
+export function bassArray3V(bassGroove: number[], bassLine2V: string[]) {
   let bass: string[] = [];
   let sum = 0;
   let possibleBassValues = ["d", "e", "f", "g", "b"];
@@ -152,7 +151,7 @@ export function bassString3V(bassGroove: number[], bassLine2V: string[]) {
   return bass;
 }
 
-export function bassString4V(bassGroove: number[], bassLine1V:string[]) {
+export function bassArray4V(bassGroove: number[], bassLine1V:string[]) {
   let bass: string[] = [];
   let sum = 0;
   let possibleBassValues = ["d", "e", "f", "g", "b"];
@@ -191,7 +190,7 @@ export function bassString4V(bassGroove: number[], bassLine1V:string[]) {
   return bass;
 }
 
-export function bassString1C(bassGroove: number[], bassLine1V: string[]) {
+export function bassArray1C(bassGroove: number[], bassLine1V: string[]) {
   let bass: string[] = [];
   let sum = 0;
   let possibleBassValues = ["d", "e", "f", "g", "b"];
@@ -230,7 +229,7 @@ export function bassString1C(bassGroove: number[], bassLine1V: string[]) {
   return bass;
 }
 
-export function bassString2C(bassGroove: number[], bassLine1C: string[]) {
+export function bassArray2C(bassGroove: number[], bassLine1C: string[]) {
   let bass: string[] = [];
   let sum = 0;
   let possibleBassValues = ["d", "e", "f", "g", "b"];
@@ -273,7 +272,7 @@ export function bassString2C(bassGroove: number[], bassLine1C: string[]) {
   return bass;
 }
 
-export function bassString3C(bassGroove: number[], bassLine1V: string[]) {
+export function bassArray3C(bassGroove: number[], bassLine1V: string[]) {
   let bass: string[] = [];
   let sum = 0;
 
@@ -303,7 +302,7 @@ export function bassString3C(bassGroove: number[], bassLine1V: string[]) {
   return bass;
 }
 
-export function bassString4C(bassGroove: number[], bassLine1V: string[]) {
+export function bassArray4C(bassGroove: number[], bassLine1V: string[]) {
   let bass: string[] = [];
   let sum = 0;
   let possibleBassValues = ["d", "e", "f", "g", "b"];
@@ -342,7 +341,7 @@ export function bassString4C(bassGroove: number[], bassLine1V: string[]) {
   return bass;
 }
 
-export function bassString1B(bassGroove: number[], bassLine1C: string[]) {
+export function bassArray1B(bassGroove: number[], bassLine1C: string[]) {
   let bass: string[] = [];
   let sum = 0;
   let bass1;
@@ -386,7 +385,7 @@ export function bassString1B(bassGroove: number[], bassLine1C: string[]) {
   return bass;
 }
 
-export function adjustBassString(bassString: string[], keyAdjust: number) {
+export function adjustBassArray(bassString: string[], keyAdjust: number) {
   let transpose: string[] = [];
   let keys: string[] = []
   for (let i = 0; i < bassString.length; i++) {

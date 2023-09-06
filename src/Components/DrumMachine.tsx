@@ -1,8 +1,8 @@
 import React, { useEffect, useRef } from "react";
-import { playDrums } from "./SongStructure/playSong";
-import { setDrumState, setIsPlaying, SongState, setCurrentBeat } from "./reducers";
+import { playDrums } from "../SongStructure/playSong";
+import { setDrumState, SongState, setCurrentBeat } from "../reducers";
 import { useDispatch, useSelector } from "react-redux";
-import styles from "./DrumMachine.module.scss";
+import styles from "../Styles/DrumMachine.module.scss";
 
 interface DrumMachineProps {
   onRenderWidthChange: any;

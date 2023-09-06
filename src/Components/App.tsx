@@ -1,13 +1,14 @@
 import React, { useState, useEffect } from 'react'
 import Info from './Info';
+import Generate from './Generate';
 import DrumMachine from "./DrumMachine";
 import BassStaff from "./BassStaff";
 import Piano from './Piano';
 import { useSelector, useDispatch } from "react-redux"
-import { playVerse } from './SongStructure/playSong';
-import { incrementByAmount, setIsPlaying, setMidi, SongState, setCurrentBeat } from './reducers';
+import { playVerse } from '../SongStructure/playSong';
+import { incrementByAmount, setIsPlaying, setMidi, SongState, setCurrentBeat } from '../reducers';
 
-import styles from "./App.module.scss"
+import styles from "../Styles/App.module.scss"
 
 
 function listInputsAndOutputs(midiAccess: WebMidi.MIDIAccess) {
@@ -36,6 +37,15 @@ function App() {
   const [openedParts, setOpenedParts] = useState<{ [key: string]: boolean }>({});
   const [currentPart, setCurrentPart] = useState<number>(0); // Track current open part
   const [showInfoScreen, setShowInfoScreen] = useState(true);
+  const [showGenerate, setShowGenerate] = useState(false);
+
+  const handleGenerateClick = () => {
+    setShowGenerate(true);
+  };
+
+  const handleCloseGenerate = () => {
+    setShowGenerate(false);
+  };
 
   const song = useSelector((state: { song: SongState }) => state.song)
   const bpm = song.bpm
@@ -147,7 +157,12 @@ function App() {
 
   return (
     <div className={styles.rowContainer}>
-      <div className={styles.key}>Key of : {song.key}</div>
+      <button className={styles.key} onClick={handleGenerateClick}>Key of : {song.key}</button>
+      {showGenerate && (
+        <div className={styles.generateOverlay}>
+          <Generate onClose={handleCloseGenerate}/>
+        </div>
+      )}
       {song.songStructure.map((songProps, index) => {
         const songParts = [];
           const key = `${index}`;

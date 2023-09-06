@@ -1,15 +1,10 @@
 import { useSelector, useDispatch } from 'react-redux';
-import { SongState, setChordState } from './reducers';
-import { midiMap } from './SongStructure/tone';
+import { SongState, setChordState } from '../reducers';
+import { midiMap } from '../SongStructure/tone';
 
-import styles from "./Piano.module.scss"
-
-interface PianoProps {
-
-}
+import styles from "../Styles/Piano.module.scss"
 
 export default function Piano() {
-  // Generate the array of piano keys
 
   const song = useSelector((state: { song: SongState }) => state.song)
   const part = song.selectedBeat[0]

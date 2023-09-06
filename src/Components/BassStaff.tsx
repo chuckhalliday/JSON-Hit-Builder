@@ -1,9 +1,9 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
-import { playBass } from './SongStructure/playParts';
-import { setBassState, SongState } from './reducers';
+import { playBass } from '../SongStructure/playParts';
+import { setBassState, SongState } from '../reducers';
 
-import styles from "./DrumMachine.module.scss";
+import styles from "../Styles/DrumMachine.module.scss";
 
 interface BassStaffProps {
   renderWidth: number;
