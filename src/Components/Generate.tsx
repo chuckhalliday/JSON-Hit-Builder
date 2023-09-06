@@ -1,7 +1,7 @@
 import styles from "../Styles/App.module.scss"
 
 interface GenerateProps {
-  onClose: () => void; // Define the prop type for onClose
+  onClose: () => void;
 }
 
 export default function Generate({ onClose }: GenerateProps){
