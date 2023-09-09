@@ -172,7 +172,8 @@ export default function Generate({ onClose }: GenerateProps) {
             <button onClick={() => incrementPart(arrangement[2][2], 2, 2)}>BG: {arrangement[2][2]+1}</button>
             <button onClick={() => incrementPart(arrangement[2][3], 2, 3)}>BG: {arrangement[2][3]+1}</button>
         </div>
-        <button onClick={() => updateSong()}></button>
+        <br/>
+        <button onClick={() => updateSong()}>Regenerate</button>
       </div>
     </div>
   );
