@@ -1,20 +1,29 @@
-export function createDrums(bassGroove: number[]) {
+import { subdivideArray } from "./groove";
+
+export function createDrums(bassGroove: number[][], tripMod: number) {
   const possibleLengths = [0.25, 0.5, 1];
-  let drumArr: number[] = [];
+  let drumArr: number[][] = [];
   let subdivision = 1;
 
   for (let i = 0; i < bassGroove.length; i++) {
-    let beat = bassGroove[i];
+    let drumPart: number[] = []
+    for (let j = 0; j < bassGroove[i].length; j++) {
+    let beat = bassGroove[i][j];
     while (beat > 0) {
       let length = possibleLengths[possibleLengths.length - subdivision];
       if (beat >= length) {
-        drumArr.push(length);
+        drumPart.push(length);
         beat -= length;
       } else {
         subdivision++;
       }
     }
   }
+  if (Math.random() < tripMod) {
+    drumPart = subdivideArray(drumPart)
+  }
+  drumArr.push(drumPart)
+}
 
   return drumArr;
 }

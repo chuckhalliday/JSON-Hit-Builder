@@ -39,6 +39,7 @@
   background-color: white;
   width: 80%;
   height: 80%;
+  overflow: scroll;
 }
 
 .key {
@@ -80,7 +81,7 @@
 }
 
 /* Define standard appearance for range input */
-input[type="range"] {
+input[type="range"].bpm {
   -webkit-appearance: none; /* Safari and Chrome */
   -moz-appearance: none; /* Firefox */
   appearance: none; /* Standard */
@@ -92,7 +93,7 @@ input[type="range"] {
 }
 
 /* Define standard appearance for range input thumb */
-input[type="range"]::-webkit-slider-thumb {
+input[type="range"].bpm::-webkit-slider-thumb {
   -webkit-appearance: none; /* Safari and Chrome */
   appearance: none; /* Standard */
   width: 14px;
@@ -104,7 +105,7 @@ input[type="range"]::-webkit-slider-thumb {
 }
 
 /* Define standard appearance for range input thumb in Firefox */
-input[type="range"]::-moz-range-thumb {
+input[type="range"].bpm::-moz-range-thumb {
   -moz-appearance: none;
   appearance: none; /* Standard */
   width: 14px;
@@ -114,6 +115,7 @@ input[type="range"]::-moz-range-thumb {
   cursor: pointer;
   margin-top: -1px;
 }
+
 
 .button {
     border: none;
