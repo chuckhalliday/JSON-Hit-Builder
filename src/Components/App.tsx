@@ -205,6 +205,7 @@ function App() {
         <label className={styles.fader}>
           <span>BPM:{bpm}</span>
           <input
+          className={styles.bpm}
             type="range"
             min={90}
             max={150}

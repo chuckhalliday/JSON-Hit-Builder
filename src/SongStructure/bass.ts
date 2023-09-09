@@ -1,26 +1,5 @@
-export function primaryGroove() {
-  const initBass: number[] = [0.5];
-  let measureSum = 0.5;
-  let beatSum = 0.5;
-
-  const randomValues = [0.5, 1, 1.5, 2, 0.5, 1, 1.5, 2, 0.5, 1, 1.5, 2, 0.5, 1, 1.5, 2, 0.5, 1, 1.5, 2, 0.5, 1, 1.5, 2, 0.25, 0.75];
-
-  while (measureSum < 8) {
-    const random = randomValues[Math.floor(Math.random() * randomValues.length)];
-    if (beatSum + random <= 2) {
-      initBass.push(random);
-      beatSum += random;
-    } else {
-    }
-    if (beatSum === 2) {
-      beatSum = 0;
-      measureSum += 2;
-    }
-  }
-  return initBass;
-}
-
 const a_c: string = Math.random() < 0.5 ? "a" : "c";
+
 const dVals = ["o", "a", "c", "f"];
 let dAcc = dVals[Math.floor(Math.random() * dVals.length)];
 const eVals = ["p", "d", "g", "b"];

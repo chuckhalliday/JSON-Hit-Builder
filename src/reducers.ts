@@ -1,14 +1,16 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
+import { randomGroove, randomArrangement } from "./SongStructure/groove";
 import generateSong from "./SongStructure/generateSong";
 
-const songVariables = generateSong()
+const randomBassGrooves: number[][] = [randomGroove(), randomGroove(), randomGroove(), randomGroove()]
+const songVariables = generateSong(randomBassGrooves, randomArrangement(), (Math.random()/4))
 
 export interface SongState {
     isPlaying: boolean,
     bpm: number,
     key: string,
     midi: boolean,
-    selectedBeat: number [],
+    selectedBeat: number[],
     songStructure: {
       type: string;
       repeat: number;
@@ -55,6 +57,10 @@ const song = createSlice({
         console.log(action);
         state.midi = action.payload.midi;
       },
+      setSong: (state, action: PayloadAction<{ songStructure: SongState["songStructure"] }>) => {
+        console.log(action);
+        state.songStructure = action.payload.songStructure;
+      },
       setBassState: (state, action: PayloadAction<{ index: number, bassNoteLocations: { x: number, y: number, acc: string }[] }>) => {
         console.log(action);
         state.songStructure[action.payload.index].bassNoteLocations = action.payload.bassNoteLocations;
@@ -90,5 +96,5 @@ const song = createSlice({
     },
   });
 
-export const { setIsPlaying, setMidi, setBassState, setDrumState, setChordState, setCurrentBeat, incrementByAmount } = song.actions;
+export const { setIsPlaying, setMidi, setSong, setBassState, setDrumState, setChordState, setCurrentBeat, incrementByAmount } = song.actions;
 export default song;
