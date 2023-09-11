@@ -35,9 +35,6 @@ export default function Generate({ onClose }: GenerateProps) {
   const [key, setKey] = useState<number | undefined>()
   const [modify, setModify] = useState<number>(0)
   const [toneModify, setToneModify] = useState<number>(0)
-  console.log(key)
-  console.log(modify)
-  console.log(toneModify)
   const [keyAdjust, setKeyAdjust] = useState<number | undefined>()
 
   const handleKeyChange = (e: ChangeEvent<HTMLSelectElement>) => {
@@ -104,8 +101,7 @@ export default function Generate({ onClose }: GenerateProps) {
       setKeyAdjust(undefined)
     }
   })
-  console.log(keyAdjust)
-  console.log(tonality)
+
   const generateNew = generateSong(grooves, arrangement, triplet, keyAdjust, tonality)
   
   const updateSong = () => {
