@@ -42,7 +42,6 @@ export function randomArrangement() {
   const chorus = getRandomSection();
   const bridge = getRandomSection();
   const arrangement = [verse, chorus, bridge];
-  console.log(arrangement)
   return arrangement;
 }
 
