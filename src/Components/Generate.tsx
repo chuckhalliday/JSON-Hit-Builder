@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useDispatch } from "react-redux";
 import { setSong, SongState } from "../reducers";
 import generateSong from "../SongStructure/generateSong";
@@ -34,7 +34,23 @@ export default function Generate({ onClose }: GenerateProps) {
   
   const updateSong = () => {
     dispatch(setSong(generateNew))
+    onClose()
   }
+  const generateRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (generateRef.current && !generateRef.current.contains(e.target as Node)) {
+        onClose();
+      }
+    };
+  
+    document.addEventListener("mousedown", handler);
+  
+    return () => {
+      document.removeEventListener("mousedown", handler);
+    };
+  }, []);
 
   const combineNumbers = (grooveIndex: number, index: number) => {
     const newGrooves = [...grooves];
@@ -86,21 +102,17 @@ export default function Generate({ onClose }: GenerateProps) {
 
   const incrementPart = (value: number, partType: number, partNum: number) => {
     const newArr = [...arrangement]
-    console.log(value)
-    console.log(grooves.length)
     if (value < grooves.length - 1){
       newArr[partType].splice(partNum, 1, value+1)
-      console.log(newArr)
       setArrangement(newArr)
     } else {
       newArr[partType].splice(partNum, 1, 0)
-      console.log('no')
       setArrangement(newArr)
     }
   }
 
   return (
-    <div className={styles.generateContainer}>
+    <div className={styles.generateContainer} ref={generateRef}>
       <button onClick={onClose}>x</button>
       <div>
         <h2>Generate New Song</h2>
