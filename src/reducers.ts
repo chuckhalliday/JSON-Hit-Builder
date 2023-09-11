@@ -57,9 +57,11 @@ const song = createSlice({
         console.log(action);
         state.midi = action.payload.midi;
       },
-      setSong: (state, action: PayloadAction<{ songStructure: SongState["songStructure"] }>) => {
+      setSong: (state, action: PayloadAction<{ songStructure: any, key: string, bpm: number }>) => {
         console.log(action);
         state.songStructure = action.payload.songStructure;
+        state.key = action.payload.key;
+        state.bpm = action.payload.bpm
       },
       setBassState: (state, action: PayloadAction<{ index: number, bassNoteLocations: { x: number, y: number, acc: string }[] }>) => {
         console.log(action);

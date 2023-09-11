@@ -1,4 +1,4 @@
-const a_c: string = Math.random() < 0.5 ? "a" : "c";
+
 
 const dVals = ["o", "a", "c", "f"];
 let dAcc = dVals[Math.floor(Math.random() * dVals.length)];
@@ -18,7 +18,15 @@ const bVals = ["e", "g", "p", "b"];
 let bAcc = bVals[Math.floor(Math.random() * bVals.length)];
 
 
-export function bassArray1V(bassGroove: number[]) {
+export function bassArray1V(bassGroove: number[], tonality?: string) {
+  let a_c: string
+  if (tonality === 'Major') {
+    a_c = "c"
+  } else if (tonality === 'Minor') {
+    a_c = "a"
+  } else {
+    a_c = Math.random() < 0.5 ? "a" : "c";
+  }
   let bass: string[] = [a_c];
 
   let possibleBassValues: string[];

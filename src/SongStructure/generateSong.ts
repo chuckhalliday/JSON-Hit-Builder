@@ -5,7 +5,9 @@ import { createChords, chordArray, adjustChordArray } from "./chords.js";
 import { setKey, findKey } from './key.js';
 import { generateSongStructure } from './songStructure.js';
 
-export default function generateSong(bassGrooves: number[][], arrangement: number[][], tripMod: number){
+export default function generateSong(bassGrooves: number[][], arrangement: number[][], tripMod: number, pickedKey?: number, tonality?: string){
+  console.log(pickedKey)
+  console.log(tonality)
   const verseBass: number[] = bassGrooves[arrangement[0][0]].concat(bassGrooves[arrangement[0][1]], bassGrooves[arrangement[0][2]], bassGrooves[arrangement[0][3]]);
   const chorusBass: number[] = bassGrooves[arrangement[1][0]].concat(bassGrooves[arrangement[1][1]], bassGrooves[arrangement[1][2]], bassGrooves[arrangement[1][3]]);
   const bridgeBass: number[] = bassGrooves[arrangement[2][0]].concat(bassGrooves[arrangement[2][1]], bassGrooves[arrangement[2][2]], bassGrooves[arrangement[2][3]]);
@@ -21,7 +23,7 @@ export default function generateSong(bassGrooves: number[][], arrangement: numbe
 
   //verse
 
-  const bassLine1V: string[] = bassArray1V(bassGrooves[arrangement[0][0]]);
+  const bassLine1V: string[] = bassArray1V(bassGrooves[arrangement[0][0]], tonality);
   const bassLine2V: string[] = bassArray2V(bassGrooves[arrangement[0][1]], bassLine1V);
   const bassLine3V: string[] = bassArray3V(bassGrooves[arrangement[0][2]], bassLine2V);
   const bassLine4V: string[] = bassArray4V(bassGrooves[arrangement[0][3]], bassLine1V);
@@ -72,8 +74,13 @@ export default function generateSong(bassGrooves: number[][], arrangement: numbe
   const bassDrum3B: { index: number; checked: boolean; accent?: boolean }[][] = drumArray(bassDrum2B, drumGrooves[arrangement[2][2]], bassGrooves[arrangement[2][2]], bassLine3B);
   const drumBridge: { index: number; checked: boolean; accent?: boolean }[][] = drumArray(bassDrum3B, drumGrooves[arrangement[2][3]], bassGrooves[arrangement[2][3]], bassLine4B);
 
+  let keyAdjust: number
 
-  let keyAdjust: number = setKey()
+  if (pickedKey != undefined) {
+    keyAdjust = pickedKey
+  } else {
+    keyAdjust = setKey()
+  }
   let key: string = findKey(bassV, keyAdjust)
 
 
