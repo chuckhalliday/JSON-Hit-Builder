@@ -1,6 +1,6 @@
-import React, { useState, useEffect, useRef } from "react";
-import { useDispatch } from "react-redux";
-import { setSong, SongState } from "../reducers";
+import { useState, useEffect, useRef, ChangeEvent } from "react";
+import { useDispatch} from "react-redux";
+import { setSong } from "../reducers";
 import generateSong from "../SongStructure/generateSong";
 import styles from "../Styles/App.module.scss";
 
@@ -29,8 +29,84 @@ export default function Generate({ onClose }: GenerateProps) {
     [0, 0, 0, 0],
   ]);
   const [triplet, setTriplet] = useState(0.0)
+  const [selectedKey, setSelectedKey] = useState('');
+  const [sharpFlat, setSharpFlat] = useState<string>('♮')
+  const [tonality, setTonality] = useState<string | undefined>()
+  const [key, setKey] = useState<number | undefined>()
+  const [modify, setModify] = useState<number>(0)
+  const [toneModify, setToneModify] = useState<number>(0)
+  console.log(key)
+  console.log(modify)
+  console.log(toneModify)
+  const [keyAdjust, setKeyAdjust] = useState<number | undefined>()
 
-  const generateNew = generateSong(grooves, arrangement, triplet)
+  const handleKeyChange = (e: ChangeEvent<HTMLSelectElement>) => {
+    setSharpFlat('♮')
+    setTonality('Major')
+    setToneModify(0)
+    setSelectedKey(e.target.value);
+    if (e.target.value === '') {
+      setSharpFlat('♮')
+      setModify(0)
+      setToneModify(0)
+      setTonality(undefined)
+      setKey(undefined)
+    } else if (e.target.value === 'A') {
+      setKey(-3)
+    } else if (e.target.value === 'B') {
+      setKey(-1)
+    } else if (e.target.value === 'C') {
+      setKey(0)
+    } else if (e.target.value === 'D') {
+      setKey(2)
+    } else if (e.target.value === 'E') {
+      setKey(4)
+    } else if (e.target.value === 'F') {
+      setKey(-7)
+    } else if (e.target.value === 'G') {
+      setKey(-5)
+    }
+  };
+
+  const handleModifyChange = (e: ChangeEvent<HTMLSelectElement>) => {
+    if (e.target.value === '♮') {
+      setSharpFlat('♮')
+      setModify(0)
+    } else if (e.target.value === '#') {
+      setSharpFlat('#')
+      setModify(1)
+    } else if (e.target.value === '♭') {
+      setSharpFlat('♭')
+      setModify(-1)
+    } else {
+      setSharpFlat('♮')
+      setModify(0)
+    }
+  }
+
+  const handleTonalityChange = (e: ChangeEvent<HTMLSelectElement>) => {
+    if (e.target.value === 'Major' || e.target.value === 'Minor') {
+      setTonality(e.target.value);
+      if (e.target.value === 'Major') {
+        setToneModify(0)
+      } else if (e.target.value === 'Minor') {
+        setToneModify(3)
+      }
+    } else {
+      setTonality(undefined)
+    }
+  };
+
+  useEffect(()=> {
+    if (key != undefined) {
+      setKeyAdjust(key + modify + toneModify)
+    } else {
+      setKeyAdjust(undefined)
+    }
+  })
+  console.log(keyAdjust)
+  console.log(tonality)
+  const generateNew = generateSong(grooves, arrangement, triplet, keyAdjust, tonality)
   
   const updateSong = () => {
     dispatch(setSong(generateNew))
@@ -116,20 +192,7 @@ export default function Generate({ onClose }: GenerateProps) {
       <button onClick={onClose}>x</button>
       <div>
         <h2>Generate New Song</h2>
-        <p>~Under Construction~</p>
-        <p>Triplet Frequency:     
-          <input
-          type="range"
-          min="0"
-          max="1"
-          step="0.1"
-          defaultValue="0" // Set an initial value (e.g., 5)
-          className={styles.circularDial} // Apply your custom dial styles
-          onChange={(e) => {
-          const newValue = parseInt(e.target.value, 10);
-          setTriplet(newValue)
-          }}
-        /></p>
+        <p>~Under Construction~</p>     
         {grooves.map((groove, grooveIndex) => (
           <div key={grooveIndex}>
             <p>Bass Groove {grooveIndex + 1}:</p>
@@ -184,6 +247,54 @@ export default function Generate({ onClose }: GenerateProps) {
             <button onClick={() => incrementPart(arrangement[2][2], 2, 2)}>BG: {arrangement[2][2]+1}</button>
             <button onClick={() => incrementPart(arrangement[2][3], 2, 3)}>BG: {arrangement[2][3]+1}</button>
         </div>
+        <p>Triplet Frequency:     
+          <input
+          type="range"
+          min="0"
+          max="1"
+          step="0.1"
+          defaultValue="0" // Set an initial value (e.g., 5)
+          className={styles.circularDial} // Apply your custom dial styles
+          onChange={(e) => {
+          const newValue = parseInt(e.target.value, 10);
+          setTriplet(newValue)
+          }}
+        /></p>
+        <p>Key (optional): 
+          <select id="note" onChange = {handleKeyChange}>
+            <option></option>
+            <option>A</option>
+            <option>B</option>
+            <option>C</option>
+            <option>D</option>
+            <option>E</option>
+            <option>F</option>
+            <option>G</option>
+          </select>
+          {selectedKey && (
+          <select id="modify" value={sharpFlat} onChange={handleModifyChange}>
+            <option>♮</option>
+            {(selectedKey === "A" || selectedKey === "C" || selectedKey === "D" || selectedKey === "F" || selectedKey === "G") ? (
+              <option>#</option>
+            ) : (
+              null
+            )}
+            {(selectedKey === "A" || selectedKey === "B" || selectedKey === "D" || selectedKey === "E" || selectedKey === "G") ? (
+              <option>♭</option>
+            ) : (
+              null
+            )}
+          </select>
+          )}
+        </p>
+        {selectedKey && (
+        <p>Tonality: 
+          <select id="tonality" value={tonality} onChange = {handleTonalityChange}>
+            <option>Major</option>
+            <option>Minor</option>
+          </select>
+          </p>
+        )}   
         <br/>
         <button onClick={() => updateSong()}>Regenerate</button>
       </div>
