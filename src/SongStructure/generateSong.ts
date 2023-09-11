@@ -6,8 +6,7 @@ import { setKey, findKey } from './key.js';
 import { generateSongStructure } from './songStructure.js';
 
 export default function generateSong(bassGrooves: number[][], arrangement: number[][], tripMod: number, pickedKey?: number, tonality?: string){
-  console.log(pickedKey)
-  console.log(tonality)
+
   const verseBass: number[] = bassGrooves[arrangement[0][0]].concat(bassGrooves[arrangement[0][1]], bassGrooves[arrangement[0][2]], bassGrooves[arrangement[0][3]]);
   const chorusBass: number[] = bassGrooves[arrangement[1][0]].concat(bassGrooves[arrangement[1][1]], bassGrooves[arrangement[1][2]], bassGrooves[arrangement[1][3]]);
   const bridgeBass: number[] = bassGrooves[arrangement[2][0]].concat(bassGrooves[arrangement[2][1]], bassGrooves[arrangement[2][2]], bassGrooves[arrangement[2][3]]);
