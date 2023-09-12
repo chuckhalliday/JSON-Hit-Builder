@@ -7,14 +7,16 @@ import { generateSongStructure } from './songStructure.js';
 
 export default function generateSong(bassGrooves: number[][], arrangement: number[][], tripMod: number, pickedKey?: number, tonality?: string){
 
-  const verseBass: number[] = bassGrooves[arrangement[0][0]].concat(bassGrooves[arrangement[0][1]], bassGrooves[arrangement[0][2]], bassGrooves[arrangement[0][3]]);
-  const chorusBass: number[] = bassGrooves[arrangement[1][0]].concat(bassGrooves[arrangement[1][1]], bassGrooves[arrangement[1][2]], bassGrooves[arrangement[1][3]]);
-  const bridgeBass: number[] = bassGrooves[arrangement[2][0]].concat(bassGrooves[arrangement[2][1]], bassGrooves[arrangement[2][2]], bassGrooves[arrangement[2][3]]);
+  const bassGrooveBySection = arrangement.map(section =>
+    section.reduce((bass, index) => bass.concat(bassGrooves[index]), [] as number[])
+  );
+  const [verseBass, chorusBass, bridgeBass] = bassGrooveBySection;
 
   const drumGrooves = createDrums(bassGrooves, tripMod)
-  const verseDrums: number[] =  drumGrooves[arrangement[0][0]].concat(drumGrooves[arrangement[0][1]], drumGrooves[arrangement[0][2]], drumGrooves[arrangement[0][3]]);
-  const chorusDrums: number[] = drumGrooves[arrangement[1][0]].concat(drumGrooves[arrangement[1][1]], drumGrooves[arrangement[1][2]], drumGrooves[arrangement[1][3]]);
-  const bridgeDrums: number[] = drumGrooves[arrangement[2][0]].concat(drumGrooves[arrangement[2][1]], drumGrooves[arrangement[2][2]], drumGrooves[arrangement[2][3]]);
+  const drumGrooveBySection = arrangement.map(section =>
+    section.reduce((drums, index) => drums.concat(drumGrooves[index]), [] as number[])
+  );
+  const [verseDrums, chorusDrums, bridgeDrums] = drumGrooveBySection;
 
   const verseChords: number[] = createChords(verseBass)
   const chorusChords: number[] = createChords(chorusBass)
@@ -37,7 +39,6 @@ export default function generateSong(bassGrooves: number[][], arrangement: numbe
   const bassDrum3V: { index: number; checked: boolean; accent?: boolean }[][] = drumArray(bassDrum2V, drumGrooves[arrangement[0][2]], bassGrooves[arrangement[0][2]], bassLine3V);
   const drumVerse: { index: number; checked: boolean; accent?: boolean }[][] = drumArray(bassDrum3V, drumGrooves[arrangement[0][3]], bassGrooves[arrangement[0][3]], bassLine4V);
 
-
   //chorus
 
   const bassLine1C: string[] = bassArray1C(bassGrooves[arrangement[1][0]], bassLine1V);
@@ -54,7 +55,6 @@ export default function generateSong(bassGrooves: number[][], arrangement: numbe
   const bassDrum2C: { index: number; checked: boolean; accent?: boolean }[][] = drumArray(bassDrum1C, drumGrooves[arrangement[1][1]], bassGrooves[arrangement[1][1]], bassLine2C);
   const bassDrum3C: { index: number; checked: boolean; accent?: boolean }[][] = drumArray(bassDrum2C, drumGrooves[arrangement[1][2]], bassGrooves[arrangement[1][2]], bassLine3C);
   const drumChorus: { index: number; checked: boolean; accent?: boolean }[][] = drumArray(bassDrum3C, drumGrooves[arrangement[1][3]], bassGrooves[arrangement[1][3]], bassLine4C);
-
 
   //bridge
 
@@ -82,7 +82,6 @@ export default function generateSong(bassGrooves: number[][], arrangement: numbe
   }
   let key: string = findKey(bassV, keyAdjust)
 
-
   let bassVA = adjustBassArray(bassV, keyAdjust)
   let chordsVA = adjustChordArray(chordsV, keyAdjust)
 
@@ -98,11 +97,11 @@ export default function generateSong(bassGrooves: number[][], arrangement: numbe
   const beatstotal: number = bps * songtime;
   const measures: number = Math.round(beatstotal / 4 / 4) * 4;
   const partsLength: number = measures / 8;
-  const songStructure = generateSongStructure(partsLength, bassVA, verseBass, bassCA, chorusBass, bassBA, bridgeBass,
-  drumVerse, verseDrums,
-  drumChorus, chorusDrums,
-  drumBridge, bridgeDrums,
-  chordsVA, verseChords, chordsCA, chorusChords, chordsBA, bridgeChords) 
+  
+  const songStructure = generateSongStructure(
+    partsLength, bassVA, verseBass, bassCA, chorusBass, bassBA, bridgeBass,
+    drumVerse, verseDrums, drumChorus, chorusDrums, drumBridge, bridgeDrums,
+    chordsVA, verseChords, chordsCA, chorusChords, chordsBA, bridgeChords) 
 
   let totalSteps: number = 0
   for (let i = 0; i < songStructure.length; i++) {
@@ -119,24 +118,6 @@ export default function generateSong(bassGrooves: number[][], arrangement: numbe
   songStructure: songStructure,
   bpm: bpm,
   key: key,
-  bassDrum1V: bassDrum1V,
-  verseDrums: verseDrums, 
-  verseBass: verseBass, 
-  verseChords: verseChords, 
-  chorusDrums: chorusDrums, 
-  chorusBass: chorusBass, 
-  chorusChords: chorusChords, 
-  bridgeDrums: bridgeDrums, 
-  bridgeBass: bridgeBass, 
-  bridgeChords: bridgeChords, 
-  drumVerse: drumVerse, 
-  bassV: bassV, 
-  chordsV: chordsV, 
-  drumChorus: drumChorus, 
-  bassC: bassC, 
-  drumBridge: drumBridge,  
-  bassB: bassB, 
-  chordsB: chordsB
   }
   return songVariables
 }
