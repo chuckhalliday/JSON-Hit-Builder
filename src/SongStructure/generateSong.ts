@@ -74,7 +74,6 @@ export default function generateSong(bassGrooves: number[][], arrangement: numbe
   const drumBridge: { index: number; checked: boolean; accent?: boolean }[][] = drumArray(bassDrum3B, drumGrooves[arrangement[2][3]], bassGrooves[arrangement[2][3]], bassLine4B);
 
   let keyAdjust: number
-
   if (pickedKey != undefined) {
     keyAdjust = pickedKey
   } else {
@@ -83,13 +82,12 @@ export default function generateSong(bassGrooves: number[][], arrangement: numbe
   let key: string = findKey(bassV, keyAdjust)
 
   let bassVA = adjustBassArray(bassV, keyAdjust)
-  let chordsVA = adjustChordArray(chordsV, keyAdjust)
-
   let bassCA = adjustBassArray(bassC, keyAdjust)
-  let chordsCA = adjustChordArray(chordsC, keyAdjust)
-
-  let bassBA = adjustBassArray(bassB, keyAdjust)
   let chordsBA = adjustChordArray(chordsB, keyAdjust)
+
+  let chordsVA = adjustChordArray(chordsV, keyAdjust)
+  let chordsCA = adjustChordArray(chordsC, keyAdjust)
+  let bassBA = adjustBassArray(bassB, keyAdjust)
 
   const songtime: number = Math.round(Math.random() * (240 - 210) + 210);
   const bpm: number = Math.round(Math.random() * (140 - 100) + 100);
