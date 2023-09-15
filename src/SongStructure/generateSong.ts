@@ -96,10 +96,9 @@ export default function generateSong(bassGrooves: number[][], arrangement: numbe
   const measures: number = Math.round(beatstotal / 4 / 4) * 4;
   const partsLength: number = measures / 8;
   
-  const songStructure = generateSongStructure(
-    partsLength, bassVA, verseBass, bassCA, chorusBass, bassBA, bridgeBass,
-    drumVerse, verseDrums, drumChorus, chorusDrums, drumBridge, bridgeDrums,
-    chordsVA, verseChords, chordsCA, chorusChords, chordsBA, bridgeChords) 
+  const songStructure = generateSongStructure(partsLength, bassVA, verseBass, bassCA, chorusBass, bassBA, bridgeBass, 
+    chordsVA, verseChords, chordsCA, chorusChords, chordsBA, bridgeChords,
+    drumVerse, verseDrums, drumChorus, chorusDrums, drumBridge, bridgeDrums) 
 
   let totalSteps: number = 0
   for (let i = 0; i < songStructure.length; i++) {

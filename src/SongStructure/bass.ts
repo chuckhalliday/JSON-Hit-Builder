@@ -1,4 +1,32 @@
-
+export function bassMeasures(bassGroove: number[], drumGroove: number[]) {
+  let bassArray: number[]=[-10, 115]
+  let gridX: number = 115
+  let bassSum: number = bassGroove[0]
+  let drumSum: number = 0
+  let bassIndex: number = 1
+  let measureLines: number[] = []
+  for (let i = 0; i < drumGroove.length; i++) {
+    drumSum+= drumGroove[i]
+    if (drumSum >= 3.93 && drumSum <= 4.07 || drumSum >= 7.93 && drumSum <= 8.07) {
+      gridX += 78
+      measureLines.push(gridX - 42)
+    } else if (Math.abs(Math.round(drumSum) - drumSum) <= 0.005) {
+      gridX += 48
+    } else {
+      gridX += 38
+    }
+    if (bassSum - drumSum <= 0.05) {
+      bassArray.push(gridX)
+    if (bassSum >= 7.95 && drumSum >= 7.95) {
+      bassSum = 0
+      drumSum = 0
+    }
+    bassSum += bassGroove[bassIndex]
+    bassIndex++
+    }
+  }
+  return [bassArray, measureLines]
+}
 
 const dVals = ["o", "a", "c", "f"];
 let dAcc = dVals[Math.floor(Math.random() * dVals.length)];

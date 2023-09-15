@@ -22,8 +22,9 @@
 
   .whiteCheck {
     margin-top: 42px;
-    transform: translateX(70%);
+    width: 10px;
     accent-color: blue;
+    transform: translateX(50%);
     z-index: 1;
   }
 
@@ -49,6 +50,7 @@
 
   .blackCheck {
     transform: translateY(-200%);
+    width: 10px;
     accent-color: blue;
     z-index: 1;
   }
