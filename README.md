@@ -6,7 +6,7 @@ I had built out the structure for three concurrent instruments that trigger MIDI
 
 This decision quickly made me realize that in the long run I would be best off reverse-engineering some of the important functionalites of Sonic Pi, instead of jumping back and forth between languages, and after working through myriad puzzles and deploying a basic drum machine front-end I was amazed (and relieved) to discover that MIDI can be sent to a local DAW directly from a live URL in the browser
 
-~Thus far I have only worked with MIDI on my Macbook and to replicate the full functionality you want to make sure that you have 3 buses set up on your IAC driver - Bus 1 for drums, Bus 2 for bass, and Bus 3 for chords
+~Thus far this MIDI functionality is only set up for Mac, and to replicate the full functionality you want to make sure that you have 3 buses set up on your IAC driver - Bus 1 for drums, Bus 2 for bass, and Bus 3 for chords.  If the buses are recognized they will appear in your console when you click "Use MIDI"~
 
 Fast forward a few months and the algorithm for the core "groove" functionality is still a work in progress, but the concept has expanded into a web program that generates complete song structures!
 
