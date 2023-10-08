@@ -70,6 +70,11 @@ function App() {
     }
   };
 
+  const logout = async () => {
+    let { error } = await supabase.auth.signOut()
+    setAuthenticated(false)
+  }
+
   const handleGenerateClick = () => {
     setShowGenerate(true);
   };
@@ -259,6 +264,7 @@ function App() {
               defaultValue={1}
             />
           </label> */}
+          <button onClick={logout} className={styles.button}>Log Out</button>
         </div>
         </div>
       ) : (
