@@ -13,19 +13,6 @@ import { createClient } from '@supabase/supabase-js'
 const supabaseUrl = 'https://ifsfdjaensqwsrhoymfh.supabase.co'
 const supabase = createClient(supabaseUrl, 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imlmc2ZkamFlbnNxd3NyaG95bWZoIiwicm9sZSI6ImFub24iLCJpYXQiOjE2OTY3NTUzOTcsImV4cCI6MjAxMjMzMTM5N30.pHYsuL39FQql2zs7tMoL9i5Vqod2Or07nPwB-XnKFww')
 
-async function login(){
-  const { data, error } = await supabase.auth.signInWithOAuth({
-    provider: 'google',
-    options: {
-      queryParams: {
-        access_type: 'offline',
-        prompt: 'consent',
-      },
-    }
-  })
-}
-login()
-
 function listInputsAndOutputs(midiAccess: WebMidi.MIDIAccess) {
   console.log("MIDI ready!");
   for (const entry of midiAccess.inputs) {
@@ -53,6 +40,35 @@ function App() {
   const [currentPart, setCurrentPart] = useState<number>(0); // Track current open part
   const [showInfoScreen, setShowInfoScreen] = useState(true);
   const [showGenerate, setShowGenerate] = useState(false);
+  const [authenticated, setAuthenticated] = useState(false);
+
+  useEffect(() => {
+    const checkAuthentication = async () => {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (user) {
+        setAuthenticated(true);
+      }
+    };
+
+    checkAuthentication();
+  }, []);
+
+  const login = async () => {
+    if (!authenticated) {
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          queryParams: {
+            access_type: 'offline',
+            prompt: 'consent',
+          },
+        },
+      });
+      if (!error) {
+        setAuthenticated(true);
+      }
+    }
+  };
 
   const handleGenerateClick = () => {
     setShowGenerate(true);
@@ -171,18 +187,21 @@ function App() {
   };
 
   return (
-    <div className={styles.rowContainer}>
-      <button className={styles.key} onClick={handleGenerateClick}>Key of : {song.key}</button>
-      {showGenerate && (
-        <div className={styles.generateOverlay}>
-          <Generate onClose={handleCloseGenerate}/>
-        </div>
-      )}
-      {song.songStructure.map((songProps, index) => {
-        const songParts = [];
+    <div >
+      {authenticated ? (
+        // Render your app components when authenticated
+        <div className={styles.rowContainer}>
+        <button className={styles.key} onClick={handleGenerateClick}>Key of : {song.key}</button>
+        {showGenerate && (
+          <div className={styles.generateOverlay}>
+            <Generate onClose={handleCloseGenerate}/>
+          </div>
+        )}
+        {song.songStructure.map((songProps, index) => {
+          const songParts = [];
           const key = `${index}`;
           const isOpen = openedParts[key];
-
+  
           return (
             <div key={key} className={styles.parts}>
               <button
@@ -206,41 +225,45 @@ function App() {
             </div>
           );
         })}
-      <div className={styles.info}>
-      {showInfoScreen && <Info />}
-      </div>
-      {/* Renders controls */}
-      <div className={styles.controls}>
-      <button onClick={handleStartClick} className={styles.button}>
-          {isPlaying ? "Pause" : "Play Song"}
-        </button>
-      <button onClick={handleMidi} className={styles.button}>
-          {midi ? "Use Osc" : "Use Midi"}
-        </button>
-        <label className={styles.fader}>
-          <span>BPM:{bpm}</span>
-          <input
-          className={styles.bpm}
-            type="range"
-            min={90}
-            max={150}
-            step={1}
-            onChange={(e) => dispatch(incrementByAmount(e.target.value))}
-            defaultValue={bpm}
-          />
-        </label>
-        {/*<label className={styles.fader}>
-          <span>Volume</span>
-          <input
-            type="range"
-            min={0}
-            max={1}
-            step={0.01}
-            onChange={handleVolumeChange} 
-            defaultValue={1}
-          />
-    </label> */}
-      </div>
+        <div className={styles.info}>
+          {showInfoScreen && <Info />}
+        </div>
+        {/* Renders controls */}
+        <div className={styles.controls}>
+          <button onClick={handleStartClick} className={styles.button}>
+            {isPlaying ? "Pause" : "Play Song"}
+          </button>
+          <button onClick={handleMidi} className={styles.button}>
+            {midi ? "Use Osc" : "Use Midi"}
+          </button>
+          <label className={styles.fader}>
+            <span>BPM:{bpm}</span>
+            <input
+              className={styles.bpm}
+              type="range"
+              min={90}
+              max={150}
+              step={1}
+              onChange={(e) => dispatch(incrementByAmount(e.target.value))}
+              defaultValue={bpm}
+            />
+          </label>
+          {/*<label className={styles.fader}>
+            <span>Volume</span>
+            <input
+              type="range"
+              min={0}
+              max={1}
+              step={0.01}
+              onChange={handleVolumeChange} 
+              defaultValue={1}
+            />
+          </label> */}
+        </div>
+        </div>
+      ) : (
+        <button onClick={login}>Log In with Google</button>
+      )}
     </div>
   );
 }
