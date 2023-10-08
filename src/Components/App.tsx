@@ -14,18 +14,17 @@ const supabaseUrl = 'https://ifsfdjaensqwsrhoymfh.supabase.co'
 const supabase = createClient(supabaseUrl, 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imlmc2ZkamFlbnNxd3NyaG95bWZoIiwicm9sZSI6ImFub24iLCJpYXQiOjE2OTY3NTUzOTcsImV4cCI6MjAxMjMzMTM5N30.pHYsuL39FQql2zs7tMoL9i5Vqod2Or07nPwB-XnKFww')
 
 async function login(){
-const { data, error } = await supabase.auth.signInWithOAuth({
-  provider: 'google',
-  options: {
-    redirectTo: `${
-      process.env.NEXT_PUBLIC_VERCEL_URL
-        ? 'https://ifsfdjaensqwsrhoymfh.supabase.co/auth/v1/callback'
-        : 'http://localhost:3000'
-    }`
-  }
-})
+  const { data, error } = await supabase.auth.signInWithOAuth({
+    provider: 'google',
+    options: {
+      queryParams: {
+        access_type: 'offline',
+        prompt: 'consent',
+      },
+    }
+  })
 }
-
+login()
 
 function listInputsAndOutputs(midiAccess: WebMidi.MIDIAccess) {
   console.log("MIDI ready!");
@@ -54,8 +53,6 @@ function App() {
   const [currentPart, setCurrentPart] = useState<number>(0); // Track current open part
   const [showInfoScreen, setShowInfoScreen] = useState(true);
   const [showGenerate, setShowGenerate] = useState(false);
-
-  login()
 
   const handleGenerateClick = () => {
     setShowGenerate(true);
