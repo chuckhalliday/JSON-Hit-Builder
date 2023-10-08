@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@reduxjs/toolkit": "^1.9.5",
+    "@supabase/supabase-js": "^2.38.0",
     "@types/webmidi": "^2.0.7",
     "immer": "^10.0.2",
     "react": "^18.2.0",
@@ -38,6 +39,9 @@
     "transformIgnorePatterns": []
   },
   "babel": {
-    "presets": ["@babel/preset-env", "@babel/preset-typescript"]
+    "presets": [
+      "@babel/preset-env",
+      "@babel/preset-typescript"
+    ]
   }
 }
