@@ -31,6 +31,19 @@ export default function Save({ onClose }: SaveProps) {
       fetchData();
     }, []);
 
+    useEffect(() => {
+        const handler = (e: MouseEvent) => {
+          if (saveRef.current && !saveRef.current.contains(e.target as Node)) {
+            onClose();
+          }
+        }
+          document.addEventListener("mousedown", handler);
+  
+          return () => {
+            document.removeEventListener("mousedown", handler);
+          };
+        }, []);
+
     const getUser = async () => {
         const { data: { user } } = await supabase.auth.getUser()
         if(user) {
