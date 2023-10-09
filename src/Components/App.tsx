@@ -281,7 +281,7 @@ function App() {
               defaultValue={1}
             />
           </label> */}
-          <button onClick={handleSaveClick} className={styles.button}>Save</button>
+          <button onClick={handleSaveClick} className={styles.button}>Save/Load</button>
           <button onClick={logout} className={styles.button}>Log Out</button>
         </div>
         </div>
