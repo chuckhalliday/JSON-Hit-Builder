@@ -42,17 +42,6 @@ function App() {
   const [showGenerate, setShowGenerate] = useState(false);
   const [authenticated, setAuthenticated] = useState(false);
 
-  useEffect(() => {
-    const checkAuthentication = async () => {
-      const { data: { user } } = await supabase.auth.getUser()
-      if (user) {
-        setAuthenticated(true);
-      }
-    };
-
-    checkAuthentication();
-  }, []);
-
   const login = async () => {
     if (!authenticated) {
       const { data, error } = await supabase.auth.signInWithOAuth({
@@ -69,6 +58,18 @@ function App() {
       }
     }
   };
+
+  useEffect(() => {
+    const checkAuthentication = async () => {
+      const { data: { session } } = await supabase.auth.getSession()
+      if (session) {
+        setAuthenticated(true);
+      }
+    };
+
+    checkAuthentication();
+  }, []);
+
 
   const logout = async () => {
     let { error } = await supabase.auth.signOut()
