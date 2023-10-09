@@ -7,8 +7,6 @@ import { createClient } from '@supabase/supabase-js'
 const supabaseUrl = 'https://ifsfdjaensqwsrhoymfh.supabase.co'
 const supabase = createClient(supabaseUrl, 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imlmc2ZkamFlbnNxd3NyaG95bWZoIiwicm9sZSI6ImFub24iLCJpYXQiOjE2OTY3NTUzOTcsImV4cCI6MjAxMjMzMTM5N30.pHYsuL39FQql2zs7tMoL9i5Vqod2Or07nPwB-XnKFww')
 
-const { data: { user } } = await supabase.auth.getUser()
-console.log(user)
 
 interface SaveProps {
     onClose: () => void;
@@ -20,12 +18,17 @@ export default function Save({ onClose }: SaveProps) {
     const saveRef = useRef<HTMLDivElement | null>(null);
     const [name, setName] = useState<string>('');
 
+    const getUser = async () => {
+        const { data: { user } } = await supabase.auth.getUser()
+        return user?.id
+    }
+
     const save = async () => {
         if(name !== ''){
             let { data } = await supabase
             .from('songs')
             .select()
-            .eq('user', user?.id)
+            .eq('user', await getUser())
             .eq('name', name)
             console.log(data)
             if(data && data.length > 0){
