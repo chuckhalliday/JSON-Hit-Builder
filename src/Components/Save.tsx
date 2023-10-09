@@ -1,6 +1,6 @@
-import { useState, useRef } from "react";
-import { useSelector } from "react-redux"
-import { SongState } from "../reducers";
+import { useState, useEffect, useRef } from "react";
+import { useSelector, useDispatch } from "react-redux"
+import { SongState, setSong } from "../reducers";
 import styles from "../Styles/App.module.scss";
 import { createClient } from '@supabase/supabase-js'
 
@@ -17,18 +17,55 @@ export default function Save({ onClose }: SaveProps) {
 
     const saveRef = useRef<HTMLDivElement | null>(null);
     const [name, setName] = useState<string>('');
+    const [user, setUser] = useState<string | null>(null); // State to store user
+    const [savedComps, setSavedComps] = useState<any[]>([]); // State to store saved components
+  
+    useEffect(() => {
+      async function fetchData() {
+        const userData = await getUser();
+        setUser(userData);
+        const songsData = await getSongs(userData);
+        setSavedComps(songsData);
+      }
+  
+      fetchData();
+    }, []);
 
     const getUser = async () => {
         const { data: { user } } = await supabase.auth.getUser()
-        return user?.id
+        if(user) {
+            return user.id
+        } else {
+            return null
+        }
     }
+
+    const getSongs = async (user: string | null) => {
+        if (!user) {
+          return [];
+        }
+    
+        let { data: songs, error } = await supabase
+          .from('songs')
+          .select()
+          .eq('user', user)
+          console.log(songs)
+        return songs || [];
+      }
+
+      const dispatch = useDispatch()
+
+      const updateSong = (data: SongState) => {
+        dispatch(setSong(data))
+        onClose()
+      }
 
     const save = async () => {
         if(name !== ''){
             let { data } = await supabase
             .from('songs')
             .select()
-            .eq('user', await getUser())
+            .eq('user', user)
             .eq('name', name)
             console.log(data)
             if(data && data.length > 0){
@@ -68,6 +105,18 @@ export default function Save({ onClose }: SaveProps) {
             Save
           </button>
         </form>
+            <div>
+                <h2>Load Previous</h2>
+            </div>
+            <div>
+          {savedComps.map((comp) => {
+            return (
+              <div key={comp.name}>
+                <button onClick={() => updateSong(comp.data)}>{comp.name}</button>
+              </div>
+            )
+          })}
+        </div>
             </div>
 
         </div>
