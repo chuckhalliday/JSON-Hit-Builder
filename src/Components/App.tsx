@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import Info from './Info';
 import Generate from './Generate';
+import Save from './Save';
 import DrumMachine from "./DrumMachine";
 import BassStaff from "./BassStaff";
 import Piano from './Piano';
@@ -41,6 +42,7 @@ function App() {
   const [showInfoScreen, setShowInfoScreen] = useState(true);
   const [showGenerate, setShowGenerate] = useState(false);
   const [authenticated, setAuthenticated] = useState(false);
+  const [saveScreen, setSaveScreen] = useState(false);
 
   const login = async () => {
     if (!authenticated) {
@@ -84,6 +86,14 @@ function App() {
     setShowGenerate(false);
   };
 
+  const handleSaveClick = () => {
+    setSaveScreen(true);
+  };
+
+  const handleCloseSave = () => {
+    setSaveScreen(false);
+  };
+
   const song = useSelector((state: { song: SongState }) => state.song)
   const bpm = song.bpm
   const isPlaying = song.isPlaying
@@ -96,6 +106,7 @@ function App() {
   const lampsRef = React.useRef<HTMLInputElement[]>([]);
 
   const dispatch = useDispatch()
+
 
   async function playSong(song: SongState, verse: number, drumBeat: number, bassBeat: number, chordBeat: number) {
     let tempo = song.bpm - 60;
@@ -203,6 +214,11 @@ function App() {
             <Generate onClose={handleCloseGenerate}/>
           </div>
         )}
+        {saveScreen && (
+          <div className={styles.generateOverlay}>
+            <Save onClose={handleCloseSave}/>
+          </div>
+        )}
         {song.songStructure.map((songProps, index) => {
           const songParts = [];
           const key = `${index}`;
@@ -265,6 +281,7 @@ function App() {
               defaultValue={1}
             />
           </label> */}
+          <button onClick={handleSaveClick} className={styles.button}>Save</button>
           <button onClick={logout} className={styles.button}>Log Out</button>
         </div>
         </div>
