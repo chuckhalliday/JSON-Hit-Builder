@@ -64,7 +64,7 @@ export default function BassStaff({ renderWidth, part }: BassStaffProps) {
     }
   }
 
-  function drawNote(ctx: CanvasRenderingContext2D, location: { x: number, y: number, acc: string }, bassGrid: number[], bassGroove: number[]) {
+  function drawNote(ctx: CanvasRenderingContext2D, location: { x: number, y: number, acc: string }) {
     const CANVAS = canvasRef.current;
     let match = false
     let index = 0
@@ -87,6 +87,7 @@ export default function BassStaff({ renderWidth, part }: BassStaffProps) {
 
       //draw notes
       if (location.y >= 30) {
+        //line for notes up to dotted half
         if (groove <= 2.5) {
           ctx.beginPath();
           ctx.moveTo(location.x + spacing,
@@ -95,6 +96,7 @@ export default function BassStaff({ renderWidth, part }: BassStaffProps) {
             location.y - spacing * 5);
           ctx.stroke();
           }
+          //flag for notes smaller than quarter note
           if(groove < 1){
             ctx.beginPath();
             ctx.moveTo(location.x + spacing,
@@ -110,6 +112,7 @@ export default function BassStaff({ renderWidth, part }: BassStaffProps) {
             ctx.stroke();
             ctx.fill();
           }
+          //double flag for sixteenth notes
           if(groove === 0.25){
             if (location.y >= 30) {
               ctx.beginPath();
@@ -132,12 +135,13 @@ export default function BassStaff({ renderWidth, part }: BassStaffProps) {
         if (location.acc === 'sharp') {
           ctx.fillText('#', location.x + spacing * -2.5, location.y - spacing * 1.9 + fontSize );
         }
-        if (groove === 1.5 || groove === 0.75) {
+        //dots for syncopated notes
+        if (groove === 2.5 || groove === 1.5 || groove === 0.75) {
           ctx.beginPath();
           ctx.arc(location.x + spacing + 8, location.y - 3.8, 2.8, 0, Math.PI * 2);
           ctx.fill();
         }
-
+        //draw actual note
         ctx.beginPath();
         ctx.save();
         ctx.translate(location.x, location.y);
@@ -149,9 +153,9 @@ export default function BassStaff({ renderWidth, part }: BassStaffProps) {
         if(groove <= 1.5){
           ctx.fill();
         }
-
+      //draw rests
       } else {
-        //draw rests
+        //half rest  
         if (groove <= 2) {
           if (groove === 2) {
             ctx.beginPath();
@@ -165,6 +169,7 @@ export default function BassStaff({ renderWidth, part }: BassStaffProps) {
               75);
             ctx.stroke()
             ctx.fill();
+            //draw quarter rest
           } else if (groove >= 1) {
             ctx.beginPath();
             ctx.moveTo(location.x - 5, 51);
@@ -178,12 +183,14 @@ export default function BassStaff({ renderWidth, part }: BassStaffProps) {
             ctx.fillStyle = "black";
             ctx.fill();
             ctx.stroke();
+            //dotted quarter
             if (groove === 1.5) {
               ctx.beginPath();
               ctx.arc(location.x + 12, 70, 2.8, 0, Math.PI * 2);
               ctx.fill();
             }
           } else if (groove < 1) {
+            //eighth
             ctx.beginPath();
             ctx.moveTo(location.x - 1, 88);
             ctx.lineTo(location.x + 8, 65);
@@ -197,11 +204,13 @@ export default function BassStaff({ renderWidth, part }: BassStaffProps) {
             ctx.moveTo(location.x - 8, 69);
             ctx.quadraticCurveTo(location.x - 5, 72, location.x + 8, 65);
             ctx.stroke();
+            //dotted eigth
             if (groove === 0.75) {
               ctx.beginPath();
               ctx.arc(location.x + 14, 67, 2.8, 0, Math.PI * 2);
               ctx.fill();
             }
+            //sixteenth rest
             if(groove === 0.25) {
               ctx.beginPath();
               ctx.moveTo(location.x - 6, 103);
@@ -281,7 +290,7 @@ export default function BassStaff({ renderWidth, part }: BassStaffProps) {
         drawClef(ctx, { x: 45, y: CANVAS.height / 2, acc:'none' });
 
         bassNoteGrid.forEach((note) => {
-          drawNote(ctx, note, bassGrid, bassGroove);
+          drawNote(ctx, note);
         });
         chordGrid.forEach((chord, i) => {
           displayChord(ctx, chord, bassGrid, chords[i])
@@ -292,7 +301,7 @@ export default function BassStaff({ renderWidth, part }: BassStaffProps) {
           y: index * spacing,
           acc: 'none'
         };
-        drawNote(ctx, location, bassGrid, bassGroove);
+        drawNote(ctx, location);
       }
     }
   }

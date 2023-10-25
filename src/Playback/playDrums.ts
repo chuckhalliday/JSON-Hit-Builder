@@ -16,7 +16,7 @@ export function loadSoundFile(url: string, callback: (buffer: AudioBuffer) => vo
     request.send();
   }
 
-export function playSound(buffer: AudioBuffer, volume: number = 1.0 /*set the volume 0.0 - 1.0*/) {
+export function playDrumSample(buffer: AudioBuffer, volume: number = 1.0 /*set the volume 0.0 - 1.0*/) {
     const source = audioContext.createBufferSource();
     source.buffer = buffer;
     
@@ -54,7 +54,7 @@ export default async function playBeat(midi: boolean, beat: number, pattern: Arr
         if (pattern === stepsRef[0] && pattern[index].checked) {
           if(!midi) {
             loadSoundFile("../kick.mp3", (buffer: AudioBuffer) => {
-            playSound(buffer, velocity/100);
+            playDrumSample(buffer, velocity/100);
             });
           } else {
             triggerMidi('1', 36, duration, velocity, release)
@@ -63,7 +63,7 @@ export default async function playBeat(midi: boolean, beat: number, pattern: Arr
         } else if (pattern === stepsRef[1]&& pattern[index].checked) {
           if(!midi) {
             loadSoundFile("../snare.mp3", (buffer: AudioBuffer) => {
-            playSound(buffer, velocity/100);
+            playDrumSample(buffer, velocity/100);
           });
           } else {
             triggerMidi('1', 38, duration, velocity, release)
@@ -72,7 +72,7 @@ export default async function playBeat(midi: boolean, beat: number, pattern: Arr
         } else if (pattern === stepsRef[5] && pattern[index].checked) {
           if(!midi){
             loadSoundFile("../hihatC.mp3", (buffer: AudioBuffer) => {
-            playSound(buffer, velocity/100);
+            playDrumSample(buffer, velocity/100);
           })
           } else {
             triggerMidi('1', 42, duration, velocity, release)
@@ -81,7 +81,7 @@ export default async function playBeat(midi: boolean, beat: number, pattern: Arr
         } else if (pattern === stepsRef[6] && pattern[index].checked) {
           if(!midi){
             loadSoundFile("../hihatO.mp3", (buffer: AudioBuffer) => {
-            playSound(buffer, velocity/100);
+            playDrumSample(buffer, velocity/100);
           });
           } else {
             triggerMidi('1', 46, duration, velocity, release)
@@ -90,7 +90,7 @@ export default async function playBeat(midi: boolean, beat: number, pattern: Arr
         } else if (pattern === stepsRef[8] && pattern[index].checked) {
           if(!midi){
             loadSoundFile("../crash.mp3", (buffer: AudioBuffer) => {
-            playSound(buffer, velocity/100);
+            playDrumSample(buffer, velocity/100);
           });
           } else {
             triggerMidi('1', 49, duration, velocity, release)
