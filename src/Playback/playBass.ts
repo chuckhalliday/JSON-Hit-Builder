@@ -1,7 +1,7 @@
 import { tone, midiTone } from "../SongStructure/tone";
 import { triggerMidi, wait } from "./playFunctions";
  
-async function playSound(audioContext: AudioContext, bass: number, duration: number, velocity: number, release: number) {
+async function playBassOsc(audioContext: AudioContext, bass: number, duration: number, velocity: number, release: number) {
     const osc = audioContext.createOscillator();
     const gainNode = audioContext.createGain();
     const filterNode = audioContext.createBiquadFilter();
@@ -139,7 +139,7 @@ async function playSound(audioContext: AudioContext, bass: number, duration: num
   
       if (!midi) {
         if (bass > 0) {
-          await playSound(audioContext, bass, duration, velocity, release);
+          await playBassOsc(audioContext, bass, duration, velocity, release);
         } else {
           await wait(duration);
         }
