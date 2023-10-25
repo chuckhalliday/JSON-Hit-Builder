@@ -6,7 +6,7 @@ import DrumMachine from "./DrumMachine";
 import BassStaff from "./BassStaff";
 import Piano from './Piano';
 import { useSelector, useDispatch } from "react-redux"
-import { playVerse } from '../SongStructure/playSong';
+import { playVerse } from '../Playback/playSong';
 import { incrementByAmount, setIsPlaying, setMidi, SongState, setCurrentBeat } from '../reducers';
 import styles from "../Styles/App.module.scss"
 import { createClient } from '@supabase/supabase-js'

@@ -1,6 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
-import { playBass } from '../SongStructure/playParts';
+import playBass from '../Playback/playBass';
 import { setBassState, SongState } from '../reducers';
 
 import styles from "../Styles/DrumMachine.module.scss";

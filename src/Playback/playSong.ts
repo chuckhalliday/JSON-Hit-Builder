@@ -1,5 +1,7 @@
 //import midi from 'midi'
-import { playBeat, playBass, playChords } from './playParts.js'
+import playBeat from './playDrums.js';
+import playChords from './playChords.js';
+import playBass from './playBass.js';
 import { SongState } from '../reducers.js';
 
 export async function countIn(bpm: number, midi: boolean, beat: number, initDrums: number[], 

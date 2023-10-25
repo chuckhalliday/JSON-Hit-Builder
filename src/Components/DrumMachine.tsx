@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from "react";
-import { playDrums } from "../SongStructure/playSong";
+import { playDrums } from "../Playback/playSong";
 import { setDrumState, SongState, setCurrentBeat } from "../reducers";
 import { useDispatch, useSelector } from "react-redux";
 import styles from "../Styles/DrumMachine.module.scss";
