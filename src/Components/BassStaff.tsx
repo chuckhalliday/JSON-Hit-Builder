@@ -66,8 +66,18 @@ export default function BassStaff({ renderWidth, part }: BassStaffProps) {
 
   function drawNote(ctx: CanvasRenderingContext2D, location: { x: number, y: number, acc: string }, bassGrid: number[], bassGroove: number[]) {
     const CANVAS = canvasRef.current;
-    if (CANVAS) {
+    let match = false
+    let index = 0
+    for (let i = 1; i < bassGrid.length; i++){
+      if (location.x === bassGrid[i]){
+        match = true;
+        index = i - 1;
+        break;
+      }
+    }
+    if (CANVAS && match) {
       const spacing = CANVAS.height / 20;
+      const groove = bassGroove[index];
       ctx.fillStyle = "black";
       ctx.strokeStyle = "black";
       ctx.lineWidth = 1;
@@ -75,24 +85,75 @@ export default function BassStaff({ renderWidth, part }: BassStaffProps) {
       const fontSize = 20;
       ctx.font = `${fontSize}px serif`;
 
-      for (let i = 1; i < bassGrid.length; i++){
-        const isMatch = location.x === bassGrid[i];
-        const groove = bassGroove[i - 1];
-        if (location.y >= 30) {
-        if (location.x === bassGrid[i] && location.acc === 'flat') {
+      //draw notes
+      if (location.y >= 30) {
+        if (groove <= 2.5) {
+          ctx.beginPath();
+          ctx.moveTo(location.x + spacing,
+            location.y);
+          ctx.lineTo(location.x + spacing,
+            location.y - spacing * 5);
+          ctx.stroke();
+          }
+          if(groove < 1){
+            ctx.beginPath();
+            ctx.moveTo(location.x + spacing,
+              location.y - spacing * 5);
+            ctx.bezierCurveTo(
+              location.x + spacing * 2, location.y - spacing * 3,
+              location.x + spacing * 2.5, location.y - spacing * 3,
+              location.x + spacing * 2.5, location.y - spacing * 1);
+            ctx.bezierCurveTo(
+              location.x + spacing * 2.5, location.y - spacing * 2.7,
+              location.x + spacing * 2, location.y - spacing * 2.7,
+              location.x + spacing, location.y - spacing * 4.5);
+            ctx.stroke();
+            ctx.fill();
+          }
+          if(groove === 0.25){
+            if (location.y >= 30) {
+              ctx.beginPath();
+              ctx.moveTo(location.x + spacing, location.y - spacing * 5 + 8);
+              ctx.bezierCurveTo(
+                location.x + spacing * 2, location.y - spacing * 3 + 7,
+                location.x + spacing * 2.5, location.y - spacing * 3 + 7,
+                location.x + spacing * 2.5, location.y - spacing * 1 + 4);
+              ctx.bezierCurveTo(
+                location.x + spacing * 2.5, location.y - spacing * 2.7 + 7,
+                location.x + spacing * 2, location.y - spacing * 2.7 + 7,
+                location.x + spacing, location.y - spacing * 4.5 + 4);
+              ctx.stroke();
+              ctx.fill();
+            } 
+          }
+        if (location.acc === 'flat') {
           ctx.fillText('♭', location.x + spacing * -3.5, location.y - spacing * 2 + fontSize);
         }
-        if (location.x === bassGrid[i] && location.acc === 'sharp') {
+        if (location.acc === 'sharp') {
           ctx.fillText('#', location.x + spacing * -2.5, location.y - spacing * 1.9 + fontSize );
         }
-        if (isMatch && groove === 1.5 || isMatch && groove === 0.75) {
+        if (groove === 1.5 || groove === 0.75) {
           ctx.beginPath();
           ctx.arc(location.x + spacing + 8, location.y - 3.8, 2.8, 0, Math.PI * 2);
           ctx.fill();
         }
-      }
-        if (isMatch && groove <= 2) {
-          if (location.y < 30 && groove === 2) {
+
+        ctx.beginPath();
+        ctx.save();
+        ctx.translate(location.x, location.y);
+        ctx.rotate(-0.2);
+        ctx.scale(1.05, 0.8);
+        ctx.arc(0, 0, spacing, 0, Math.PI * 2);
+
+        //half to quarter note fill
+        if(groove <= 1.5){
+          ctx.fill();
+        }
+
+      } else {
+        //draw rests
+        if (groove <= 2) {
+          if (groove === 2) {
             ctx.beginPath();
             ctx.moveTo(location.x + spacing,
               75);
@@ -104,7 +165,7 @@ export default function BassStaff({ renderWidth, part }: BassStaffProps) {
               75);
             ctx.stroke()
             ctx.fill();
-          } else if (location.y < 30 && groove >= 1) {
+          } else if (groove >= 1) {
             ctx.beginPath();
             ctx.moveTo(location.x - 5, 51);
             ctx.lineTo(location.x + 5, 66);
@@ -122,9 +183,9 @@ export default function BassStaff({ renderWidth, part }: BassStaffProps) {
               ctx.arc(location.x + 12, 70, 2.8, 0, Math.PI * 2);
               ctx.fill();
             }
-          } else if (location.y < 30 && groove >= 0.5) {
+          } else if (groove < 1) {
             ctx.beginPath();
-            ctx.moveTo(location.x - 2, 88);
+            ctx.moveTo(location.x - 1, 88);
             ctx.lineTo(location.x + 8, 65);
             ctx.stroke();
             
@@ -141,86 +202,33 @@ export default function BassStaff({ renderWidth, part }: BassStaffProps) {
               ctx.arc(location.x + 14, 67, 2.8, 0, Math.PI * 2);
               ctx.fill();
             }
-          } else if (location.y >= 30) {
-          ctx.beginPath();
-          ctx.moveTo(location.x + spacing,
-            location.y);
-          ctx.lineTo(location.x + spacing,
-            location.y - spacing * 5);
-          ctx.stroke();
-          }
-        }
-        if(location.x === bassGrid[i] && bassGroove[i - 1] <= 0.75 && location.y >= 30){
-          ctx.beginPath();
-          ctx.moveTo(location.x + spacing,
-            location.y - spacing * 5);
-          ctx.bezierCurveTo(
-            location.x + spacing * 2, location.y - spacing * 3,
-            location.x + spacing * 2.5, location.y - spacing * 3,
-            location.x + spacing * 2.5, location.y - spacing * 1);
-          ctx.bezierCurveTo(
-            location.x + spacing * 2.5, location.y - spacing * 2.7,
-            location.x + spacing * 2, location.y - spacing * 2.7,
-            location.x + spacing, location.y - spacing * 4.5);
-          ctx.stroke();
-          ctx.fill();
-        }
-        if(location.x === bassGrid[i] && bassGroove[i - 1] <= 0.25){
-          if (location.y >= 30) {
-            ctx.beginPath();
-            ctx.moveTo(location.x + spacing, location.y - spacing * 5 + 8);
-            ctx.bezierCurveTo(
-              location.x + spacing * 2, location.y - spacing * 3 + 7,
-              location.x + spacing * 2.5, location.y - spacing * 3 + 7,
-              location.x + spacing * 2.5, location.y - spacing * 1 + 4);
-            ctx.bezierCurveTo(
-              location.x + spacing * 2.5, location.y - spacing * 2.7 + 7,
-              location.x + spacing * 2, location.y - spacing * 2.7 + 7,
-              location.x + spacing, location.y - spacing * 4.5 + 4);
-            ctx.stroke();
-            ctx.fill();
-          } else {
-            ctx.beginPath();
-            ctx.moveTo(location.x - 5, 103);
-            ctx.lineTo(location.x + 8, 65);
-            ctx.stroke();
-            
-            ctx.beginPath();
-            ctx.arc(location.x - 6, 67, 3.5, 0, Math.PI * 2);
-            ctx.fill();
-            
-            ctx.beginPath();
-            ctx.moveTo(location.x - 8, 69);
-            ctx.quadraticCurveTo(location.x - 5, 72, location.x + 8, 65);
-            ctx.stroke();
-            
-            ctx.beginPath();
-            ctx.arc(location.x - 9, 82, 3.5, 0, Math.PI * 2);
-            ctx.fill();
-            
-            ctx.beginPath();
-            ctx.moveTo(location.x - 10, 83);
-            ctx.quadraticCurveTo(location.x - 8, 87, location.x + 2, 81);
-            ctx.stroke();
+            if(groove === 0.25) {
+              ctx.beginPath();
+              ctx.moveTo(location.x - 6, 103);
+              ctx.lineTo(location.x + 8, 65);
+              ctx.stroke();
+              
+              ctx.beginPath();
+              ctx.arc(location.x - 6, 67, 3.5, 0, Math.PI * 2);
+              ctx.fill();
+              
+              ctx.beginPath();
+              ctx.moveTo(location.x - 8, 69);
+              ctx.quadraticCurveTo(location.x - 5, 72, location.x + 8, 65);
+              ctx.stroke();
+              
+              ctx.beginPath();
+              ctx.arc(location.x - 9, 82, 3.5, 0, Math.PI * 2);
+              ctx.fill();
+              
+              ctx.beginPath();
+              ctx.moveTo(location.x - 10, 83);
+              ctx.quadraticCurveTo(location.x - 8, 87, location.x + 2, 81);
+              ctx.stroke();
+            }
           }
         }
       }
-      if (location.y >= 30) {
-      ctx.beginPath();
-      ctx.save();
-      ctx.translate(location.x, location.y);
-      ctx.rotate(-0.2);
-      ctx.scale(1.05, 0.8);
-      ctx.arc(0, 0, spacing, 0, Math.PI * 2);
-      }
-
-      //half to quarter note fill
-      for (let i = 1; i < bassGrid.length; i++) {
-        if(location.x === bassGrid[i] && bassGroove[i - 1] <= 1.5 && location.y >= 30){
-          ctx.fill();
-        }
-      }
-      
       ctx.stroke();
       ctx.restore();
     }
