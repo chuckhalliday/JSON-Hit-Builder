@@ -73,7 +73,6 @@ export default async function playChords(midi: boolean, beat: number, pattern: s
           })
           await wait(duration)
         }
-  
       }
     }
   }

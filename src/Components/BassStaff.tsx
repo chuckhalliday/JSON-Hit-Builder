@@ -87,7 +87,7 @@ export default function BassStaff({ renderWidth, part }: BassStaffProps) {
 
       //draw notes
       if (location.y >= 30) {
-        //line for notes up to dotted half
+        //add line for notes up to dotted half
         if (groove <= 2.5) {
           ctx.beginPath();
           ctx.moveTo(location.x + spacing,
@@ -96,7 +96,7 @@ export default function BassStaff({ renderWidth, part }: BassStaffProps) {
             location.y - spacing * 5);
           ctx.stroke();
           }
-          //flag for notes smaller than quarter note
+          //add flag for notes smaller than quarter note
           if(groove < 1){
             ctx.beginPath();
             ctx.moveTo(location.x + spacing,
@@ -112,7 +112,7 @@ export default function BassStaff({ renderWidth, part }: BassStaffProps) {
             ctx.stroke();
             ctx.fill();
           }
-          //double flag for sixteenth notes
+          //add double flag for sixteenth notes
           if(groove === 0.25){
             if (location.y >= 30) {
               ctx.beginPath();
@@ -135,7 +135,7 @@ export default function BassStaff({ renderWidth, part }: BassStaffProps) {
         if (location.acc === 'sharp') {
           ctx.fillText('#', location.x + spacing * -2.5, location.y - spacing * 1.9 + fontSize );
         }
-        //dots for syncopated notes
+        //add dots for syncopated notes
         if (groove === 2.5 || groove === 1.5 || groove === 0.75) {
           ctx.beginPath();
           ctx.arc(location.x + spacing + 8, location.y - 3.8, 2.8, 0, Math.PI * 2);

@@ -286,7 +286,7 @@ function App() {
         </div>
         </div>
       ) : (
-        <button onClick={login}>Log In with Google</button>
+        <button className="login" onClick={login}>Log In with Google</button>
       )}
     </div>
   );

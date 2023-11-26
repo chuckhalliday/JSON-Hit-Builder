@@ -1,3 +1,4 @@
+//calculates an array of x-coordinates where the measure lines should be drawn on bass staff canvas
 export function bassMeasures(bassGroove: number[], drumGroove: number[]) {
   let bassArray: number[]=[-10, 115]
   let gridX: number = 115
@@ -400,7 +401,7 @@ export function bassArray1B(bassGroove: number[], bassLine1C: string[]) {
   return bass;
 }
 
-export function adjustBassArray(bassString: string[], keyAdjust: number) {
+export function transposeBassArray(bassString: string[], keyAdjust: number) {
   let transpose: string[] = [];
   let keys: string[] = []
   for (let i = 0; i < bassString.length; i++) {
