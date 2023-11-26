@@ -117,12 +117,19 @@ input[type="range"].bpm::-moz-range-thumb {
   margin-top: -1px;
 }
 
+.login {
+  width: 160px;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
 
 .button {
     border: none;
     cursor: pointer;
     appearance: none;
-    background-color: #20e72d;
+    background-color: rgb(71, 182, 71);
     color: black;
     width: 90px;
     line-height: 2;

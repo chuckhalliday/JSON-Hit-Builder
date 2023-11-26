@@ -83,6 +83,7 @@ for (let i = 0; i < bassGroove.length; i++) {
     return chords;
 }
 
+//calculates an array of x-coordinates where chord names should be displayed over bass staff
 export function chordLocation(bassLocation: { x: number, y: number, acc: string }[], bassGroove: number[], chordGroove: number[]) {
   let chordX: number[] = []
   let bassSum = 0
@@ -100,8 +101,7 @@ export function chordLocation(bassLocation: { x: number, y: number, acc: string 
   return chordX
 }
 
-
-export function adjustChordArray(chordString: string, keyAdjust: number) {
+export function transposeChordArray(chordString: string, keyAdjust: number) {
   let transpose: string[] = [];
   let keys: string[] = []
   for (let i = 0; i < chordString.length; i++) {

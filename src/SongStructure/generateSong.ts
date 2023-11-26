@@ -1,7 +1,7 @@
 import { createDrums, drumArray } from "./drums.js";
 import { bassArray1V, bassArray2V, bassArray3V, bassArray4V,
-adjustBassArray, bassArray1B, bassArray1C, bassArray2C, bassArray3C, bassArray4C} from "./bass.js";
-import { createChords, chordArray, adjustChordArray } from "./chords.js";
+transposeBassArray, bassArray1B, bassArray1C, bassArray2C, bassArray3C, bassArray4C} from "./bass.js";
+import { createChords, chordArray, transposeChordArray } from "./chords.js";
 import { setKey, findKey } from './key.js';
 import { generateSongStructure } from './songStructure.js';
 
@@ -81,13 +81,13 @@ export default function generateSong(bassGrooves: number[][], arrangement: numbe
   }
   let key: string = findKey(bassV, keyAdjust)
 
-  let bassVA = adjustBassArray(bassV, keyAdjust)
-  let bassCA = adjustBassArray(bassC, keyAdjust)
-  let chordsBA = adjustChordArray(chordsB, keyAdjust)
+  let bassVA = transposeBassArray(bassV, keyAdjust)
+  let bassCA = transposeBassArray(bassC, keyAdjust)
+  let chordsBA = transposeChordArray(chordsB, keyAdjust)
 
-  let chordsVA = adjustChordArray(chordsV, keyAdjust)
-  let chordsCA = adjustChordArray(chordsC, keyAdjust)
-  let bassBA = adjustBassArray(bassB, keyAdjust)
+  let chordsVA = transposeChordArray(chordsV, keyAdjust)
+  let chordsCA = transposeChordArray(chordsC, keyAdjust)
+  let bassBA = transposeBassArray(bassB, keyAdjust)
 
   const songtime: number = Math.round(Math.random() * (240 - 210) + 210);
   const bpm: number = Math.round(Math.random() * (140 - 100) + 100);
