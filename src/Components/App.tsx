@@ -58,6 +58,21 @@ function App() {
     }
   };
 
+  const devLogin = async () => {
+    const email = import.meta.env.VITE_DEV_EMAIL;
+    const password = import.meta.env.VITE_DEV_PASSWORD;
+    if (!email || !password) {
+      alert('Set VITE_DEV_EMAIL and VITE_DEV_PASSWORD in .env.local to use dev login.');
+      return;
+    }
+    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    if (error) {
+      alert(`Dev login failed: ${error.message}`);
+      return;
+    }
+    setAuthenticated(true);
+  };
+
   useEffect(() => {
     const checkAuthentication = async () => {
       const { data: { session }, error } = await supabase.auth.getSession()
@@ -109,6 +124,7 @@ function App() {
   let chordBeat = song.selectedBeat[3]
 
   const lampsRef = React.useRef<HTMLInputElement[]>([]);
+  const stopRef = React.useRef(false);
 
   const dispatch = useDispatch()
 
@@ -117,16 +133,16 @@ function App() {
     let tempo = song.bpm - 60;
     //const output = new midi.Output()
     //output.openPort(3)
-  
+
     //Start recording
-  
+
     //output.sendMessage([144, 16, 1])
     //await countIn(song.bpm, song.songStructure[0].drumGroove, song.songStructure[0].drums)
     //output.sendMessage([176, 50, tempo]);
       //Drop locators
       //output.sendMessage([144, 17, 1])
       //output.sendMessage([176, sum, 1])
-      await playVerse(
+      const result = await playVerse(
         song.bpm,
         song.midi,
         drumBeat,
@@ -135,17 +151,25 @@ function App() {
         song.songStructure[verse].drumGroove,
         song.songStructure[verse].drums,
         song.songStructure[verse].bassGroove,
-        song.songStructure[verse].bassNoteLocations, 
+        song.songStructure[verse].bassNoteLocations,
         song.songStructure[verse].chordsGroove,
         song.songStructure[verse].chords,
         song.songStructure[verse].chordTones,
-        lampsRef.current
+        lampsRef.current,
+        () => stopRef.current
       );
-      verse++
-      if (verse < song.songStructure.length) {
-        dispatch(setCurrentBeat([verse, 0, 0, 0]))
-        setCurrentPart(verse);
-        handlePartOpen(`${verse}`); 
+
+      if (stopRef.current) {
+        dispatch(setCurrentBeat([verse, result.drumBeat, result.bassBeat, result.chordBeat]))
+        dispatch(setIsPlaying({ isPlaying: false }))
+        return;
+      }
+
+      const nextVerse = verse + 1
+      if (nextVerse < song.songStructure.length) {
+        dispatch(setCurrentBeat([nextVerse, 0, 0, 0]))
+        setCurrentPart(nextVerse);
+        handlePartOpen(`${nextVerse}`);
       } else {
       dispatch(setIsPlaying({ isPlaying: false }))
       console.log("End")
@@ -189,13 +213,54 @@ function App() {
 
  const handleStartClick = () => {
     if (isPlaying) {
+      stopRef.current = true;
       dispatch(setIsPlaying({isPlaying: false}));
     } else {
+      stopRef.current = false;
       if (!openedParts[0] && !openedParts[song.selectedBeat[0]]) {
         handlePartOpen(`${song.selectedBeat[0]}`)
       }
       dispatch(setIsPlaying({isPlaying: true}));
     }
+  };
+
+  const [isPartPlaying, setIsPartPlaying] = useState(false);
+  const partStopRef = React.useRef(false);
+
+  const handlePlayPartClick = async (part: number) => {
+    if (isPartPlaying) {
+      partStopRef.current = true;
+      setIsPartPlaying(false);
+      return;
+    }
+    partStopRef.current = false;
+    setIsPartPlaying(true);
+    const result = await playVerse(
+      song.bpm,
+      song.midi,
+      song.selectedBeat[1],
+      song.selectedBeat[2],
+      song.selectedBeat[3],
+      song.songStructure[part].drumGroove,
+      song.songStructure[part].drums,
+      song.songStructure[part].bassGroove,
+      song.songStructure[part].bassNoteLocations,
+      song.songStructure[part].chordsGroove,
+      song.songStructure[part].chords,
+      song.songStructure[part].chordTones,
+      lampsRef.current,
+      () => partStopRef.current
+    );
+    setIsPartPlaying(false);
+    const drumLength = song.songStructure[part].drumGroove.length;
+    const bassLength = song.songStructure[part].bassGroove.length;
+    const chordLength = song.songStructure[part].chordsGroove.length;
+    dispatch(setCurrentBeat([
+      part,
+      result.drumBeat >= drumLength ? 0 : result.drumBeat,
+      result.bassBeat >= bassLength ? 0 : result.bassBeat,
+      result.chordBeat >= chordLength ? 0 : result.chordBeat,
+    ]));
   };
 
   const handleMidi = async () => {
@@ -237,11 +302,14 @@ function App() {
               >
                 {songProps.type.charAt(0)}
               </button>
-              <Piano />
+              <Piano lampsRef={lampsRef} />
               {isOpen && currentPart === index && (
                 <div className={styles.openedPart}>
                   <h3>{songProps.type} ({songProps.repeat})</h3>
-                  <BassStaff renderWidth={renderWidth} part={index} />
+                  <button onClick={() => handlePlayPartClick(index)} className={styles.button}>
+                    {isPartPlaying ? "Pause" : "Play All"}
+                  </button>
+                  <BassStaff renderWidth={renderWidth} part={index} lampsRef={lampsRef} />
                   <DrumMachine
                     onRenderWidthChange={handleRenderWidthChange}
                     part={index}
@@ -291,7 +359,12 @@ function App() {
         </div>
         </div>
       ) : (
-        <button className="login" onClick={login}>Log In with Google</button>
+        <div>
+          <button className="login" onClick={login}>Log In with Google</button>
+          {import.meta.env.DEV && (
+            <button className="login" onClick={devLogin}>Dev Login</button>
+          )}
+        </div>
       )}
     </div>
   );

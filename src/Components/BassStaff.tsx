@@ -1,17 +1,18 @@
 import React, { useEffect, useRef } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import playBass from '../Playback/playBass';
-import { setBassState, SongState } from '../reducers';
+import { setBassState, setCurrentBeat, SongState } from '../reducers';
 
 import styles from "../Styles/DrumMachine.module.scss";
 
 interface BassStaffProps {
   renderWidth: number;
-  part: number
+  part: number;
+  lampsRef: React.MutableRefObject<HTMLInputElement[]>;
 }
 
 
-export default function BassStaff({ renderWidth, part }: BassStaffProps) {
+export default function BassStaff({ renderWidth, part, lampsRef }: BassStaffProps) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const CLEF_IMAGE = new Image();
   CLEF_IMAGE.src = "/BassClef.png";
@@ -20,11 +21,12 @@ export default function BassStaff({ renderWidth, part }: BassStaffProps) {
   const song = useSelector((state: { song: SongState }) => state.song);
   const bpm = song.bpm
   const midi = song.midi
-  const beat = song.selectedBeat[1]
+  const beat = song.selectedBeat[2]
 
   const bassGrid = song.songStructure[part].bassGrid
   const bassNoteGrid = song.songStructure[part].bassNoteLocations
   const bassGroove = song.songStructure[part].bassGroove
+  const drumGroove = song.songStructure[part].drumGroove
   const chords = song.songStructure[part].chords
   const chordGrid = song.songStructure[part].chordsLocation
   const measureLines = song.songStructure[part].measureLines
@@ -359,14 +361,20 @@ export default function BassStaff({ renderWidth, part }: BassStaffProps) {
   }, [MOUSE]);
 
   const [isPlaying, setIsPlaying] = React.useState(false);
+  const stopRef = useRef(false);
 
   const handleStartClick = async () => {
     if (isPlaying) {
+      stopRef.current = true;
       setIsPlaying(false);
-    } else {
-      playBass(midi, beat, bassNoteGrid, bassGroove, bpm);
-      setIsPlaying(true);
+      return;
     }
+    stopRef.current = false;
+    setIsPlaying(true);
+    const endBeat = await playBass(midi, beat, bassNoteGrid, bassGroove, bpm, () => stopRef.current, lampsRef.current, drumGroove);
+    setIsPlaying(false);
+    const nextBeat = endBeat >= bassGroove.length ? 0 : endBeat;
+    dispatch(setCurrentBeat([part, song.selectedBeat[1], nextBeat, song.selectedBeat[3]]));
   };
   useEffect(() => {
     function main() {
