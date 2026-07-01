@@ -44,8 +44,18 @@ drumVerse: { index: number; checked: boolean; accent?: boolean }[][], drumGroove
 
   let randomPartLength = Math.min(remainingParts, Math.floor(Math.random() * 3) + 1);
 
+  // drawBass returns one more note-location than the groove has durations: the
+  // bass grid carries an extra leading coordinate (the clef offset), so the last
+  // note-location is an off-staff rest with no matching duration. Playback pairs
+  // pattern[i] with groove[i], so trim any excess trailing entries to keep the
+  // pattern the same length as the groove. Only ever shortens, never pads.
+  const trimToGroove = (
+    locs: { x: number; y: number; acc: string }[],
+    groove: number[]
+  ) => (locs.length > groove.length ? locs.slice(0, groove.length) : locs);
+
   let [bassGrid, measureLines] = bassMeasures(bassGrooveV, drumGrooveV)
-  let bassNoteLocations = (drawBass(bassVA, bassGrid))
+  let bassNoteLocations = trimToGroove(drawBass(bassVA, bassGrid), bassGrooveV)
   let chordLocations = (chordLocation(bassNoteLocations, bassGrooveV, chordsGrooveV))
   let chordTones = createChordTones(chordsVA)
 
@@ -87,7 +97,7 @@ drumVerse: { index: number; checked: boolean; accent?: boolean }[][], drumGroove
 
     randomPartLength = Math.min(remainingParts, Math.floor(Math.random() * 3) + 1);
     [bassGrid, measureLines] = bassMeasures(partBassGroove, partDrumsGroove)
-    bassNoteLocations = drawBass(partBass, bassGrid)
+    bassNoteLocations = trimToGroove(drawBass(partBass, bassGrid), partBassGroove)
     chordLocations = (chordLocation(bassNoteLocations, partBassGroove, partChordsGroove))
     chordTones = createChordTones(partChords)
 

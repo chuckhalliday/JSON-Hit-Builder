@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 import Info from './Info';
 import Generate from './Generate';
 import Save from './Save';
@@ -167,7 +167,16 @@ function App() {
       );
 
       if (stopRef.current) {
-        dispatch(setCurrentBeat([verse, result.drumBeat, result.bassBeat, result.chordBeat]))
+        const wrap = (idx: number, len: number) => (idx >= len ? 0 : idx);
+        const drumLen = song.songStructure[verse].drumGroove.length;
+        const bassLen = song.songStructure[verse].bassGroove.length;
+        const chordLen = song.songStructure[verse].chordsGroove.length;
+        dispatch(setCurrentBeat([
+          verse,
+          wrap(result.drumBeat, drumLen),
+          wrap(result.bassBeat, bassLen),
+          wrap(result.chordBeat, chordLen),
+        ]))
         dispatch(setIsPlaying({ isPlaying: false }))
         return;
       }
@@ -207,9 +216,12 @@ function App() {
 
   const [renderWidth, setRenderWidth] = useState(0);
 
-  const handleRenderWidthChange = (width: number) => {
-    setRenderWidth(width);
-  };
+  // Stable identity so DrumMachine's width-measuring effect (which lists this in
+  // its deps) doesn't re-run on every App render. The prev-guard also stops a
+  // feedback loop where measuring width triggers a re-render that re-measures.
+  const handleRenderWidthChange = useCallback((width: number) => {
+    setRenderWidth(prev => (prev === width ? prev : width));
+  }, []);
 
   useEffect(() => {
      if (isPlaying) {
