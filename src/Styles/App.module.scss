@@ -76,6 +76,14 @@
     width: 100%;
 }
 
+.songControls {
+    display: inline-flex;
+    flex-direction: column;
+    row-gap: 4px;
+    vertical-align: middle;
+    margin-right: 16px;
+}
+
 .fader {
     align-items: center;
     margin-left: 16px;

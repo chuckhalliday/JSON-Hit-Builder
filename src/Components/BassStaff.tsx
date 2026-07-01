@@ -1,18 +1,18 @@
-import React, { useEffect, useRef } from 'react';
+import React, { forwardRef, useEffect, useImperativeHandle, useRef } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import playBass from '../Playback/playBass';
 import { setBassState, setCurrentBeat, SongState } from '../reducers';
-
-import styles from "../Styles/DrumMachine.module.scss";
+import { PlayHandle } from './Piano';
 
 interface BassStaffProps {
   renderWidth: number;
   part: number;
   lampsRef: React.MutableRefObject<HTMLInputElement[]>;
+  onPlayingChange?: (isPlaying: boolean) => void;
 }
 
 
-export default function BassStaff({ renderWidth, part, lampsRef }: BassStaffProps) {
+const BassStaff = forwardRef<PlayHandle, BassStaffProps>(function BassStaff({ renderWidth, part, lampsRef, onPlayingChange }, ref) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const CLEF_IMAGE = new Image();
   CLEF_IMAGE.src = "/BassClef.png";
@@ -367,15 +367,23 @@ export default function BassStaff({ renderWidth, part, lampsRef }: BassStaffProp
     if (isPlaying) {
       stopRef.current = true;
       setIsPlaying(false);
+      onPlayingChange?.(false);
       return;
     }
     stopRef.current = false;
     setIsPlaying(true);
+    onPlayingChange?.(true);
     const endBeat = await playBass(midi, beat, bassNoteGrid, bassGroove, bpm, () => stopRef.current, lampsRef.current, drumGroove);
     setIsPlaying(false);
+    onPlayingChange?.(false);
     const nextBeat = endBeat >= bassGroove.length ? 0 : endBeat;
     dispatch(setCurrentBeat([part, song.selectedBeat[1], nextBeat, song.selectedBeat[3]]));
   };
+
+  useImperativeHandle(ref, () => ({
+    play: handleStartClick
+  }));
+
   useEffect(() => {
     function main() {
       const CANVAS = canvasRef.current;
@@ -394,15 +402,11 @@ export default function BassStaff({ renderWidth, part, lampsRef }: BassStaffProp
     main();
   }, [renderWidth, bassNoteGrid, bassGroove, chords, chordGrid, bassGrid, MOUSE]);
 
-  return ( 
+  return (
     <div>
       <canvas ref={canvasRef} id="myCanvas" />
-      {/* Renders controls */}
-      <div className={styles.controls}>
-          <button onClick={handleStartClick} className={styles.button}>
-            {isPlaying ? "Pause" : "Play Bass"}
-          </button>
-      </div>
     </div>
   )
-}
+});
+
+export default BassStaff;
