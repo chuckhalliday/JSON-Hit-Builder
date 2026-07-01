@@ -4,7 +4,7 @@ import { SongState, setSong } from "../reducers";
 import styles from "../Styles/App.module.scss";
 import { createClient } from '@supabase/supabase-js'
 
-const supabaseUrl = 'https://ifsfdjaensqwsrhoymfh.supabase.co'
+const supabaseUrl = 'https://daonzpcrzgamlmcnjoiv.supabase.co'
 const supabase = createClient(supabaseUrl, 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imlmc2ZkamFlbnNxd3NyaG95bWZoIiwicm9sZSI6ImFub24iLCJpYXQiOjE2OTY3NTUzOTcsImV4cCI6MjAxMjMzMTM5N30.pHYsuL39FQql2zs7tMoL9i5Vqod2Or07nPwB-XnKFww')
 
 
