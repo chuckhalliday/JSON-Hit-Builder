@@ -61,7 +61,7 @@ export default function Save({ onClose }: SaveProps) {
         let { data: songs, error } = await supabase
           .from('songs')
           .select()
-          .eq('user_id', user)
+          .eq('user', user)
           console.log(songs)
         return songs || [];
       }
@@ -78,7 +78,7 @@ export default function Save({ onClose }: SaveProps) {
             let { data } = await supabase
             .from('songs')
             .select()
-            .eq('user_id', user)
+            .eq('user', user)
             .eq('name', name)
             console.log(data)
             if(data && data.length > 0){
