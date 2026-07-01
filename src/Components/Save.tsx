@@ -2,10 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { useSelector, useDispatch } from "react-redux"
 import { SongState, setSong } from "../reducers";
 import styles from "../Styles/App.module.scss";
-import { createClient } from '@supabase/supabase-js'
-
-const supabaseUrl = 'https://daonzpcrzgamlmcnjoiv.supabase.co'
-const supabase = createClient(supabaseUrl, 'sb_publishable_xYcgf8Ytdb36Y371k0v1uA_wfjbbGSJ')
+import { supabase } from '../supabaseClient'
 
 
 interface SaveProps {
