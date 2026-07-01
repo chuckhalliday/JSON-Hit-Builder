@@ -46,7 +46,7 @@ function App() {
 
   const login = async () => {
     if (!authenticated) {
-      const { data, error } = await supabase.auth.signInWithOAuth({
+      const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
           queryParams: {
@@ -55,15 +55,21 @@ function App() {
           },
         },
       });
-      if (!error) {
-        setAuthenticated(true);
+      if (error) {
+        alert(`Login failed: ${error.message}`);
+      } else {
+        setAuthenticated(true)
       }
     }
   };
 
   useEffect(() => {
     const checkAuthentication = async () => {
-      const { data: { session } } = await supabase.auth.getSession()
+      const { data: { session }, error } = await supabase.auth.getSession()
+      if (error) {
+        alert(`Failed to check login status: ${error.message}`);
+        return;
+      }
       if (session) {
         setAuthenticated(true);
       }
@@ -74,7 +80,11 @@ function App() {
 
 
   const logout = async () => {
-    let { error } = await supabase.auth.signOut()
+    const { error } = await supabase.auth.signOut()
+    if (error) {
+      alert(`Logout failed: ${error.message}`);
+      return;
+    }
     setAuthenticated(false)
   }
 

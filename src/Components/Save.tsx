@@ -19,15 +19,21 @@ export default function Save({ onClose }: SaveProps) {
     const [name, setName] = useState<string>('');
     const [user, setUser] = useState<string | null>(null); // State to store user
     const [savedComps, setSavedComps] = useState<any[]>([]); // State to store saved components
-  
+    const [loadError, setLoadError] = useState<string | null>(null);
+
     useEffect(() => {
       async function fetchData() {
-        const userData = await getUser();
-        setUser(userData);
-        const songsData = await getSongs(userData);
-        setSavedComps(songsData);
+        try {
+          const userData = await getUser();
+          setUser(userData);
+          const songsData = await getSongs(userData);
+          setSavedComps(songsData);
+        } catch (err) {
+          setLoadError('Failed to load saved songs. Please try again.');
+          console.error(err);
+        }
       }
-  
+
       fetchData();
     }, []);
 
@@ -45,24 +51,25 @@ export default function Save({ onClose }: SaveProps) {
         }, []);
 
     const getUser = async () => {
-        const { data: { user } } = await supabase.auth.getUser()
-        if(user) {
-            return user.id
-        } else {
-            return null
+        const { data: { user }, error } = await supabase.auth.getUser()
+        if (error) {
+            throw error
         }
+        return user ? user.id : null
     }
 
     const getSongs = async (user: string | null) => {
         if (!user) {
           return [];
         }
-    
+
         let { data: songs, error } = await supabase
           .from('songs')
           .select()
           .eq('user', user)
-          console.log(songs)
+        if (error) {
+            throw error
+        }
         return songs || [];
       }
 
@@ -74,31 +81,45 @@ export default function Save({ onClose }: SaveProps) {
       }
 
     const save = async () => {
-        if(name !== ''){
-            let { data } = await supabase
+        if(name === ''){
+            alert('Please name the song')
+            return
+        }
+
+        const { data: existing, error: lookupError } = await supabase
             .from('songs')
             .select()
             .eq('user', user)
             .eq('name', name)
-            console.log(data)
-            if(data && data.length > 0){
-                const { data, error } = await supabase
-                .from('songs')
-                .update([{data: song}])
-                .eq('name', name)
-                .select()
-                alert(`${name} updated!`)
-                onClose()
-            } else {
-                const { data, error } = await supabase
-                .from('songs')
-                .insert([{data: song, name: name, user: user}])
-                .select()
-                alert(`${name} created!`)
-                onClose()
+
+        if (lookupError) {
+            alert(`Failed to save ${name}: ${lookupError.message}`)
+            return
+        }
+
+        if (existing && existing.length > 0) {
+            const { error } = await supabase
+            .from('songs')
+            .update([{data: song}])
+            .eq('name', name)
+            .select()
+            if (error) {
+                alert(`Failed to update ${name}: ${error.message}`)
+                return
             }
+            alert(`${name} updated!`)
+            onClose()
         } else {
-            alert('Please name the song')
+            const { error } = await supabase
+            .from('songs')
+            .insert([{data: song, name: name, user: user}])
+            .select()
+            if (error) {
+                alert(`Failed to create ${name}: ${error.message}`)
+                return
+            }
+            alert(`${name} created!`)
+            onClose()
         }
       }
 
@@ -120,6 +141,7 @@ export default function Save({ onClose }: SaveProps) {
         </form>
             <div>
                 <h2>Load Previous</h2>
+                {loadError && <p className={styles.error}>{loadError}</p>}
             </div>
             <div>
           {savedComps.map((comp) => {
