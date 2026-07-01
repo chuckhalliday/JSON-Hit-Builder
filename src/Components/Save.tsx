@@ -5,7 +5,7 @@ import styles from "../Styles/App.module.scss";
 import { createClient } from '@supabase/supabase-js'
 
 const supabaseUrl = 'https://daonzpcrzgamlmcnjoiv.supabase.co'
-const supabase = createClient(supabaseUrl, 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imlmc2ZkamFlbnNxd3NyaG95bWZoIiwicm9sZSI6ImFub24iLCJpYXQiOjE2OTY3NTUzOTcsImV4cCI6MjAxMjMzMTM5N30.pHYsuL39FQql2zs7tMoL9i5Vqod2Or07nPwB-XnKFww')
+const supabase = createClient(supabaseUrl, 'sb_publishable_xYcgf8Ytdb36Y371k0v1uA_wfjbbGSJ')
 
 
 interface SaveProps {
@@ -92,7 +92,7 @@ export default function Save({ onClose }: SaveProps) {
             } else {
                 const { data, error } = await supabase
                 .from('songs')
-                .insert([{data: song, name: name}])
+                .insert([{data: song, name: name, user: user}])
                 .select()
                 alert(`${name} created!`)
                 onClose()
