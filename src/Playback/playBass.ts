@@ -1,25 +1,35 @@
 import { tone, midiTone } from "../SongStructure/tone";
-import { triggerMidi, wait } from "./playFunctions";
+import { triggerMidi } from "./playFunctions";
 import { indexToLamp } from "../SongStructure/beatMapping";
- 
-async function playBassOsc(audioContext: AudioContext, bass: number, duration: number, velocity: number, release: number) {
+import { getAudioContext } from "./audioContext";
+import { runPreScheduledSequence, scheduleTimer, Register } from "./scheduler";
+
+const distortionAmount = 30; // Adjust distortion amount as needed
+const distortionCurve = new Float32Array(65536);
+for (let i = 0; i < 65536; i++) {
+  const x = (i - 32768) / 32768;
+  distortionCurve[i] = Math.tanh(x * distortionAmount);
+}
+
+function playBassOsc(audioContext: AudioContext, startTime: number, bass: number, duration: number, _velocity: number, _release: number): OscillatorNode[] {
     const osc = audioContext.createOscillator();
     const gainNode = audioContext.createGain();
     const filterNode = audioContext.createBiquadFilter();
-  
+
     const fundamentalFreq = bass;
-  
+
     const harmonics = [1.5, 2, 3]; // Additional harmonics
     const harmonicGains = [0.2, 0.1, 0.05]; // Gain values for harmonics
-  
-    osc.type = "sawtooth"; // Use a sine waveform
+
+    osc.type = "sawtooth";
     osc.frequency.value = fundamentalFreq;
-  
+
     osc.connect(gainNode);
     gainNode.connect(filterNode);
     filterNode.connect(audioContext.destination);
-  
-    // Add additional harmonics
+
+    const oscillators: OscillatorNode[] = [osc];
+
     for (let i = 0; i < harmonics.length; i++) {
       const harmonicOsc = audioContext.createOscillator();
       harmonicOsc.type = "sine";
@@ -28,38 +38,40 @@ async function playBassOsc(audioContext: AudioContext, bass: number, duration: n
       harmonicGainNode.gain.value = harmonicGains[i];
       harmonicOsc.connect(harmonicGainNode);
       harmonicGainNode.connect(filterNode);
-      harmonicOsc.start(audioContext.currentTime);
-      harmonicOsc.stop(audioContext.currentTime + duration);
+      harmonicOsc.start(startTime);
+      harmonicOsc.stop(startTime + duration);
+      harmonicOsc.onended = () => {
+        harmonicOsc.disconnect();
+        harmonicGainNode.disconnect();
+      };
+      oscillators.push(harmonicOsc);
     }
-  
-    const attackTime = 0.01; // Adjust the attack time as needed
-    const releaseTime = 0.05; // Adjust the release time as needed
-  
-    gainNode.gain.setValueAtTime(0, audioContext.currentTime);
-    gainNode.gain.linearRampToValueAtTime(0.2, audioContext.currentTime + attackTime);
-    gainNode.gain.linearRampToValueAtTime(0, audioContext.currentTime + duration - releaseTime);
-  
-    filterNode.type = "lowpass"; // Apply a low-pass filter
-    filterNode.frequency.value = 800; // Adjust the cutoff frequency as needed
-  
+
+    const attackTime = 0.01;
+    const releaseTime = 0.05;
+
+    gainNode.gain.setValueAtTime(0, startTime);
+    gainNode.gain.linearRampToValueAtTime(0.2, startTime + attackTime);
+    gainNode.gain.linearRampToValueAtTime(0, startTime + duration - releaseTime);
+
+    filterNode.type = "lowpass";
+    filterNode.frequency.value = 800;
+
     const distortion = audioContext.createWaveShaper();
-    const distortionAmount = 30; // Adjust distortion amount as needed
-    const curve = new Float32Array(65536);
-    for (let i = 0; i < 65536; i++) {
-      const x = (i - 32768) / 32768;
-      curve[i] = Math.tanh(x * distortionAmount);
-    }
-    distortion.curve = curve;
+    distortion.curve = distortionCurve;
     gainNode.connect(distortion);
     distortion.connect(filterNode);
-  
-    osc.start(audioContext.currentTime);
-    await wait(duration);
-    osc.stop(audioContext.currentTime + releaseTime);
-  
-    osc.disconnect();
-    gainNode.disconnect();
-    filterNode.disconnect();
+
+    osc.start(startTime);
+    osc.stop(startTime + duration + releaseTime);
+    osc.onended = () => {
+      osc.disconnect();
+      gainNode.disconnect();
+      filterNode.disconnect();
+      distortion.disconnect();
+    };
+
+    return oscillators;
   }
   
   function mapBassValue(midi: boolean, pattern: {x: number, y: number, acc: string}) {
@@ -128,42 +140,42 @@ async function playBassOsc(audioContext: AudioContext, bass: number, duration: n
     return bass
   }
   
-  async function playBass(midi: boolean, beat: number, pattern: {x: number, y: number, acc: string}[], groove: number[], bpm: number, shouldStop?: () => boolean, lamps?: HTMLInputElement[], drumGroove?: number[]) {
+  function playBass(midi: boolean, beat: number, pattern: {x: number, y: number, acc: string}[], groove: number[], bpm: number, shouldStop?: () => boolean, lamps?: HTMLInputElement[], drumGroove?: number[]) {
     const beatDuration = 60 / bpm; // duration of one beat in seconds
-    const audioContext = new AudioContext();
-    let index = beat;
+    const audioContext = getAudioContext();
 
-    for (; index < pattern.length; index++) {
-      if (shouldStop && shouldStop()) {
-        return index;
-      }
+    const getDuration = (index: number) => groove[index] * beatDuration;
+
+    const onSchedule = (index: number, time: number, duration: number, register: Register) => {
       if (lamps && drumGroove) {
         const lampIndex = indexToLamp(groove, index, drumGroove);
         if (lamps[lampIndex]) {
-          lamps[lampIndex].checked = true;
+          scheduleTimer(time, () => {
+            lamps[lampIndex].checked = true;
+            lamps[lampIndex].dispatchEvent(new Event('change', { bubbles: true }));
+          }, register);
         }
       }
-      const duration = groove[index] * beatDuration;
-      let velocity = Math.floor(Math.random() * (70 - 50 + 1) + 50);
-      let release = Math.floor(Math.random() * (70 - 50 + 1) + 50);
-      let bass = mapBassValue(midi, pattern[index]);
-  
+
+      const velocity = Math.floor(Math.random() * (70 - 50 + 1) + 50);
+      const release = Math.floor(Math.random() * (70 - 50 + 1) + 50);
+      const bass = mapBassValue(midi, pattern[index]);
+
+      if (bass <= 0) return;
+
       if (!midi) {
-        if (bass > 0) {
-          await playBassOsc(audioContext, bass, duration, velocity, release);
-        } else {
-          await wait(duration);
-        }
+        const oscillators = playBassOsc(audioContext, time, bass, duration, velocity, release);
+        register(() => {
+          for (const o of oscillators) {
+            try { o.stop(); } catch { /* already stopped */ }
+          }
+        });
       } else {
-        if (bass > 0) {
-          triggerMidi('2', bass, duration, velocity, release);
-          await wait(duration);
-        } else {
-          await wait(duration);
-        }
+        scheduleTimer(time, () => triggerMidi('2', bass, duration, velocity, release), register);
       }
-    }
-    return index;
+    };
+
+    return runPreScheduledSequence(beat, pattern.length, getDuration, onSchedule, shouldStop);
   }
 
   export default playBass;

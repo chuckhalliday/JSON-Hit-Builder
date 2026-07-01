@@ -19,11 +19,8 @@ export async function triggerMidi(bus: string, note: number, duration: number, v
       return;
     }
 
-    const startMessage = [0x90, note, velocity];
-    const stopMessage = [0x80 , note, release]
-    outputDevice.send(startMessage);
-    await wait(duration);
-    outputDevice.send(stopMessage)
+    outputDevice.send([0x90, note, velocity]);
+    setTimeout(() => outputDevice!.send([0x80, note, release]), duration * 1000);
   } catch (error) {
     console.log("MIDI access request failed:", error);
   }

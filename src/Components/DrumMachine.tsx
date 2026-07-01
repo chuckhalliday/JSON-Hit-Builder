@@ -1,21 +1,24 @@
-import React, { useEffect, useRef } from "react";
+import React, { forwardRef, useEffect, useImperativeHandle, useRef } from "react";
 import { playDrums } from "../Playback/playSong";
 import { setDrumState, SongState, setCurrentBeat } from "../reducers";
 import { lampToPositions } from "../SongStructure/beatMapping";
 import { useDispatch, useSelector } from "react-redux";
+import { PlayHandle } from "./Piano";
 import styles from "../Styles/DrumMachine.module.scss";
 
 interface DrumMachineProps {
   onRenderWidthChange: any;
   part: number;
   lampsRef: React.MutableRefObject<HTMLInputElement[]>;
+  onPlayingChange?: (isPlaying: boolean) => void;
 }
 
-export default function DrumMachine({
+const DrumMachine = forwardRef<PlayHandle, DrumMachineProps>(function DrumMachine({
   onRenderWidthChange,
   part,
   lampsRef,
-}: DrumMachineProps) {
+  onPlayingChange,
+}, ref) {
   const [isPlaying, setIsPlaying] = React.useState(false);
   const stopRef = useRef(false);
   const dispatch = useDispatch()
@@ -89,6 +92,7 @@ export default function DrumMachine({
     if (isPlaying) {
       stopRef.current = true;
       setIsPlaying(false);
+      onPlayingChange?.(false);
       return;
     }
 
@@ -100,11 +104,17 @@ export default function DrumMachine({
     );
     stopRef.current = false;
     setIsPlaying(true);
+    onPlayingChange?.(true);
     const endBeat = await playDrums(bpm, midi, start, drumGroove, drumHits, lampsRef.current, () => stopRef.current);
     setIsPlaying(false);
+    onPlayingChange?.(false);
     const nextBeat = endBeat >= drumGroove.length ? 0 : endBeat;
     dispatch(setCurrentBeat([part, nextBeat, song.selectedBeat[2], song.selectedBeat[3]]));
   };
+
+  useImperativeHandle(ref, () => ({
+    play: handleStartClick
+  }));
 
   function addSpacingToRows(step: number) {
     let sum = 0;
@@ -233,13 +243,8 @@ export default function DrumMachine({
           ))}
         </div>
       </div>
-      
-      {/* Renders controls */}
-      <div className={styles.controls}>
-        <button onClick={handleStartClick} className={styles.button}>
-          {isPlaying ? "Pause" : "Play Drums"}
-        </button>
-      </div>
     </div>
   );
-}
+});
+
+export default DrumMachine;

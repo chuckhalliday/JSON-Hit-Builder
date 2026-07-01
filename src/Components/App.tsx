@@ -1,10 +1,10 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 import Info from './Info';
 import Generate from './Generate';
 import Save from './Save';
 import DrumMachine from "./DrumMachine";
 import BassStaff from "./BassStaff";
-import Piano from './Piano';
+import Piano, { PlayHandle } from './Piano';
 import { useSelector, useDispatch } from "react-redux"
 import { playVerse } from '../Playback/playSong';
 import { incrementByAmount, setIsPlaying, setMidi, SongState, setCurrentBeat } from '../reducers';
@@ -126,6 +126,13 @@ function App() {
   const lampsRef = React.useRef<HTMLInputElement[]>([]);
   const stopRef = React.useRef(false);
 
+  const pianoRef = React.useRef<PlayHandle>(null);
+  const bassStaffRef = React.useRef<PlayHandle>(null);
+  const drumMachineRef = React.useRef<PlayHandle>(null);
+  const [chordsPlaying, setChordsPlaying] = useState(false);
+  const [bassPlaying, setBassPlaying] = useState(false);
+  const [drumsPlaying, setDrumsPlaying] = useState(false);
+
   const dispatch = useDispatch()
 
 
@@ -160,7 +167,16 @@ function App() {
       );
 
       if (stopRef.current) {
-        dispatch(setCurrentBeat([verse, result.drumBeat, result.bassBeat, result.chordBeat]))
+        const wrap = (idx: number, len: number) => (idx >= len ? 0 : idx);
+        const drumLen = song.songStructure[verse].drumGroove.length;
+        const bassLen = song.songStructure[verse].bassGroove.length;
+        const chordLen = song.songStructure[verse].chordsGroove.length;
+        dispatch(setCurrentBeat([
+          verse,
+          wrap(result.drumBeat, drumLen),
+          wrap(result.bassBeat, bassLen),
+          wrap(result.chordBeat, chordLen),
+        ]))
         dispatch(setIsPlaying({ isPlaying: false }))
         return;
       }
@@ -200,9 +216,12 @@ function App() {
 
   const [renderWidth, setRenderWidth] = useState(0);
 
-  const handleRenderWidthChange = (width: number) => {
-    setRenderWidth(width);
-  };
+  // Stable identity so DrumMachine's width-measuring effect (which lists this in
+  // its deps) doesn't re-run on every App render. The prev-guard also stops a
+  // feedback loop where measuring width triggers a re-render that re-measures.
+  const handleRenderWidthChange = useCallback((width: number) => {
+    setRenderWidth(prev => (prev === width ? prev : width));
+  }, []);
 
   useEffect(() => {
      if (isPlaying) {
@@ -222,45 +241,6 @@ function App() {
       }
       dispatch(setIsPlaying({isPlaying: true}));
     }
-  };
-
-  const [isPartPlaying, setIsPartPlaying] = useState(false);
-  const partStopRef = React.useRef(false);
-
-  const handlePlayPartClick = async (part: number) => {
-    if (isPartPlaying) {
-      partStopRef.current = true;
-      setIsPartPlaying(false);
-      return;
-    }
-    partStopRef.current = false;
-    setIsPartPlaying(true);
-    const result = await playVerse(
-      song.bpm,
-      song.midi,
-      song.selectedBeat[1],
-      song.selectedBeat[2],
-      song.selectedBeat[3],
-      song.songStructure[part].drumGroove,
-      song.songStructure[part].drums,
-      song.songStructure[part].bassGroove,
-      song.songStructure[part].bassNoteLocations,
-      song.songStructure[part].chordsGroove,
-      song.songStructure[part].chords,
-      song.songStructure[part].chordTones,
-      lampsRef.current,
-      () => partStopRef.current
-    );
-    setIsPartPlaying(false);
-    const drumLength = song.songStructure[part].drumGroove.length;
-    const bassLength = song.songStructure[part].bassGroove.length;
-    const chordLength = song.songStructure[part].chordsGroove.length;
-    dispatch(setCurrentBeat([
-      part,
-      result.drumBeat >= drumLength ? 0 : result.drumBeat,
-      result.bassBeat >= bassLength ? 0 : result.bassBeat,
-      result.chordBeat >= chordLength ? 0 : result.chordBeat,
-    ]));
   };
 
   const handleMidi = async () => {
@@ -289,11 +269,12 @@ function App() {
             <Save onClose={handleCloseSave}/>
           </div>
         )}
+        <Piano ref={pianoRef} lampsRef={lampsRef} onPlayingChange={setChordsPlaying} />
         {song.songStructure.map((songProps, index) => {
           const songParts = [];
           const key = `${index}`;
           const isOpen = openedParts[key];
-  
+
           return (
             <div key={key} className={styles.parts}>
               <button
@@ -302,18 +283,16 @@ function App() {
               >
                 {songProps.type.charAt(0)}
               </button>
-              <Piano lampsRef={lampsRef} />
               {isOpen && currentPart === index && (
                 <div className={styles.openedPart}>
                   <h3>{songProps.type} ({songProps.repeat})</h3>
-                  <button onClick={() => handlePlayPartClick(index)} className={styles.button}>
-                    {isPartPlaying ? "Pause" : "Play All"}
-                  </button>
-                  <BassStaff renderWidth={renderWidth} part={index} lampsRef={lampsRef} />
+                  <BassStaff ref={bassStaffRef} renderWidth={renderWidth} part={index} lampsRef={lampsRef} onPlayingChange={setBassPlaying} />
                   <DrumMachine
+                    ref={drumMachineRef}
                     onRenderWidthChange={handleRenderWidthChange}
                     part={index}
                     lampsRef={lampsRef}
+                    onPlayingChange={setDrumsPlaying}
                   />
                 </div>
               )}
@@ -325,9 +304,20 @@ function App() {
         </div>
         {/* Renders controls */}
         <div className={styles.controls}>
-          <button onClick={handleStartClick} className={styles.button}>
-            {isPlaying ? "Pause" : "Play Song"}
-          </button>
+          <div className={styles.songControls}>
+            <button onClick={() => pianoRef.current?.play()} className={styles.button}>
+              {chordsPlaying ? "Pause" : "Play Chords"}
+            </button>
+            <button onClick={() => bassStaffRef.current?.play()} className={styles.button}>
+              {bassPlaying ? "Pause" : "Play Bass"}
+            </button>
+            <button onClick={() => drumMachineRef.current?.play()} className={styles.button}>
+              {drumsPlaying ? "Pause" : "Play Drums"}
+            </button>
+            <button onClick={handleStartClick} className={styles.button}>
+              {isPlaying ? "Pause" : "Play Song"}
+            </button>
+          </div>
           <button onClick={handleMidi} className={styles.button}>
             {midi ? "Use Osc" : "Use Midi"}
           </button>
