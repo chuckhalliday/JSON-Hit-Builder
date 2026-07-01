@@ -1,10 +1,17 @@
+import { MutableRefObject, useRef, useState } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
-import { SongState, setChordState } from '../reducers';
+import { SongState, setChordState, setCurrentBeat } from '../reducers';
 import { midiMap } from '../SongStructure/tone';
+import playChords from '../Playback/playChords';
 
 import styles from "../Styles/Piano.module.scss"
+import controlStyles from "../Styles/DrumMachine.module.scss"
 
-export default function Piano() {
+interface PianoProps {
+  lampsRef: MutableRefObject<HTMLInputElement[]>;
+}
+
+export default function Piano({ lampsRef }: PianoProps) {
 
   const song = useSelector((state: { song: SongState }) => state.song)
   const part = song.selectedBeat[0]
@@ -12,6 +19,30 @@ export default function Piano() {
   const notes = song.songStructure[part].chordTones.midiTones[beat]
   const noteKeys = notes.map(note => note - 53)
   const dispatch = useDispatch()
+
+  const bpm = song.bpm
+  const midi = song.midi
+  const chords = song.songStructure[part].chords
+  const chordTones = song.songStructure[part].chordTones
+  const chordsGroove = song.songStructure[part].chordsGroove
+  const drumGroove = song.songStructure[part].drumGroove
+
+  const [isPlaying, setIsPlaying] = useState(false);
+  const stopRef = useRef(false);
+
+  const handleStartClick = async () => {
+    if (isPlaying) {
+      stopRef.current = true;
+      setIsPlaying(false);
+      return;
+    }
+    stopRef.current = false;
+    setIsPlaying(true);
+    const endBeat = await playChords(midi, beat, chords, chordTones, chordsGroove, bpm, () => stopRef.current, lampsRef.current, drumGroove);
+    setIsPlaying(false);
+    const nextBeat = endBeat >= chordsGroove.length ? 0 : endBeat;
+    dispatch(setCurrentBeat([part, song.selectedBeat[1], song.selectedBeat[2], nextBeat]));
+  };
 
   const generatePianoKeys = (noteKeys: number[]) => {
     const whiteKeys = [0, 2, 4, 6, 7, 9, 11, 12, 14, 16, 18, 19, 21, 23, 24, 26, 28, 30, 31, 33, 35];
@@ -41,6 +72,11 @@ export default function Piano() {
   return (
     <div className={styles.piano}>
       {pianoKeys}
+      <div className={controlStyles.controls}>
+        <button onClick={handleStartClick} className={controlStyles.button}>
+          {isPlaying ? "Pause" : "Play Chords"}
+        </button>
+      </div>
     </div>
   );
 }

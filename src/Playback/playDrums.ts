@@ -31,11 +31,15 @@ export function playDrumSample(buffer: AudioBuffer, volume: number = 1.0 /*set t
     source.start();
   }
 
-export default async function playBeat(midi: boolean, beat: number, pattern: Array<{ index: number; checked: boolean; accent?: boolean }>, groove: number[], bpm: number, stepsRef: Array<Array<{ index: number; checked: boolean }>>, lamps?: HTMLInputElement[]) {
+export default async function playBeat(midi: boolean, beat: number, pattern: Array<{ index: number; checked: boolean; accent?: boolean }>, groove: number[], bpm: number, stepsRef: Array<Array<{ index: number; checked: boolean }>>, lamps?: HTMLInputElement[], shouldStop?: () => boolean) {
     const beatDuration = 60 / bpm // duration of one beat in seconds
     const swingRatio = 3/3; // adjust as needed
-  
-    for (let index = beat; index < groove.length; index++) {
+    let index = beat;
+
+    for (; index < groove.length; index++) {
+      if (shouldStop && shouldStop()) {
+        return index;
+      }
       let velocity = Math.floor(Math.random() * (70 - 50 + 1) + 50);
       if (pattern[index].accent) {
         velocity = 90;
@@ -99,5 +103,6 @@ export default async function playBeat(midi: boolean, beat: number, pattern: Arr
         }else {
           await wait(duration);
         }
-    } 
+    }
+    return index;
   }

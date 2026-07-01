@@ -1,6 +1,7 @@
 import React, { useEffect, useRef } from "react";
 import { playDrums } from "../Playback/playSong";
 import { setDrumState, SongState, setCurrentBeat } from "../reducers";
+import { lampToPositions } from "../SongStructure/beatMapping";
 import { useDispatch, useSelector } from "react-redux";
 import styles from "../Styles/DrumMachine.module.scss";
 
@@ -16,11 +17,12 @@ export default function DrumMachine({
   lampsRef,
 }: DrumMachineProps) {
   const [isPlaying, setIsPlaying] = React.useState(false);
+  const stopRef = useRef(false);
   const dispatch = useDispatch()
 
   const song = useSelector((state: { song: SongState }) => state.song);
   const bpm = song.bpm
-  const start = song.selectedBeat[0]
+  const start = song.selectedBeat[1]
   const midi = song.midi
   const drums = song.songStructure[part].drums
   const steps = song.songStructure[part].stepIds
@@ -84,18 +86,24 @@ export default function DrumMachine({
 
 
   const handleStartClick = async () => {
-    const drumHits: Array<Array<{ index: number; checked: boolean }>> = stepsRef.current.map((row) =>
-    row.map((inputElement, columnIndex) => ({
-      index: columnIndex,
-      checked: inputElement.checked,
-    }))
-  );
     if (isPlaying) {
+      stopRef.current = true;
       setIsPlaying(false);
-    } else {
-     playDrums(bpm, midi, start, drumGroove, drumHits, lampsRef.current);
-      setIsPlaying(true);
+      return;
     }
+
+    const drumHits: Array<Array<{ index: number; checked: boolean }>> = stepsRef.current.map((row) =>
+      row.map((inputElement, columnIndex) => ({
+        index: columnIndex,
+        checked: inputElement.checked,
+      }))
+    );
+    stopRef.current = false;
+    setIsPlaying(true);
+    const endBeat = await playDrums(bpm, midi, start, drumGroove, drumHits, lampsRef.current, () => stopRef.current);
+    setIsPlaying(false);
+    const nextBeat = endBeat >= drumGroove.length ? 0 : endBeat;
+    dispatch(setCurrentBeat([part, nextBeat, song.selectedBeat[2], song.selectedBeat[3]]));
   };
 
   function addSpacingToRows(step: number) {
@@ -131,38 +139,12 @@ export default function DrumMachine({
   useEffect(() => {
     function handleLampChange(event: any) {
       const lampId: number = parseInt(event.target.id);
-      const getPosition = () => {
-        let drumPosition: number = 0
-        let bassPosition: number = 0
-        let chordPosition: number = 0
-        let drumSum = 0
-        let bassSum = song.songStructure[part].bassGroove[0]
-        let chordSum = song.songStructure[part].chordsGroove[0]
-        let bassIndex = 1
-        let chordIndex = 1
-
-        for (let i=0; i < lampId; i++){
-          drumSum+=song.songStructure[part].drumGroove[i]
-          drumSum = parseFloat(drumSum.toFixed(2))
-          if (drumSum === chordSum && bassSum === chordSum) {
-            drumPosition = i + 1
-            bassPosition = bassIndex
-            chordPosition = chordIndex
-          }
-          if (drumSum === chordSum) {
-            chordSum+= song.songStructure[part].chordsGroove[chordIndex]
-            chordSum = parseFloat(chordSum.toFixed(2))
-            chordIndex++
-          }
-          if (drumSum === bassSum) {
-            bassSum+= song.songStructure[part].bassGroove[bassIndex]
-            bassSum = parseFloat(bassSum.toFixed(2))
-            bassIndex++
-          }
-        }
-        return [drumPosition, bassPosition, chordPosition]
-      }
-      const position: number[] = getPosition()
+      const position = lampToPositions(
+        lampId,
+        song.songStructure[part].drumGroove,
+        song.songStructure[part].bassGroove,
+        song.songStructure[part].chordsGroove
+      )
       dispatch(setCurrentBeat([part, position[0], position[1], position[2]]))
     }
 

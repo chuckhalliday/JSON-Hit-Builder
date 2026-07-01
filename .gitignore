@@ -1,3 +1,6 @@
 node_modules
 midi.js
 notes
+.env
+.env.local
+.env.*.local

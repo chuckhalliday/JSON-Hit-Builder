@@ -1,5 +1,6 @@
 import { tone, midiTone } from "../SongStructure/tone";
 import { triggerMidi, wait } from "./playFunctions";
+import { indexToLamp } from "../SongStructure/beatMapping";
  
 async function playBassOsc(audioContext: AudioContext, bass: number, duration: number, velocity: number, release: number) {
     const osc = audioContext.createOscillator();
@@ -127,11 +128,21 @@ async function playBassOsc(audioContext: AudioContext, bass: number, duration: n
     return bass
   }
   
-  async function playBass(midi: boolean, beat: number, pattern: {x: number, y: number, acc: string}[], groove: number[], bpm: number) {
+  async function playBass(midi: boolean, beat: number, pattern: {x: number, y: number, acc: string}[], groove: number[], bpm: number, shouldStop?: () => boolean, lamps?: HTMLInputElement[], drumGroove?: number[]) {
     const beatDuration = 60 / bpm; // duration of one beat in seconds
     const audioContext = new AudioContext();
-  
-    for (let index = beat; index < pattern.length; index++) {
+    let index = beat;
+
+    for (; index < pattern.length; index++) {
+      if (shouldStop && shouldStop()) {
+        return index;
+      }
+      if (lamps && drumGroove) {
+        const lampIndex = indexToLamp(groove, index, drumGroove);
+        if (lamps[lampIndex]) {
+          lamps[lampIndex].checked = true;
+        }
+      }
       const duration = groove[index] * beatDuration;
       let velocity = Math.floor(Math.random() * (70 - 50 + 1) + 50);
       let release = Math.floor(Math.random() * (70 - 50 + 1) + 50);
@@ -152,6 +163,7 @@ async function playBassOsc(audioContext: AudioContext, bass: number, duration: n
         }
       }
     }
+    return index;
   }
-  
+
   export default playBass;

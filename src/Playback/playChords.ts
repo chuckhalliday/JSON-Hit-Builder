@@ -1,9 +1,10 @@
 import { triggerMidi, wait } from "./playFunctions";
+import { indexToLamp } from "../SongStructure/beatMapping";
 
-export default async function playChords(midi: boolean, beat: number, pattern: string[], chords: { oscTones: number[][], midiTones: number[][]}, groove: number[], bpm: number) {
+export default async function playChords(midi: boolean, beat: number, pattern: string[], chords: { oscTones: number[][], midiTones: number[][]}, groove: number[], bpm: number, shouldStop?: () => boolean, lamps?: HTMLInputElement[], drumGroove?: number[]) {
     const beatDuration = 60 / bpm; // duration of one beat in seconds
     const audioContext = new AudioContext();
-  
+
     const gainNode = audioContext.createGain();
     const filterNode = audioContext.createBiquadFilter();
     filterNode.type = 'lowpass'; // Adjust the filter type as needed
@@ -11,9 +12,19 @@ export default async function playChords(midi: boolean, beat: number, pattern: s
     let chordTones: number[] = [];
     let velocity = Math.floor(Math.random() * (70 - 50 + 1) + 50);
     const release = Math.floor(Math.random() * (70 - 50 + 1) + 50);
-  
+    let i = beat;
+
     if (!midi) {
-      for (let i = beat; i < pattern.length; i++) {
+      for (; i < pattern.length; i++) {
+        if (shouldStop && shouldStop()) {
+          break;
+        }
+        if (lamps && drumGroove) {
+          const lampIndex = indexToLamp(groove, i, drumGroove);
+          if (lamps[lampIndex]) {
+            lamps[lampIndex].checked = true;
+          }
+        }
         const duration = groove[i] * beatDuration;
         if (pattern[i] === '-') {
           await wait(duration);
@@ -61,7 +72,16 @@ export default async function playChords(midi: boolean, beat: number, pattern: s
     audioContext.close();
   
     } else {
-      for (let i = beat; i < pattern.length; i++) {
+      for (; i < pattern.length; i++) {
+        if (shouldStop && shouldStop()) {
+          break;
+        }
+        if (lamps && drumGroove) {
+          const lampIndex = indexToLamp(groove, i, drumGroove);
+          if (lamps[lampIndex]) {
+            lamps[lampIndex].checked = true;
+          }
+        }
         const duration = groove[i] * beatDuration;
         if (pattern[i] === '-') {
           await wait(duration);
@@ -75,5 +95,5 @@ export default async function playChords(midi: boolean, beat: number, pattern: s
         }
       }
     }
+    return i;
   }
-  
