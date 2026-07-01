@@ -141,6 +141,7 @@ async function playBassOsc(audioContext: AudioContext, bass: number, duration: n
         const lampIndex = indexToLamp(groove, index, drumGroove);
         if (lamps[lampIndex]) {
           lamps[lampIndex].checked = true;
+          lamps[lampIndex].dispatchEvent(new Event('change', { bubbles: true }));
         }
       }
       const duration = groove[index] * beatDuration;

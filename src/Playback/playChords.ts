@@ -23,6 +23,7 @@ export default async function playChords(midi: boolean, beat: number, pattern: s
           const lampIndex = indexToLamp(groove, i, drumGroove);
           if (lamps[lampIndex]) {
             lamps[lampIndex].checked = true;
+            lamps[lampIndex].dispatchEvent(new Event('change', { bubbles: true }));
           }
         }
         const duration = groove[i] * beatDuration;
@@ -80,6 +81,7 @@ export default async function playChords(midi: boolean, beat: number, pattern: s
           const lampIndex = indexToLamp(groove, i, drumGroove);
           if (lamps[lampIndex]) {
             lamps[lampIndex].checked = true;
+            lamps[lampIndex].dispatchEvent(new Event('change', { bubbles: true }));
           }
         }
         const duration = groove[i] * beatDuration;

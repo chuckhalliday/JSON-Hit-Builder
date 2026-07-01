@@ -58,13 +58,41 @@ const Piano = forwardRef<PlayHandle, PianoProps>(function Piano({ lampsRef, onPl
   const generatePianoKeys = (noteKeys: number[]) => {
     const whiteKeys = [0, 2, 4, 6, 7, 9, 11, 12, 14, 16, 18, 19, 21, 23, 24, 26, 28, 30, 31, 33, 35];
     const numberOfKeys = 36;
+    const whiteKeyWidthPct = 100 / whiteKeys.length;
+    const blackKeyWidthPct = whiteKeyWidthPct * 0.65;
     const keys = [];
 
     for (let i = 0; i < numberOfKeys; i++) {
+      const isSelected = noteKeys.includes(i);
       if (whiteKeys.includes(i)) {
-        keys.push(<div key={'piano ' + i} className={styles.pianoKeys}><input key={i + 53} type="checkbox" className={styles.whiteCheck} checked={noteKeys.includes(i)} onChange={(event) => updateChordState(i, event.target.checked)}></input></div>);
+        const slot = whiteKeys.indexOf(i);
+        keys.push(
+          <div
+            key={'piano ' + i}
+            className={`${styles.pianoKeys} ${isSelected ? styles.selected : ''}`}
+            style={{ left: `${slot * whiteKeyWidthPct}%`, width: `${whiteKeyWidthPct}%` }}
+          >
+            <input key={i + 53} type="checkbox" className={styles.whiteCheck} checked={isSelected} onChange={(event) => updateChordState(i, event.target.checked)}></input>
+          </div>
+        );
       } else if (i >= 1 && i <= 35 && !whiteKeys.includes(i)) {
-        keys.push(<div key={'piano ' + i} className={styles.pianoKeysBlack}><input key={i + 53} type="checkbox" className={styles.blackCheck} checked={noteKeys.includes(i)} onChange={(event) => updateChordState(i, event.target.checked)}></input></div>);
+        let precedingWhiteSlot = 0;
+        for (let w = i - 1; w >= 0; w--) {
+          if (whiteKeys.includes(w)) {
+            precedingWhiteSlot = whiteKeys.indexOf(w);
+            break;
+          }
+        }
+        const left = (precedingWhiteSlot + 1) * whiteKeyWidthPct - blackKeyWidthPct / 2;
+        keys.push(
+          <div
+            key={'piano ' + i}
+            className={`${styles.pianoKeysBlack} ${isSelected ? styles.selected : ''}`}
+            style={{ left: `${left}%`, width: `${blackKeyWidthPct}%` }}
+          >
+            <input key={i + 53} type="checkbox" className={styles.blackCheck} checked={isSelected} onChange={(event) => updateChordState(i, event.target.checked)}></input>
+          </div>
+        );
       }
     }
 

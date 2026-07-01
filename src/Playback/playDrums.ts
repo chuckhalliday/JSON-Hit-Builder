@@ -54,6 +54,7 @@ export default async function playBeat(midi: boolean, beat: number, pattern: Arr
         : groove[index] * beatDuration;
         if (lamps) {
           lamps[index].checked = true;
+          lamps[index].dispatchEvent(new Event('change', { bubbles: true }));
         }
         if (pattern === stepsRef[0] && pattern[index].checked) {
           if(!midi) {
