@@ -91,21 +91,22 @@ export default function Save({ onClose }: SaveProps) {
             .select()
             .eq('user', user)
             .eq('name', name)
-
-        if (lookupError) {
-            alert(`Failed to save ${name}: ${lookupError.message}`)
-            return
-        }
-
-        if (existing && existing.length > 0) {
-            const { error } = await supabase
-            .from('songs')
-            .update([{data: song}])
-            .eq('name', name)
-            .select()
-            if (error) {
-                alert(`Failed to update ${name}: ${error.message}`)
-                return
+            console.log(data)
+            if(data && data.length > 0){
+                const { data, error } = await supabase
+                .from('songs')
+                .update([{data: song}])
+                .eq('name', name)
+                .select()
+                alert(`${name} updated!`)
+                onClose()
+            } else {
+                const { data, error } = await supabase
+                .from('songs')
+                .insert([{data: song, name: name, user: user}])
+                .select()
+                alert(`${name} created!`)
+                onClose()
             }
             alert(`${name} updated!`)
             onClose()
