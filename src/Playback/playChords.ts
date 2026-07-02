@@ -3,7 +3,7 @@ import { indexToLamp } from "../SongStructure/beatMapping";
 import { getAudioContext } from "./audioContext";
 import { runPreScheduledSequence, scheduleTimer, Register } from "./scheduler";
 
-export default async function playChords(midi: boolean, beat: number, pattern: string[], chords: { oscTones: number[][], midiTones: number[][]}, groove: number[], bpm: number, shouldStop?: () => boolean, lamps?: HTMLInputElement[], drumGroove?: number[]) {
+export default async function playChords(midi: boolean, beat: number, pattern: string[], chords: { oscTones: number[][], midiTones: number[][]}, groove: number[], bpm: number, shouldStop?: () => boolean, lamps?: HTMLInputElement[], drumGroove?: number[], mute?: boolean) {
     const beatDuration = 60 / bpm; // duration of one beat in seconds
     const audioContext = getAudioContext();
 
@@ -31,7 +31,7 @@ export default async function playChords(midi: boolean, beat: number, pattern: s
 
       const onSchedule = (index: number, time: number, duration: number, register: Register) => {
         scheduleLamp(index, time, register);
-        if (pattern[index] === '-') return;
+        if (pattern[index] === '-' || mute) return;
 
         const chordTones = chords.oscTones[index];
         const now = time;
@@ -79,7 +79,7 @@ export default async function playChords(midi: boolean, beat: number, pattern: s
 
       const onSchedule = (index: number, time: number, duration: number, register: Register) => {
         scheduleLamp(index, time, register);
-        if (pattern[index] === '-') return;
+        if (pattern[index] === '-' || mute) return;
         const chordTones = chords.midiTones[index];
         for (const note of chordTones) {
           scheduleTimer(time, () => triggerMidi('3', note, duration, velocity, release), register);

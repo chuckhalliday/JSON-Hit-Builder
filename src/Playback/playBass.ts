@@ -140,7 +140,7 @@ function playBassOsc(audioContext: AudioContext, startTime: number, bass: number
     return bass
   }
   
-  function playBass(midi: boolean, beat: number, pattern: {x: number, y: number, acc: string}[], groove: number[], bpm: number, shouldStop?: () => boolean, lamps?: HTMLInputElement[], drumGroove?: number[]) {
+  function playBass(midi: boolean, beat: number, pattern: {x: number, y: number, acc: string}[], groove: number[], bpm: number, shouldStop?: () => boolean, lamps?: HTMLInputElement[], drumGroove?: number[], mute?: boolean) {
     const beatDuration = 60 / bpm; // duration of one beat in seconds
     const audioContext = getAudioContext();
 
@@ -161,7 +161,7 @@ function playBassOsc(audioContext: AudioContext, startTime: number, bass: number
       const release = Math.floor(Math.random() * (70 - 50 + 1) + 50);
       const bass = mapBassValue(midi, pattern[index]);
 
-      if (bass <= 0) return;
+      if (bass <= 0 || mute) return;
 
       if (!midi) {
         const oscillators = playBassOsc(audioContext, time, bass, duration, velocity, release);
