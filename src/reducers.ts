@@ -1,10 +1,6 @@
-import { createSlice, PayloadAction } from "@reduxjs/toolkit";
-import { randomGroove, randomArrangement } from "./SongStructure/groove";
-import generateSong from "./SongStructure/generateSong";
+import { createSlice, PayloadAction, Dispatch } from "@reduxjs/toolkit";
 import { SongStructure, NoteLocation, DrumHit } from "./types";
-
-const randomBassGrooves: number[][] = [randomGroove(), randomGroove(), randomGroove(), randomGroove()]
-const songVariables = generateSong(randomBassGrooves, randomArrangement(), (Math.random()/4))
+import { createRandomSong } from "./SongStructure/createSong";
 
 export interface SongState {
     isPlaying: boolean,
@@ -12,16 +8,21 @@ export interface SongState {
     key: string,
     midi: boolean,
     selectedBeat: number[],
-    songStructure: SongStructure
+    songStructure: SongStructure,
+    seed: number | null
 }
 
+// The song tree starts empty and deterministic. The first song is produced by
+// the `newSong` thunk dispatched on mount, so importing this module has no side
+// effects and startup is reproducible.
 const initialState: SongState = {
     isPlaying: false,
-    bpm: songVariables.bpm,
-    key: songVariables.key,
+    bpm: 120,
+    key: '',
     midi: false,
     selectedBeat: [0, 0, 0, 0],
-    songStructure: songVariables.songStructure
+    songStructure: [],
+    seed: null
 };
 
 const song = createSlice({
@@ -34,10 +35,11 @@ const song = createSlice({
       setMidi: (state, action: PayloadAction<{ midi: boolean }>) => {
         state.midi = action.payload.midi;
       },
-      setSong: (state, action: PayloadAction<{ songStructure: SongStructure, key: string, bpm: number }>) => {
+      setSong: (state, action: PayloadAction<{ songStructure: SongStructure, key: string, bpm: number, seed?: number | null }>) => {
         state.songStructure = action.payload.songStructure;
         state.key = action.payload.key;
-        state.bpm = action.payload.bpm
+        state.bpm = action.payload.bpm;
+        state.seed = action.payload.seed ?? null;
       },
       setBassState: (state, action: PayloadAction<{ index: number, bassNoteLocations: NoteLocation[] }>) => {
         state.songStructure[action.payload.index].bassNoteLocations = action.payload.bassNoteLocations;
@@ -70,4 +72,13 @@ const song = createSlice({
   });
 
 export const { setIsPlaying, setMidi, setSong, setBassState, setDrumState, setChordState, setCurrentBeat, incrementByAmount } = song.actions;
+
+// Thunk: generate a fresh random song and load it into the store. Replaces the
+// old module-load side effect; dispatched on mount (and reusable for a
+// "new song" button). Pass a seed to reproduce a specific song.
+export const newSong = (seed?: number) => (dispatch: Dispatch) => {
+  const { songStructure, key, bpm, seed: usedSeed } = createRandomSong(seed);
+  dispatch(setSong({ songStructure, key, bpm, seed: usedSeed }));
+};
+
 export default song;

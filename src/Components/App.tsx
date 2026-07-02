@@ -7,7 +7,8 @@ import BassStaff from "./BassStaff";
 import Piano, { PlayHandle } from './Piano';
 import { useSelector, useDispatch } from "react-redux"
 import { playVerse } from '../Playback/playSong';
-import { incrementByAmount, setIsPlaying, setMidi, SongState, setCurrentBeat } from '../reducers';
+import { incrementByAmount, setIsPlaying, setMidi, SongState, setCurrentBeat, newSong } from '../reducers';
+import type { AppDispatch } from '../store'
 import styles from "../Styles/App.module.scss"
 import { supabase } from '../supabaseClient'
 
@@ -134,7 +135,13 @@ function App() {
   const [includeBass, setIncludeBass] = useState(true);
   const [includeDrums, setIncludeDrums] = useState(true);
 
-  const dispatch = useDispatch()
+  const dispatch = useDispatch<AppDispatch>()
+
+  // Generate the initial song on mount. Replaces the old import-time generation
+  // so startup is an explicit, dispatchable (and seedable) action.
+  useEffect(() => {
+    dispatch(newSong());
+  }, []);
 
 
   async function playSong(song: SongState, verse: number, drumBeat: number, bassBeat: number, chordBeat: number) {
@@ -273,7 +280,7 @@ function App() {
             <Save onClose={handleCloseSave}/>
           </div>
         )}
-        <Piano ref={pianoRef} lampsRef={lampsRef} />
+        {song.songStructure.length > 0 && <Piano ref={pianoRef} lampsRef={lampsRef} />}
         <div className={styles.partsRow}>
         {song.songStructure.map((songProps, index) => {
           const songParts = [];

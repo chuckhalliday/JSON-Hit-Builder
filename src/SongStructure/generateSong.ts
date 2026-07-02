@@ -1,12 +1,16 @@
 import { createDrums, drumArray } from "./drums.js";
 import { bassArray1V, bassArray2V, bassArray3V, bassArray4V,
-transposeBassArray, bassArray1B, bassArray1C, bassArray2C, bassArray3C, bassArray4C} from "./bass.js";
+transposeBassArray, bassArray1B, bassArray1C, bassArray2C, bassArray3C, bassArray4C, rollAccidentals} from "./bass.js";
 import { createChords, chordArray, transposeChordArray } from "./chords.js";
 import { setKey, findKey } from './key.js';
 import { generateSongStructure } from './songStructure.js';
 import { DrumHit } from "../types";
+import { rng } from "./rng";
 
 export default function generateSong(bassGrooves: number[][], arrangement: number[][], tripMod: number, pickedKey?: number, tonality?: string){
+
+  // Re-roll bass accidentals from the (seeded) RNG before building any lines.
+  rollAccidentals();
 
   const bassGrooveBySection = arrangement.map(section =>
     section.reduce((bass, index) => bass.concat(bassGrooves[index]), [] as number[])
@@ -90,8 +94,8 @@ export default function generateSong(bassGrooves: number[][], arrangement: numbe
   let chordsCA = transposeChordArray(chordsC, keyAdjust)
   let bassBA = transposeBassArray(bassB, keyAdjust)
 
-  const songtime: number = Math.round(Math.random() * (240 - 210) + 210);
-  const bpm: number = Math.round(Math.random() * (140 - 100) + 100);
+  const songtime: number = Math.round(rng() * (240 - 210) + 210);
+  const bpm: number = Math.round(rng() * (140 - 100) + 100);
   const bps: number = bpm / 60;
   const beatstotal: number = bps * songtime;
   const measures: number = Math.round(beatstotal / 4 / 4) * 4;

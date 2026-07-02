@@ -1,6 +1,7 @@
 import { drawBass, bassMeasures } from "./bass";
 import { chordLocation, createChordTones } from "./chords";
 import { SongStructure, NoteLocation, DrumHit } from "../types";
+import { rng } from "./rng";
 
 export function generateSongStructure(partsLength: number, bassVA: string[], bassGrooveV: number[], bassCA: string[], bassGrooveC: number[], bassBA: string[], bassGrooveB: number[], chordsVA: string[], chordsGrooveV: number[], chordsCA: string[], chordsGrooveC: number[], chordsBA: string[], chordsGrooveB: number[], 
 drumVerse: DrumHit[][], drumGrooveV: number[], drumChorus: DrumHit[][], drumGrooveC: number[], drumBridge: DrumHit[][], drumGrooveB: number[]) {
@@ -21,7 +22,7 @@ drumVerse: DrumHit[][], drumGrooveV: number[], drumChorus: DrumHit[][], drumGroo
   let partChords: string[];
   let partChordsGroove: number[];
 
-  let randomPartLength = Math.min(remainingParts, Math.floor(Math.random() * 3) + 1);
+  let randomPartLength = Math.min(remainingParts, Math.floor(rng() * 3) + 1);
 
   // drawBass returns one more note-location than the groove has durations: the
   // bass grid carries an extra leading coordinate (the clef offset), so the last
@@ -47,9 +48,9 @@ drumVerse: DrumHit[][], drumGrooveV: number[], drumChorus: DrumHit[][], drumGroo
   lastPartType = 'Verse'
 
   while (remainingParts > 0) {
-    let randomPartType = partTypes[Math.floor(Math.random() * partTypes.length)];
+    let randomPartType = partTypes[Math.floor(rng() * partTypes.length)];
     while (randomPartType === lastPartType) {
-      randomPartType = partTypes[Math.floor(Math.random() * partTypes.length)];
+      randomPartType = partTypes[Math.floor(rng() * partTypes.length)];
     }
     if (randomPartType === 'Verse') {
       partChords = chordsVA
@@ -74,7 +75,7 @@ drumVerse: DrumHit[][], drumGrooveV: number[], drumChorus: DrumHit[][], drumGroo
       partDrumsGroove = drumGrooveB
     }
 
-    randomPartLength = Math.min(remainingParts, Math.floor(Math.random() * 3) + 1);
+    randomPartLength = Math.min(remainingParts, Math.floor(rng() * 3) + 1);
     [bassGrid, measureLines] = bassMeasures(partBassGroove, partDrumsGroove)
     bassNoteLocations = trimToGroove(drawBass(partBass, bassGrid), partBassGroove)
     chordLocations = (chordLocation(bassNoteLocations, partBassGroove, partChordsGroove))

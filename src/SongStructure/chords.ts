@@ -1,11 +1,12 @@
 import { chordToneMappings, chordMidiMappings } from "./tone"
 import { ChordTones, NoteLocation } from "../types"
+import { rng } from "./rng"
 
 export function createChords(bassGroove: number[]) {
   let chordArray = []
   let sum = bassGroove[0]
   for (let i = 1; i < bassGroove.length; i++) {
-    let roll = Math.random()
+    let roll = rng()
     if (sum >= 2) {
       chordArray.push(sum)
       sum = 0
@@ -26,12 +27,12 @@ export function createChords(bassGroove: number[]) {
 
 export function chordArray(chordsGroove: number[], bassGroove: number[], bassString: string[]) {
 
-const cmajCmaj7 = Math.random() < 0.9 ? "1" : "!";
-const dmin7C9 = Math.random() < 0.8 ? "@" : "9";
-const emin7Emaj = Math.random() < 0.8 ? "#" : "8";
-const f7Fmin = Math.random() < 0.5 ? "$" : "0";
-const g7Bdim = Math.random() < 0.7 ? "%" : "7";
-const aminCmaj = Math.random() < 0.8 ? "6" : "1";
+const cmajCmaj7 = rng() < 0.9 ? "1" : "!";
+const dmin7C9 = rng() < 0.8 ? "@" : "9";
+const emin7Emaj = rng() < 0.8 ? "#" : "8";
+const f7Fmin = rng() < 0.5 ? "$" : "0";
+const g7Bdim = rng() < 0.7 ? "%" : "7";
+const aminCmaj = rng() < 0.8 ? "6" : "1";
 
 let chords = ""
 let chordSum = 0;
@@ -47,21 +48,21 @@ for (let i = 0; i < bassGroove.length; i++) {
         if (note === "c") {
           chords += cmajCmaj7;
         } else if (note === "d") {
-          chords += Math.random() < 0.8 ? "2" : dmin7C9;
+          chords += rng() < 0.8 ? "2" : dmin7C9;
         } else if (note === "e") {
-          chords += Math.random() < 0.8 ? "3" : emin7Emaj;
+          chords += rng() < 0.8 ? "3" : emin7Emaj;
         } else if (note === "f") {
-          chords += Math.random() < 0.8 ? "4" : f7Fmin;
+          chords += rng() < 0.8 ? "4" : f7Fmin;
         } else if (note === "g") {
-          chords += Math.random() < 0.8 ? "5" : g7Bdim;
+          chords += rng() < 0.8 ? "5" : g7Bdim;
         } else if (note === "a") {
           chords += aminCmaj;
         } else if (note === "b") {
           chords += g7Bdim;
         } else if (note === "o") {
-          chords += Math.random() < 0.8 ? "4" : f7Fmin;
+          chords += rng() < 0.8 ? "4" : f7Fmin;
         } else if (note === "p") {
-          chords += Math.random() < 0.8 ? "5" : g7Bdim;
+          chords += rng() < 0.8 ? "5" : g7Bdim;
         } else if (note === "|") {
           chords = chords;
         } else if (note === "-") {
@@ -167,13 +168,13 @@ export function createChordTones(chordString: string[]) {
       chordTones.oscTones.push([]);
       chordTones.midiTones.push([]);
     } else if (chordToneMappings.hasOwnProperty(chordString[i]) && chordMidiMappings.hasOwnProperty(chordString[i])) {
-      const numberOfTones = Math.floor(Math.random() * 3) + 2;
+      const numberOfTones = Math.floor(rng() * 3) + 2;
       const availableOscTones = chordToneMappings[chordString[i]];
       const availableMidiTones = chordMidiMappings[chordString[i]];
 
       const shuffledIndices = Array.from({ length: availableOscTones.length }, (_, index) => index);
       for (let j = shuffledIndices.length - 1; j > 0; j--) {
-        const randomIndex = Math.floor(Math.random() * (j + 1));
+        const randomIndex = Math.floor(rng() * (j + 1));
         [shuffledIndices[j], shuffledIndices[randomIndex]] = [shuffledIndices[randomIndex], shuffledIndices[j]];
       }
 
