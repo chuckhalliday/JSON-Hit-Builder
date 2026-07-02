@@ -156,6 +156,7 @@ const DrumMachine = forwardRef<PlayHandle, DrumMachineProps>(function DrumMachin
         song.songStructure[part].chordsGroove
       )
       dispatch(setCurrentBeat([part, position[0], position[1], position[2]]))
+      event.target.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
     }
 
     lampsRef.current.forEach((lamp) => {
