@@ -40,6 +40,7 @@ function App() {
   const [showGenerate, setShowGenerate] = useState(false);
   const [authenticated, setAuthenticated] = useState(false);
   const [saveScreen, setSaveScreen] = useState(false);
+  const anyPartOpen = Object.values(openedParts).some(Boolean);
 
   const login = async () => {
     if (!authenticated) {
@@ -258,7 +259,7 @@ function App() {
       {authenticated ? (
         // Render your app components when authenticated
         <div className={styles.rowContainer}>
-        <button className={styles.key} onClick={handleGenerateClick}>Key of : {song.key}</button>
+        <button className={styles.key} onClick={handleGenerateClick}>Key of :<br />{song.key}</button>
         {showGenerate && (
           <div className={styles.generateOverlay}>
             <Generate onClose={handleCloseGenerate}/>
@@ -270,6 +271,7 @@ function App() {
           </div>
         )}
         <Piano ref={pianoRef} lampsRef={lampsRef} onPlayingChange={setChordsPlaying} />
+        <div className={styles.partsRow}>
         {song.songStructure.map((songProps, index) => {
           const songParts = [];
           const key = `${index}`;
@@ -279,7 +281,7 @@ function App() {
             <div key={key} className={styles.parts}>
               <button
                 onClick={() => handlePartOpen(key)}
-                className={isOpen ? `${styles.openButton}` : ''}
+                className={isOpen ? `${styles.partButton} ${styles.openButton}` : styles.partButton}
               >
                 {songProps.type.charAt(0)}
               </button>
@@ -299,8 +301,9 @@ function App() {
             </div>
           );
         })}
+        </div>
         <div className={styles.info}>
-          {showInfoScreen && <Info />}
+          {showInfoScreen && !anyPartOpen && <Info />}
         </div>
         {/* Renders controls */}
         <div className={styles.controls}>
