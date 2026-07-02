@@ -1,6 +1,7 @@
 import { createSlice, PayloadAction, Dispatch } from "@reduxjs/toolkit";
 import { SongStructure, NoteLocation, DrumHit } from "./types";
 import { createRandomSong } from "./SongStructure/createSong";
+import { bassPitch } from "./SongStructure/bassPitch";
 
 export interface SongState {
     isPlaying: boolean,
@@ -42,7 +43,11 @@ const song = createSlice({
         state.seed = action.payload.seed ?? null;
       },
       setBassState: (state, action: PayloadAction<{ index: number, bassNoteLocations: NoteLocation[] }>) => {
-        state.songStructure[action.payload.index].bassNoteLocations = action.payload.bassNoteLocations;
+        // Recompute each note's pitch from its (possibly edited) staff position
+        // and accidental, so dragging a note or toggling its accidental keeps
+        // the stored osc/midi that playback reads in sync with the staff.
+        state.songStructure[action.payload.index].bassNoteLocations =
+          action.payload.bassNoteLocations.map(note => ({ ...note, ...bassPitch(note.y, note.acc) }));
       },
       setDrumState: (state, action: PayloadAction<{ index: number, drumPart: number, drumStep: number, drums: DrumHit }>) => {
         state.songStructure[action.payload.index].drums[action.payload.drumPart][action.payload.drumStep] = action.payload.drums;

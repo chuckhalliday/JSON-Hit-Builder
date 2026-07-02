@@ -14,12 +14,15 @@ export interface DrumHit {
 }
 
 // A bass note's location on the staff. `x`/`y` are canvas pixels used for
-// drawing; `acc` is the accidental ('none' | 'sharp' | 'flat').
-// (Step 3 adds concrete pitch fields so playback never has to read pixels.)
+// drawing; `acc` is the accidental ('none' | 'sharp' | 'flat'). `osc`/`midi`
+// carry the note's concrete pitch (oscillator frequency and MIDI note number)
+// so playback reads the pitch directly and never has to interpret pixels.
 export interface NoteLocation {
   x: number;
   y: number;
   acc: string;
+  osc: number;
+  midi: number;
 }
 
 // Concurrent chord voicings per beat: oscillator frequencies and MIDI notes.

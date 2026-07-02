@@ -1,4 +1,6 @@
 import { rng } from "./rng";
+import { bassPitch } from "./bassPitch";
+import { NoteLocation } from "../types";
 
 //calculates an array of x-coordinates where the measure lines should be drawn on bass staff canvas
 export function bassMeasures(bassGroove: number[], drumGroove: number[]) {
@@ -484,10 +486,10 @@ export function transposeBassArray(bassString: string[], keyAdjust: number) {
 }
 
 export function drawBass(bass: string[], bassGrid: number[]) {
-  let bassNoteLocations: { x: number, y: number, acc: string }[] = [];
-  
+  let bassNoteLocations: NoteLocation[] = [];
+
   for (let i = 1; i < bassGrid.length; i++) {
-    let noteLocation: {x: number, y: number, acc: string } = { x: 0, y: 0, acc: 'none' } // Create a new object for each iteration
+    let noteLocation: NoteLocation = { x: 0, y: 0, acc: 'none', osc: 0, midi: 0 } // Create a new object for each iteration
   
       noteLocation.x = bassGrid[i];
       if (bass[i - 1] === 'G' || bass[i] === 'G#' || bass[i] === 'Gb') {
@@ -515,8 +517,15 @@ export function drawBass(bass: string[], bassGrid: number[]) {
         noteLocation.acc = 'none'
       }
   
+      // Store the note's concrete pitch alongside its staff position, computed
+      // from the same (y, acc) the staff draws. Playback reads osc/midi and
+      // never has to interpret pixels.
+      const pitch = bassPitch(noteLocation.y, noteLocation.acc);
+      noteLocation.osc = pitch.osc;
+      noteLocation.midi = pitch.midi;
+
       bassNoteLocations.push(noteLocation);
     }
-  
+
     return bassNoteLocations;
   }
