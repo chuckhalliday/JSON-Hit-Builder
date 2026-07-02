@@ -70,7 +70,7 @@ const MIDI_NOTES: Record<number, number> = {
   0: 36, 1: 38, 5: 42, 6: 46, 8: 49,
 };
 
-export default function playBeat(midi: boolean, beat: number, pattern: Array<{ index: number; checked: boolean; accent?: boolean }>, groove: number[], bpm: number, stepsRef: Array<Array<{ index: number; checked: boolean }>>, lamps?: HTMLInputElement[], shouldStop?: () => boolean) {
+export default function playBeat(midi: boolean, beat: number, pattern: Array<{ index: number; checked: boolean; accent?: boolean }>, groove: number[], bpm: number, stepsRef: Array<Array<{ index: number; checked: boolean }>>, lamps?: HTMLInputElement[], shouldStop?: () => boolean, mute?: boolean) {
     const beatDuration = 60 / bpm // duration of one beat in seconds
     const swingRatio = 3/3; // adjust as needed
 
@@ -105,7 +105,7 @@ export default function playBeat(midi: boolean, beat: number, pattern: Array<{ i
         }, register);
       }
 
-      if (sampleUrl === undefined || !pattern[index].checked) return;
+      if (sampleUrl === undefined || !pattern[index].checked || mute) return;
 
       if (!midi) {
         loadSoundFile(sampleUrl, (buffer: AudioBuffer) => {

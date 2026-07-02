@@ -20,15 +20,16 @@ export interface VersePlaybackResult {
 }
 
 export async function playVerse(bpm: number, midi: boolean, drumBeat: number, bassBeat: number, chordBeat: number, verseDrumGroove: number[], verseDrums: Array<Array<{ index: number; checked: boolean, accent?: boolean }>>,
-  verseBassGroove: number[], verseBass: {x: number, y: number, acc: string }[], verseChordGroove: number[], verseChords: string[], verseChordTones: { oscTones: number[][], midiTones: number[][]}, lamps: HTMLInputElement[], shouldStop?: () => boolean): Promise<VersePlaybackResult> {
+  verseBassGroove: number[], verseBass: {x: number, y: number, acc: string }[], verseChordGroove: number[], verseChords: string[], verseChordTones: { oscTones: number[][], midiTones: number[][]}, lamps: HTMLInputElement[], shouldStop?: () => boolean,
+  includeDrums = true, includeBass = true, includeChords = true): Promise<VersePlaybackResult> {
   const [drumEnd, , , , , bassEnd, chordEnd] = await Promise.all([
-    playBeat(midi, drumBeat, verseDrums[0], verseDrumGroove, bpm, verseDrums, lamps, shouldStop),
-    playBeat(midi, drumBeat, verseDrums[1], verseDrumGroove, bpm, verseDrums, undefined, shouldStop),
-    playBeat(midi, drumBeat, verseDrums[5], verseDrumGroove, bpm, verseDrums, undefined, shouldStop),
-    playBeat(midi, drumBeat, verseDrums[6], verseDrumGroove, bpm, verseDrums, undefined, shouldStop),
-    playBeat(midi, drumBeat, verseDrums[8], verseDrumGroove, bpm, verseDrums, undefined, shouldStop),
-    playBass(midi, bassBeat, verseBass, verseBassGroove, bpm, shouldStop, lamps, verseDrumGroove),
-    playChords(midi, chordBeat, verseChords, verseChordTones, verseChordGroove, bpm, shouldStop, lamps, verseDrumGroove)
+    playBeat(midi, drumBeat, verseDrums[0], verseDrumGroove, bpm, verseDrums, lamps, shouldStop, !includeDrums),
+    playBeat(midi, drumBeat, verseDrums[1], verseDrumGroove, bpm, verseDrums, undefined, shouldStop, !includeDrums),
+    playBeat(midi, drumBeat, verseDrums[5], verseDrumGroove, bpm, verseDrums, undefined, shouldStop, !includeDrums),
+    playBeat(midi, drumBeat, verseDrums[6], verseDrumGroove, bpm, verseDrums, undefined, shouldStop, !includeDrums),
+    playBeat(midi, drumBeat, verseDrums[8], verseDrumGroove, bpm, verseDrums, undefined, shouldStop, !includeDrums),
+    playBass(midi, bassBeat, verseBass, verseBassGroove, bpm, shouldStop, lamps, verseDrumGroove, !includeBass),
+    playChords(midi, chordBeat, verseChords, verseChordTones, verseChordGroove, bpm, shouldStop, lamps, verseDrumGroove, !includeChords)
   ])
   return { drumBeat: drumEnd, bassBeat: bassEnd, chordBeat: chordEnd }
 }

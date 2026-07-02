@@ -130,9 +130,9 @@ function App() {
   const pianoRef = React.useRef<PlayHandle>(null);
   const bassStaffRef = React.useRef<PlayHandle>(null);
   const drumMachineRef = React.useRef<PlayHandle>(null);
-  const [chordsPlaying, setChordsPlaying] = useState(false);
-  const [bassPlaying, setBassPlaying] = useState(false);
-  const [drumsPlaying, setDrumsPlaying] = useState(false);
+  const [includeChords, setIncludeChords] = useState(true);
+  const [includeBass, setIncludeBass] = useState(true);
+  const [includeDrums, setIncludeDrums] = useState(true);
 
   const dispatch = useDispatch()
 
@@ -164,7 +164,10 @@ function App() {
         song.songStructure[verse].chords,
         song.songStructure[verse].chordTones,
         lampsRef.current,
-        () => stopRef.current
+        () => stopRef.current,
+        includeDrums,
+        includeBass,
+        includeChords
       );
 
       if (stopRef.current) {
@@ -270,7 +273,7 @@ function App() {
             <Save onClose={handleCloseSave}/>
           </div>
         )}
-        <Piano ref={pianoRef} lampsRef={lampsRef} onPlayingChange={setChordsPlaying} />
+        <Piano ref={pianoRef} lampsRef={lampsRef} />
         <div className={styles.partsRow}>
         {song.songStructure.map((songProps, index) => {
           const songParts = [];
@@ -288,13 +291,12 @@ function App() {
               {isOpen && currentPart === index && (
                 <div className={styles.openedPart}>
                   <h3>{songProps.type} ({songProps.repeat})</h3>
-                  <BassStaff ref={bassStaffRef} renderWidth={renderWidth} part={index} lampsRef={lampsRef} onPlayingChange={setBassPlaying} />
+                  <BassStaff ref={bassStaffRef} renderWidth={renderWidth} part={index} lampsRef={lampsRef} />
                   <DrumMachine
                     ref={drumMachineRef}
                     onRenderWidthChange={handleRenderWidthChange}
                     part={index}
                     lampsRef={lampsRef}
-                    onPlayingChange={setDrumsPlaying}
                   />
                 </div>
               )}
@@ -308,14 +310,23 @@ function App() {
         {/* Renders controls */}
         <div className={styles.controls}>
           <div className={styles.songControls}>
-            <button onClick={() => pianoRef.current?.play()} className={styles.button}>
-              {chordsPlaying ? "Pause" : "Play Chords"}
+            <button
+              onClick={() => setIncludeChords(prev => !prev)}
+              className={includeChords ? styles.button : `${styles.button} ${styles.openButton}`}
+            >
+              Chords
             </button>
-            <button onClick={() => bassStaffRef.current?.play()} className={styles.button}>
-              {bassPlaying ? "Pause" : "Play Bass"}
+            <button
+              onClick={() => setIncludeBass(prev => !prev)}
+              className={includeBass ? styles.button : `${styles.button} ${styles.openButton}`}
+            >
+              Bass
             </button>
-            <button onClick={() => drumMachineRef.current?.play()} className={styles.button}>
-              {drumsPlaying ? "Pause" : "Play Drums"}
+            <button
+              onClick={() => setIncludeDrums(prev => !prev)}
+              className={includeDrums ? styles.button : `${styles.button} ${styles.openButton}`}
+            >
+              Drums
             </button>
           </div>
           <div className={styles.bpmControls}>
@@ -342,7 +353,10 @@ function App() {
                 defaultValue={1}
               />
             </label> */}
-            <button onClick={handleStartClick} className={styles.button}>
+            <button
+              onClick={handleStartClick}
+              className={isPlaying ? `${styles.button} ${styles.openButton}` : styles.button}
+            >
               {isPlaying ? "Pause" : "Play Song"}
             </button>
           </div>
