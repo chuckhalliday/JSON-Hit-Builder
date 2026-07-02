@@ -1,4 +1,5 @@
 import { subdivideArray } from "./groove";
+import { DrumHit } from "../types";
 
 export function createDrums(bassGroove: number[][], tripMod: number) {
   let drumArr: number[][] = [];
@@ -28,7 +29,7 @@ export function createDrums(bassGroove: number[][], tripMod: number) {
 }
 
 
-export function drumArray(drumHits: { index: number; checked: boolean; accent?: boolean }[][], drumBeat: number[], bassBeat: number[], bassString: string[]) {
+export function drumArray(drumHits: DrumHit[][], drumBeat: number[], bassBeat: number[], bassString: string[]) {
   let drumSum = 0;
   let bassSum = 0;
   let bassBeatIndex = 0;

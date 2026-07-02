@@ -3,6 +3,7 @@ import { triggerMidi } from "./playFunctions";
 import { indexToLamp } from "../SongStructure/beatMapping";
 import { getAudioContext } from "./audioContext";
 import { runPreScheduledSequence, scheduleTimer, Register } from "./scheduler";
+import { NoteLocation } from "../types";
 
 const distortionAmount = 30; // Adjust distortion amount as needed
 const distortionCurve = new Float32Array(65536);
@@ -140,7 +141,7 @@ function playBassOsc(audioContext: AudioContext, startTime: number, bass: number
     return bass
   }
   
-  function playBass(midi: boolean, beat: number, pattern: {x: number, y: number, acc: string}[], groove: number[], bpm: number, shouldStop?: () => boolean, lamps?: HTMLInputElement[], drumGroove?: number[], mute?: boolean) {
+  function playBass(midi: boolean, beat: number, pattern: NoteLocation[], groove: number[], bpm: number, shouldStop?: () => boolean, lamps?: HTMLInputElement[], drumGroove?: number[], mute?: boolean) {
     const beatDuration = 60 / bpm; // duration of one beat in seconds
     const audioContext = getAudioContext();
 

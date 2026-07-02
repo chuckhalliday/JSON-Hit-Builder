@@ -1,6 +1,7 @@
 import { triggerMidi } from "./playFunctions";
 import { getAudioContext } from "./audioContext";
 import { runPreScheduledSequence, scheduleTimer, Register } from "./scheduler";
+import { DrumHit } from "../types";
 
 const sampleCache = new Map<string, AudioBuffer>();
 const pendingLoads = new Map<string, Promise<AudioBuffer>>();
@@ -70,7 +71,7 @@ const MIDI_NOTES: Record<number, number> = {
   0: 36, 1: 38, 5: 42, 6: 46, 8: 49,
 };
 
-export default function playBeat(midi: boolean, beat: number, pattern: Array<{ index: number; checked: boolean; accent?: boolean }>, groove: number[], bpm: number, stepsRef: Array<Array<{ index: number; checked: boolean }>>, lamps?: HTMLInputElement[], shouldStop?: () => boolean, mute?: boolean) {
+export default function playBeat(midi: boolean, beat: number, pattern: DrumHit[], groove: number[], bpm: number, stepsRef: DrumHit[][], lamps?: HTMLInputElement[], shouldStop?: () => boolean, mute?: boolean) {
     const beatDuration = 60 / bpm // duration of one beat in seconds
     const swingRatio = 3/3; // adjust as needed
 

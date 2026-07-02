@@ -3,9 +3,10 @@ import playBeat from './playDrums.js';
 import playChords from './playChords.js';
 import playBass from './playBass.js';
 import { SongState } from '../reducers.js';
+import { DrumHit, NoteLocation, ChordTones } from '../types';
 
 export async function countIn(bpm: number, midi: boolean, beat: number, initDrums: number[], 
-  stepsRef: Array<Array<{ index: number; checked: boolean }>>) {
+  stepsRef: DrumHit[][]) {
   for (let i = 0; i < 1; i++) {
     await Promise.all([
     playBeat(midi, beat, stepsRef[2], initDrums, bpm, stepsRef),
@@ -19,8 +20,8 @@ export interface VersePlaybackResult {
   chordBeat: number;
 }
 
-export async function playVerse(bpm: number, midi: boolean, drumBeat: number, bassBeat: number, chordBeat: number, verseDrumGroove: number[], verseDrums: Array<Array<{ index: number; checked: boolean, accent?: boolean }>>,
-  verseBassGroove: number[], verseBass: {x: number, y: number, acc: string }[], verseChordGroove: number[], verseChords: string[], verseChordTones: { oscTones: number[][], midiTones: number[][]}, lamps: HTMLInputElement[], shouldStop?: () => boolean,
+export async function playVerse(bpm: number, midi: boolean, drumBeat: number, bassBeat: number, chordBeat: number, verseDrumGroove: number[], verseDrums: DrumHit[][],
+  verseBassGroove: number[], verseBass: NoteLocation[], verseChordGroove: number[], verseChords: string[], verseChordTones: ChordTones, lamps: HTMLInputElement[], shouldStop?: () => boolean,
   includeDrums = true, includeBass = true, includeChords = true): Promise<VersePlaybackResult> {
   const [drumEnd, , , , , bassEnd, chordEnd] = await Promise.all([
     playBeat(midi, drumBeat, verseDrums[0], verseDrumGroove, bpm, verseDrums, lamps, shouldStop, !includeDrums),
@@ -34,7 +35,7 @@ export async function playVerse(bpm: number, midi: boolean, drumBeat: number, ba
   return { drumBeat: drumEnd, bassBeat: bassEnd, chordBeat: chordEnd }
 }
 
-export async function playDrums(bpm: number, midi: boolean, beat: number, partDrumGroove: number[], partDrums: Array<Array<{ index: number; checked: boolean; accent?: boolean }>>, lamps: HTMLInputElement[], shouldStop?: () => boolean): Promise<number> {
+export async function playDrums(bpm: number, midi: boolean, beat: number, partDrumGroove: number[], partDrums: DrumHit[][], lamps: HTMLInputElement[], shouldStop?: () => boolean): Promise<number> {
   const [drumEnd] = await Promise.all([
     playBeat(midi, beat, partDrums[0], partDrumGroove, bpm, partDrums, lamps, shouldStop),
     playBeat(midi, beat, partDrums[1], partDrumGroove, bpm, partDrums, undefined, shouldStop),

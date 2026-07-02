@@ -2,8 +2,9 @@ import { triggerMidi } from "./playFunctions";
 import { indexToLamp } from "../SongStructure/beatMapping";
 import { getAudioContext } from "./audioContext";
 import { runPreScheduledSequence, scheduleTimer, Register } from "./scheduler";
+import { ChordTones } from "../types";
 
-export default async function playChords(midi: boolean, beat: number, pattern: string[], chords: { oscTones: number[][], midiTones: number[][]}, groove: number[], bpm: number, shouldStop?: () => boolean, lamps?: HTMLInputElement[], drumGroove?: number[], mute?: boolean) {
+export default async function playChords(midi: boolean, beat: number, pattern: string[], chords: ChordTones, groove: number[], bpm: number, shouldStop?: () => boolean, lamps?: HTMLInputElement[], drumGroove?: number[], mute?: boolean) {
     const beatDuration = 60 / bpm; // duration of one beat in seconds
     const audioContext = getAudioContext();
 

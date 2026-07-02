@@ -1,6 +1,7 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 import { randomGroove, randomArrangement } from "./SongStructure/groove";
 import generateSong from "./SongStructure/generateSong";
+import { SongStructure, NoteLocation, DrumHit } from "./types";
 
 const randomBassGrooves: number[][] = [randomGroove(), randomGroove(), randomGroove(), randomGroove()]
 const songVariables = generateSong(randomBassGrooves, randomArrangement(), (Math.random()/4))
@@ -11,29 +12,7 @@ export interface SongState {
     key: string,
     midi: boolean,
     selectedBeat: number[],
-    songStructure: {
-      type: string;
-      repeat: number;
-      bass: string[];
-      bassGroove: number[];
-      bassGrid: number[];
-      bassNoteLocations: {
-          x: number;
-          y: number;
-          acc: string;
-      }[];
-      measureLines: number[];
-      drums: { index: number; checked: boolean; accent?: boolean }[][]
-      drumGroove: number[];
-      stepIds: number[];
-      chords: string[];
-      chordTones: {
-        oscTones: number[][],
-        midiTones: number[][]
-      }
-      chordsGroove: number[];
-      chordsLocation: number[];
-  }[]  
+    songStructure: SongStructure
 }
 
 const initialState: SongState = {
@@ -55,15 +34,15 @@ const song = createSlice({
       setMidi: (state, action: PayloadAction<{ midi: boolean }>) => {
         state.midi = action.payload.midi;
       },
-      setSong: (state, action: PayloadAction<{ songStructure: any, key: string, bpm: number }>) => {
+      setSong: (state, action: PayloadAction<{ songStructure: SongStructure, key: string, bpm: number }>) => {
         state.songStructure = action.payload.songStructure;
         state.key = action.payload.key;
         state.bpm = action.payload.bpm
       },
-      setBassState: (state, action: PayloadAction<{ index: number, bassNoteLocations: { x: number, y: number, acc: string }[] }>) => {
+      setBassState: (state, action: PayloadAction<{ index: number, bassNoteLocations: NoteLocation[] }>) => {
         state.songStructure[action.payload.index].bassNoteLocations = action.payload.bassNoteLocations;
       },
-      setDrumState: (state, action: PayloadAction<{ index: number, drumPart: number, drumStep: number, drums: { index: number, checked: boolean, accent?: boolean } }>) => {
+      setDrumState: (state, action: PayloadAction<{ index: number, drumPart: number, drumStep: number, drums: DrumHit }>) => {
         state.songStructure[action.payload.index].drums[action.payload.drumPart][action.payload.drumStep] = action.payload.drums;
       },
       setChordState: (state, action: PayloadAction<{ part: number, beat: number, midi: number, osc: number, checked: boolean }>) => {

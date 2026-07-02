@@ -1,4 +1,5 @@
 import { chordToneMappings, chordMidiMappings } from "./tone"
+import { ChordTones, NoteLocation } from "../types"
 
 export function createChords(bassGroove: number[]) {
   let chordArray = []
@@ -84,7 +85,7 @@ for (let i = 0; i < bassGroove.length; i++) {
 }
 
 //calculates an array of x-coordinates where chord names should be displayed over bass staff
-export function chordLocation(bassLocation: { x: number, y: number, acc: string }[], bassGroove: number[], chordGroove: number[]) {
+export function chordLocation(bassLocation: NoteLocation[], bassGroove: number[], chordGroove: number[]) {
   let chordX: number[] = []
   let bassSum = 0
   let chordSum = 0
@@ -159,7 +160,7 @@ export function transposeChordArray(chordString: string, keyAdjust: number) {
 }
 
 export function createChordTones(chordString: string[]) {
-  const chordTones: { oscTones: number[][], midiTones: number[][] } = { oscTones: [], midiTones: [] }
+  const chordTones: ChordTones = { oscTones: [], midiTones: [] }
 
   for (let i = 0; i < chordString.length; i++) {
     if (chordString[i] === '-') {
