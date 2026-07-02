@@ -5,6 +5,6 @@ const store = configureStore({
     reducer: {
         song: song.reducer
     }
-})
+});
 
 export default store;

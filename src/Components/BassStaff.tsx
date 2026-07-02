@@ -330,15 +330,37 @@ const BassStaff = forwardRef<PlayHandle, BassStaffProps>(function BassStaff({ re
         const spacing = CANVAS.height / 20;
         const index = Math.round(MOUSE.y / spacing);
         const x = mouseX(bassGrid);
-    
-        const updatedBassNotes = bassNoteGrid.map((note) => {
-          if (note.x === x) {
-            return { ...note, y: index * spacing };
-          }
-          return note;
-        });
-  
-        dispatch(setBassState({ index: part, bassNoteLocations: updatedBassNotes }));
+
+        // A note (not a rest) already sits in the exact cell being clicked -
+        // treat this as an accidental toggle rather than a reposition.
+        const clickedNote = bassNoteGrid.find(
+          (note) => note.x === x && note.y === index * spacing && note.y >= 30
+        );
+
+        if (clickedNote) {
+          const nextAcc =
+            clickedNote.acc === 'flat' ? 'none' :
+            clickedNote.acc === 'none' ? 'sharp' :
+            'flat';
+
+          const updatedBassNotes = bassNoteGrid.map((note) => {
+            if (note.x === x) {
+              return { ...note, acc: nextAcc };
+            }
+            return note;
+          });
+
+          dispatch(setBassState({ index: part, bassNoteLocations: updatedBassNotes }));
+        } else {
+          const updatedBassNotes = bassNoteGrid.map((note) => {
+            if (note.x === x) {
+              return { ...note, y: index * spacing };
+            }
+            return note;
+          });
+
+          dispatch(setBassState({ index: part, bassNoteLocations: updatedBassNotes }));
+        }
       }
     }
 
