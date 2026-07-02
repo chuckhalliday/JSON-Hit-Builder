@@ -74,6 +74,9 @@
     z-index: 2;
     background-color: #fff;
     width: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
 }
 
 .songControls {
@@ -85,7 +88,29 @@
 }
 
 .fader {
+    display: flex;
     align-items: center;
+    column-gap: 8px;
+    margin-left: 16px;
+    margin-top: 21.66px;
+}
+
+.bpmControls {
+    display: inline-flex;
+    flex-direction: column;
+    align-items: center;
+    vertical-align: middle;
+}
+
+.bpmControls .button {
+    margin-top: 25.66px;
+}
+
+.midiControls {
+    display: inline-flex;
+    flex-direction: column;
+    row-gap: 4px;
+    vertical-align: middle;
     margin-left: 16px;
 }
 
@@ -94,7 +119,7 @@ input[type="range"].bpm {
   -webkit-appearance: none; /* Safari and Chrome */
   -moz-appearance: none; /* Firefox */
   appearance: none; /* Standard */
-  width: 30%;
+  width: 180px;
   height: 8px;
   border-radius: 5px;
   background: linear-gradient(to right, blue, rgb(187, 187, 254)) no-repeat center;

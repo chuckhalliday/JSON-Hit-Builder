@@ -314,38 +314,42 @@ function App() {
             <button onClick={() => drumMachineRef.current?.play()} className={styles.button}>
               {drumsPlaying ? "Pause" : "Play Drums"}
             </button>
+          </div>
+          <div className={styles.bpmControls}>
+            <label className={styles.fader}>
+              <span>BPM:{bpm}</span>
+              <input
+                className={styles.bpm}
+                type="range"
+                min={90}
+                max={150}
+                step={1}
+                onChange={(e) => dispatch(incrementByAmount(e.target.value))}
+                defaultValue={bpm}
+              />
+            </label>
+            {/*<label className={styles.fader}>
+              <span>Volume</span>
+              <input
+                type="range"
+                min={0}
+                max={1}
+                step={0.01}
+                onChange={handleVolumeChange}
+                defaultValue={1}
+              />
+            </label> */}
             <button onClick={handleStartClick} className={styles.button}>
               {isPlaying ? "Pause" : "Play Song"}
             </button>
           </div>
-          <button onClick={handleMidi} className={styles.button}>
-            {midi ? "Use Osc" : "Use Midi"}
-          </button>
-          <label className={styles.fader}>
-            <span>BPM:{bpm}</span>
-            <input
-              className={styles.bpm}
-              type="range"
-              min={90}
-              max={150}
-              step={1}
-              onChange={(e) => dispatch(incrementByAmount(e.target.value))}
-              defaultValue={bpm}
-            />
-          </label>
-          {/*<label className={styles.fader}>
-            <span>Volume</span>
-            <input
-              type="range"
-              min={0}
-              max={1}
-              step={0.01}
-              onChange={handleVolumeChange} 
-              defaultValue={1}
-            />
-          </label> */}
-          <button onClick={handleSaveClick} className={styles.button}>Save/Load</button>
-          <button onClick={logout} className={styles.button}>Log Out</button>
+          <div className={styles.midiControls}>
+            <button onClick={handleMidi} className={styles.button}>
+              {midi ? "Use Osc" : "Use Midi"}
+            </button>
+            <button onClick={handleSaveClick} className={styles.button}>Save/Load</button>
+            <button onClick={logout} className={styles.button}>Log Out</button>
+          </div>
         </div>
         </div>
       ) : (
