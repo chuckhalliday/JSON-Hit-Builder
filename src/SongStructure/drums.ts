@@ -1,4 +1,6 @@
 import { subdivideArray } from "./groove";
+import { DrumHit } from "../types";
+import { rng } from "./rng";
 
 export function createDrums(bassGroove: number[][], tripMod: number) {
   let drumArr: number[][] = [];
@@ -12,13 +14,13 @@ export function createDrums(bassGroove: number[][], tripMod: number) {
         drumPart.push(0.25)
         beat-= 0.25
       } else {
-        let length = Math.random() > 0.5 ? 0.5 : 0.25
+        let length = rng() > 0.5 ? 0.5 : 0.25
         drumPart.push(length)
         beat -= length;
       }
     }
   }
-  if (Math.random() < tripMod) {
+  if (rng() < tripMod) {
     drumPart = subdivideArray(drumPart)
   }
   drumArr.push(drumPart)
@@ -28,7 +30,7 @@ export function createDrums(bassGroove: number[][], tripMod: number) {
 }
 
 
-export function drumArray(drumHits: { index: number; checked: boolean; accent?: boolean }[][], drumBeat: number[], bassBeat: number[], bassString: string[]) {
+export function drumArray(drumHits: DrumHit[][], drumBeat: number[], bassBeat: number[], bassString: string[]) {
   let drumSum = 0;
   let bassSum = 0;
   let bassBeatIndex = 0;
@@ -55,25 +57,25 @@ export function drumArray(drumHits: { index: number; checked: boolean; accent?: 
       if (drumSum === 0) {
         pushAccent(kick, i)
       } else if (Number.isInteger(drumSum)) {
-        Math.random() < 0.95 ? pushHit(kick, i) : pushRest(kick, i);
+        rng() < 0.95 ? pushHit(kick, i) : pushRest(kick, i);
       }else if (note === "-") {
-        Math.random() < 0.9 ? pushRest(kick, i) : pushHit(kick, i);
+        rng() < 0.9 ? pushRest(kick, i) : pushHit(kick, i);
       } else {
-        Math.random() < 0.6 ? pushHit(kick, i) : pushRest(kick, i);
+        rng() < 0.6 ? pushHit(kick, i) : pushRest(kick, i);
       } 
     } else if (Number.isInteger(drumSum)) {
-      Math.random() < 0.9 ? pushHit(kick, i) : pushRest(kick, i);
+      rng() < 0.9 ? pushHit(kick, i) : pushRest(kick, i);
     } else {
       pushRest(kick, i)
     }
     if (Number.isInteger(drumSum + 0.5)) {
-      Math.random() < 0.8 ? pushHit(snare, i) : pushRest(snare, i);
+      rng() < 0.8 ? pushHit(snare, i) : pushRest(snare, i);
     } else {
-      Math.random() < 0.9 ? pushRest(snare, i) : pushHit(snare, i);
+      rng() < 0.9 ? pushRest(snare, i) : pushHit(snare, i);
     }
     if (drumBeat[i] === 0.08 || drumBeat[i] === 0.09 ||
       drumBeat[i] === 0.16 || drumBeat[i] === 0.17) {
-      Math.random() < 0.5 ? (pushHit(hiHatC, i), pushRest(hiHatO, i)) : (pushHit(hiHatO, i), pushRest(hiHatC, i));
+      rng() < 0.5 ? (pushHit(hiHatC, i), pushRest(hiHatO, i)) : (pushHit(hiHatO, i), pushRest(hiHatC, i));
     } else if (Math.abs(drumSum % 0.5 - Math.round(drumSum % 0.5)) <= 0.1) {
       pushHit(hiHatC, i)
       pushRest(hiHatO, i)
@@ -82,9 +84,9 @@ export function drumArray(drumHits: { index: number; checked: boolean; accent?: 
       pushRest(hiHatO, i)
     }
     if (drumSum === 7.75 || drumSum === 23.75) {
-      Math.random() < 0.3 ? pushHit(crash, i) : pushRest(crash, i);
+      rng() < 0.3 ? pushHit(crash, i) : pushRest(crash, i);
     } else if (drumSum >= 31.75 || drumSum === 15.75) {
-      Math.random() < 0.6 ? pushAccent(crash, i) : pushRest(crash, i);
+      rng() < 0.6 ? pushAccent(crash, i) : pushRest(crash, i);
     } else {
       pushRest(crash, i)
     }
@@ -104,21 +106,21 @@ export function drumArray(drumHits: { index: number; checked: boolean; accent?: 
   let hihat = hihatString.replace(/\|/g, '');
 
   const possibleTomValues = ["u", "U", "t", "T", "s", "S", "y", "Y"];
-  let tom = possibleTomValues[Math.floor(Math.random() * possibleTomValues.length)];
+  let tom = possibleTomValues[Math.floor(rng() * possibleTomValues.length)];
 
   for (let i = 0; i < drumBeat.length; i++) {
     if (snare.charAt(i) === '-' || hihat.charAt(i) === '-') {
       if (sum === 0 || sum === 16) {
-        flair += Math.random() < 0.4 ? "R" : "-";
+        flair += rng() < 0.4 ? "R" : "-";
       } else if (sum === 8 || sum === 24) {
-        flair += Math.random() < 0.4 ? "r" : "-";
+        flair += rng() < 0.4 ? "r" : "-";
       } else if (sum === 7.5 || sum === 23.5) {
-        flair += Math.random() < 0.3 ? "Q" : "-";
+        flair += rng() < 0.3 ? "Q" : "-";
       } else if (sum === 15 || sum === 31) {
-        flair += Math.random() < 0.3 ? "q" : "-";
+        flair += rng() < 0.3 ? "q" : "-";
       } else if (drumBeat[i] === 0.33 || drumBeat[i] === 0.34 ||
         drumBeat[i] === 0.17 || drumBeat[i] === 0.16) {
-        flair += Math.random() < 0.3 ? tom : "-";
+        flair += rng() < 0.3 ? tom : "-";
       } else {
         flair += "-";
       }

@@ -1,48 +1,28 @@
 import { drawBass, bassMeasures } from "./bass";
 import { chordLocation, createChordTones } from "./chords";
+import { SongStructure, NoteLocation, DrumHit } from "../types";
+import { rng } from "./rng";
 
 export function generateSongStructure(partsLength: number, bassVA: string[], bassGrooveV: number[], bassCA: string[], bassGrooveC: number[], bassBA: string[], bassGrooveB: number[], chordsVA: string[], chordsGrooveV: number[], chordsCA: string[], chordsGrooveC: number[], chordsBA: string[], chordsGrooveB: number[], 
-drumVerse: { index: number; checked: boolean; accent?: boolean }[][], drumGrooveV: number[], drumChorus: { index: number; checked: boolean; accent?: boolean }[][], drumGrooveC: number[], drumBridge: { index: number; checked: boolean; accent?: boolean }[][], drumGrooveB: number[]) {
+drumVerse: DrumHit[][], drumGrooveV: number[], drumChorus: DrumHit[][], drumGrooveC: number[], drumBridge: DrumHit[][], drumGrooveB: number[]) {
 
   const partTypes = ['Verse', 'Chorus', 'Bridge'];
   let verseCount: number = 0
   let chorusCount: number = 0
   let bridgeCount: number = 0
 
-  const songStructure: {
-    type: string;
-    repeat: number;
-    bass: string[];
-    bassGroove: number[];
-    bassGrid: number[];
-    bassNoteLocations: {
-        x: number;
-        y: number;
-        acc: string;
-    }[];
-    measureLines: number[];
-    drums: { index: number; checked: boolean; accent?: boolean }[][]
-    drumGroove: number[];
-    stepIds: number[];
-    chords: string[];
-    chordTones: {
-      oscTones: number[][],
-      midiTones: number[][]
-    }
-    chordsGroove: number[];
-    chordsLocation: number[];
-  }[] = [];
+  const songStructure: SongStructure = [];
 
   let remainingParts = partsLength;
   let lastPartType: string;
   let partBass: string[];
   let partBassGroove: number[];
-  let partDrums: { index: number; checked: boolean; accent?: boolean }[][]
+  let partDrums: DrumHit[][]
   let partDrumsGroove: number[];
   let partChords: string[];
   let partChordsGroove: number[];
 
-  let randomPartLength = Math.min(remainingParts, Math.floor(Math.random() * 3) + 1);
+  let randomPartLength = Math.min(remainingParts, Math.floor(rng() * 3) + 1);
 
   // drawBass returns one more note-location than the groove has durations: the
   // bass grid carries an extra leading coordinate (the clef offset), so the last
@@ -50,7 +30,7 @@ drumVerse: { index: number; checked: boolean; accent?: boolean }[][], drumGroove
   // pattern[i] with groove[i], so trim any excess trailing entries to keep the
   // pattern the same length as the groove. Only ever shortens, never pads.
   const trimToGroove = (
-    locs: { x: number; y: number; acc: string }[],
+    locs: NoteLocation[],
     groove: number[]
   ) => (locs.length > groove.length ? locs.slice(0, groove.length) : locs);
 
@@ -68,9 +48,9 @@ drumVerse: { index: number; checked: boolean; accent?: boolean }[][], drumGroove
   lastPartType = 'Verse'
 
   while (remainingParts > 0) {
-    let randomPartType = partTypes[Math.floor(Math.random() * partTypes.length)];
+    let randomPartType = partTypes[Math.floor(rng() * partTypes.length)];
     while (randomPartType === lastPartType) {
-      randomPartType = partTypes[Math.floor(Math.random() * partTypes.length)];
+      randomPartType = partTypes[Math.floor(rng() * partTypes.length)];
     }
     if (randomPartType === 'Verse') {
       partChords = chordsVA
@@ -95,7 +75,7 @@ drumVerse: { index: number; checked: boolean; accent?: boolean }[][], drumGroove
       partDrumsGroove = drumGrooveB
     }
 
-    randomPartLength = Math.min(remainingParts, Math.floor(Math.random() * 3) + 1);
+    randomPartLength = Math.min(remainingParts, Math.floor(rng() * 3) + 1);
     [bassGrid, measureLines] = bassMeasures(partBassGroove, partDrumsGroove)
     bassNoteLocations = trimToGroove(drawBass(partBass, bassGrid), partBassGroove)
     chordLocations = (chordLocation(bassNoteLocations, partBassGroove, partChordsGroove))

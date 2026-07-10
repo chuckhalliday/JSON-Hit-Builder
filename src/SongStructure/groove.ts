@@ -1,3 +1,5 @@
+import { rng } from "./rng";
+
 export function randomGroove() {
   const initBass: number[] = [0.5];
   let measureSum = 0.5;
@@ -6,7 +8,7 @@ export function randomGroove() {
   const randomValues = [0.5, 1, 1.5, 2, 0.5, 1, 1.5, 2, 0.5, 1, 1.5, 2, 0.5, 1, 1.5, 2, 0.5, 1, 1.5, 2, 0.5, 1, 1.5, 2, 0.25, 0.75];
 
   while (measureSum < 8) {
-    const random = randomValues[Math.floor(Math.random() * randomValues.length)];
+    const random = randomValues[Math.floor(rng() * randomValues.length)];
     if (beatSum + random <= 2) {
       initBass.push(random);
       beatSum += random;
@@ -23,7 +25,7 @@ export function randomGroove() {
 function getRandomSection() {
   const section = [];
   for (let i = 0; i < 4; i++) {
-    const roll = Math.random();
+    const roll = rng();
     if (roll > 0.6) {
       section.push(0);
     } else if (roll > 0.4) {
@@ -58,7 +60,7 @@ export function shuffleArray(groove: number[]) {
   // First element (0.5) left in place to avoid rest on beat one
   let newArray: number[] = [];
   for (let i = groove.length - 2; i > 1; i--) {
-    let j = Math.floor(Math.random() * (i + 1));
+    let j = Math.floor(rng() * (i + 1));
     [newArray[i], newArray[j]] = [groove[j], groove[i]];
   }
   return newArray;
@@ -68,7 +70,7 @@ export function subdivideArray(groove: number[]) {
   let newArr: number[] = [];
 
   for (let i = 0; i < groove.length; i++) {
-    if ((groove[i] === 0.5 || groove[i] === 0.25) && Math.random() < 0.2) {
+    if ((groove[i] === 0.5 || groove[i] === 0.25) && rng() < 0.2) {
       // randomly subdivide element
       let val = groove[i] / 3;
       let trip = parseFloat(val.toFixed(2));

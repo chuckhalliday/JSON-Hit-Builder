@@ -1,9 +1,7 @@
-import { createSlice, PayloadAction } from "@reduxjs/toolkit";
-import { randomGroove, randomArrangement } from "./SongStructure/groove";
-import generateSong from "./SongStructure/generateSong";
-
-const randomBassGrooves: number[][] = [randomGroove(), randomGroove(), randomGroove(), randomGroove()]
-const songVariables = generateSong(randomBassGrooves, randomArrangement(), (Math.random()/4))
+import { createSlice, PayloadAction, Dispatch } from "@reduxjs/toolkit";
+import { SongStructure, NoteLocation, DrumHit } from "./types";
+import { createRandomSong } from "./SongStructure/createSong";
+import { bassPitch } from "./SongStructure/bassPitch";
 
 export interface SongState {
     isPlaying: boolean,
@@ -11,38 +9,21 @@ export interface SongState {
     key: string,
     midi: boolean,
     selectedBeat: number[],
-    songStructure: {
-      type: string;
-      repeat: number;
-      bass: string[];
-      bassGroove: number[];
-      bassGrid: number[];
-      bassNoteLocations: {
-          x: number;
-          y: number;
-          acc: string;
-      }[];
-      measureLines: number[];
-      drums: { index: number; checked: boolean; accent?: boolean }[][]
-      drumGroove: number[];
-      stepIds: number[];
-      chords: string[];
-      chordTones: {
-        oscTones: number[][],
-        midiTones: number[][]
-      }
-      chordsGroove: number[];
-      chordsLocation: number[];
-  }[]  
+    songStructure: SongStructure,
+    seed: number | null
 }
 
+// The song tree starts empty and deterministic. The first song is produced by
+// the `newSong` thunk dispatched on mount, so importing this module has no side
+// effects and startup is reproducible.
 const initialState: SongState = {
     isPlaying: false,
-    bpm: songVariables.bpm,
-    key: songVariables.key,
+    bpm: 120,
+    key: '',
     midi: false,
     selectedBeat: [0, 0, 0, 0],
-    songStructure: songVariables.songStructure
+    songStructure: [],
+    seed: null
 };
 
 const song = createSlice({
@@ -55,15 +36,20 @@ const song = createSlice({
       setMidi: (state, action: PayloadAction<{ midi: boolean }>) => {
         state.midi = action.payload.midi;
       },
-      setSong: (state, action: PayloadAction<{ songStructure: any, key: string, bpm: number }>) => {
+      setSong: (state, action: PayloadAction<{ songStructure: SongStructure, key: string, bpm: number, seed?: number | null }>) => {
         state.songStructure = action.payload.songStructure;
         state.key = action.payload.key;
-        state.bpm = action.payload.bpm
+        state.bpm = action.payload.bpm;
+        state.seed = action.payload.seed ?? null;
       },
-      setBassState: (state, action: PayloadAction<{ index: number, bassNoteLocations: { x: number, y: number, acc: string }[] }>) => {
-        state.songStructure[action.payload.index].bassNoteLocations = action.payload.bassNoteLocations;
+      setBassState: (state, action: PayloadAction<{ index: number, bassNoteLocations: NoteLocation[] }>) => {
+        // Recompute each note's pitch from its (possibly edited) staff position
+        // and accidental, so dragging a note or toggling its accidental keeps
+        // the stored osc/midi that playback reads in sync with the staff.
+        state.songStructure[action.payload.index].bassNoteLocations =
+          action.payload.bassNoteLocations.map(note => ({ ...note, ...bassPitch(note.y, note.acc) }));
       },
-      setDrumState: (state, action: PayloadAction<{ index: number, drumPart: number, drumStep: number, drums: { index: number, checked: boolean, accent?: boolean } }>) => {
+      setDrumState: (state, action: PayloadAction<{ index: number, drumPart: number, drumStep: number, drums: DrumHit }>) => {
         state.songStructure[action.payload.index].drums[action.payload.drumPart][action.payload.drumStep] = action.payload.drums;
       },
       setChordState: (state, action: PayloadAction<{ part: number, beat: number, midi: number, osc: number, checked: boolean }>) => {
@@ -91,4 +77,13 @@ const song = createSlice({
   });
 
 export const { setIsPlaying, setMidi, setSong, setBassState, setDrumState, setChordState, setCurrentBeat, incrementByAmount } = song.actions;
+
+// Thunk: generate a fresh random song and load it into the store. Replaces the
+// old module-load side effect; dispatched on mount (and reusable for a
+// "new song" button). Pass a seed to reproduce a specific song.
+export const newSong = (seed?: number) => (dispatch: Dispatch) => {
+  const { songStructure, key, bpm, seed: usedSeed } = createRandomSong(seed);
+  dispatch(setSong({ songStructure, key, bpm, seed: usedSeed }));
+};
+
 export default song;

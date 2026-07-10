@@ -1,8 +1,8 @@
-import { tone, midiTone } from "../SongStructure/tone";
 import { triggerMidi } from "./playFunctions";
 import { indexToLamp } from "../SongStructure/beatMapping";
 import { getAudioContext } from "./audioContext";
 import { runPreScheduledSequence, scheduleTimer, Register } from "./scheduler";
+import { NoteLocation } from "../types";
 
 const distortionAmount = 30; // Adjust distortion amount as needed
 const distortionCurve = new Float32Array(65536);
@@ -73,74 +73,8 @@ function playBassOsc(audioContext: AudioContext, startTime: number, bass: number
 
     return oscillators;
   }
-  
-  function mapBassValue(midi: boolean, pattern: {x: number, y: number, acc: string}) {
-    let bass = pattern.y
-    const toneSet = midi ? midiTone : tone;
-        
-        switch (bass) {
-            //E
-            case 120: pattern.acc === 'flat' ? bass = toneSet.Eb[1] : bass = toneSet.E[1]; break
-            case 67.5: pattern.acc === 'flat' ? bass = toneSet.Eb[2] : bass = toneSet.E[2]; break
 
-            //F
-            case 112.5: pattern.acc === 'sharp' ? bass = toneSet.Gb[1] : bass = toneSet.F[1]; break
-            case 60: pattern.acc === 'sharp' ? bass = toneSet.Gb[2] : bass = toneSet.F[2]; break
-
-            //G
-            case 105: if (pattern.acc === 'sharp') {
-                bass = toneSet.Ab[1];
-              } else if (pattern.acc === 'flat'){
-                bass = toneSet.Gb[1];
-              } else {
-                bass = toneSet.G[1];
-              } break;
-            case 52.5: if (pattern.acc === 'sharp') {
-                bass = toneSet.Ab[2];
-              } else if (pattern.acc === 'flat'){
-                bass = toneSet.Gb[2];
-              } else {
-                bass = toneSet.G[2];
-              } break;
-
-            //A
-            case 97.5: if (pattern.acc === 'sharp') {
-                bass = toneSet.Bb[1];
-              } else if (pattern.acc === 'flat'){
-                bass = toneSet.Ab[1];
-              } else {
-                bass = toneSet.A[1];
-              } break;
-            case 45: if (pattern.acc === 'sharp') {
-                bass = toneSet.Bb[2];
-              } else if (pattern.acc === 'flat'){
-                bass = toneSet.Ab[2];
-              } else {
-                bass = toneSet.A[2];
-              } break
-
-            //B
-            case 90: pattern.acc === 'flat' ? bass = toneSet.Bb[1] : bass = toneSet.B[1]; break
-            case 37.5: pattern.acc === 'flat' ? bass = toneSet.Bb[2] : bass = toneSet.B[2]; break
-
-            //C
-            case 82.5: pattern.acc === 'sharp' ? bass = toneSet.Db[2] : bass = toneSet.C[2]; break
-            case 30: pattern.acc === 'sharp' ? bass = toneSet.Db[3] : bass = toneSet.C[3]; break
-
-            //D
-            case 75: if (pattern.acc === 'sharp') {
-                bass = toneSet.Eb[2];
-              } else if (pattern.acc === 'flat'){
-                bass = toneSet.Db[2];
-              } else {
-                bass = toneSet.D[2];
-              } break;
-            default:
-        }
-    return bass
-  }
-  
-  function playBass(midi: boolean, beat: number, pattern: {x: number, y: number, acc: string}[], groove: number[], bpm: number, shouldStop?: () => boolean, lamps?: HTMLInputElement[], drumGroove?: number[], mute?: boolean) {
+  function playBass(midi: boolean, beat: number, pattern: NoteLocation[], groove: number[], bpm: number, shouldStop?: () => boolean, lamps?: HTMLInputElement[], drumGroove?: number[], mute?: boolean) {
     const beatDuration = 60 / bpm; // duration of one beat in seconds
     const audioContext = getAudioContext();
 
@@ -159,7 +93,10 @@ function playBassOsc(audioContext: AudioContext, startTime: number, bass: number
 
       const velocity = Math.floor(Math.random() * (70 - 50 + 1) + 50);
       const release = Math.floor(Math.random() * (70 - 50 + 1) + 50);
-      const bass = mapBassValue(midi, pattern[index]);
+      // Read the note's pre-computed pitch. The staff→pitch mapping now lives in
+      // bassPitch() at generation/edit time, so the scheduler no longer inspects
+      // pixel coordinates.
+      const bass = midi ? pattern[index].midi : pattern[index].osc;
 
       if (bass <= 0 || mute) return;
 

@@ -5,6 +5,7 @@ import { lampToPositions } from "../SongStructure/beatMapping";
 import { useDispatch, useSelector } from "react-redux";
 import { PlayHandle } from "./Piano";
 import styles from "../Styles/DrumMachine.module.scss";
+import { DrumHit } from "../types";
 
 interface DrumMachineProps {
   onRenderWidthChange: any;
@@ -96,7 +97,7 @@ const DrumMachine = forwardRef<PlayHandle, DrumMachineProps>(function DrumMachin
       return;
     }
 
-    const drumHits: Array<Array<{ index: number; checked: boolean }>> = stepsRef.current.map((row) =>
+    const drumHits: DrumHit[][] = stepsRef.current.map((row) =>
       row.map((inputElement, columnIndex) => ({
         index: columnIndex,
         checked: inputElement.checked,

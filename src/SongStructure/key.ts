@@ -1,7 +1,9 @@
+import { rng } from "./rng";
+
 export function setKey() {
   let keyDownMin = -8;
   let keyUpMax = 4;
-  let keyAdjust = Math.floor(Math.random() * (keyUpMax - keyDownMin + 1)) + keyDownMin;
+  let keyAdjust = Math.floor(rng() * (keyUpMax - keyDownMin + 1)) + keyDownMin;
 
   return keyAdjust
 }
