@@ -3,6 +3,7 @@ import { useSelector, useDispatch } from 'react-redux';
 import playBass from '../Playback/playBass';
 import { setBassState, setCurrentBeat, SongState } from '../reducers';
 import { PlayHandle } from './Piano';
+import { useLampStep } from '../Playback/useLampStep';
 
 interface BassStaffProps {
   renderWidth: number;
@@ -27,9 +28,12 @@ const BassStaff = forwardRef<PlayHandle, BassStaffProps>(function BassStaff({ re
   const bassNoteGrid = song.songStructure[part].bassNoteLocations
   const bassGroove = song.songStructure[part].bassGroove
   const drumGroove = song.songStructure[part].drumGroove
+  const chordsGroove = song.songStructure[part].chordsGroove
   const chords = song.songStructure[part].chords
   const chordGrid = song.songStructure[part].chordsLocation
   const measureLines = song.songStructure[part].measureLines
+
+  const handleStep = useLampStep(lampsRef, part, drumGroove, bassGroove, chordsGroove);
 
   const MOUSE = {
     x: -10,
@@ -395,7 +399,7 @@ const BassStaff = forwardRef<PlayHandle, BassStaffProps>(function BassStaff({ re
     stopRef.current = false;
     setIsPlaying(true);
     onPlayingChange?.(true);
-    const endBeat = await playBass(midi, beat, bassNoteGrid, bassGroove, bpm, () => stopRef.current, lampsRef.current, drumGroove);
+    const endBeat = await playBass(midi, beat, bassNoteGrid, bassGroove, bpm, () => stopRef.current, handleStep, drumGroove);
     setIsPlaying(false);
     onPlayingChange?.(false);
     const nextBeat = endBeat >= bassGroove.length ? 0 : endBeat;

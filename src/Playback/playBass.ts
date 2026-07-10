@@ -74,21 +74,16 @@ function playBassOsc(audioContext: AudioContext, startTime: number, bass: number
     return oscillators;
   }
 
-  function playBass(midi: boolean, beat: number, pattern: NoteLocation[], groove: number[], bpm: number, shouldStop?: () => boolean, lamps?: HTMLInputElement[], drumGroove?: number[], mute?: boolean) {
+  function playBass(midi: boolean, beat: number, pattern: NoteLocation[], groove: number[], bpm: number, shouldStop?: () => boolean, onStep?: (lampIndex: number) => void, drumGroove?: number[], mute?: boolean) {
     const beatDuration = 60 / bpm; // duration of one beat in seconds
     const audioContext = getAudioContext();
 
     const getDuration = (index: number) => groove[index] * beatDuration;
 
     const onSchedule = (index: number, time: number, duration: number, register: Register) => {
-      if (lamps && drumGroove) {
+      if (onStep && drumGroove) {
         const lampIndex = indexToLamp(groove, index, drumGroove);
-        if (lamps[lampIndex]) {
-          scheduleTimer(time, () => {
-            lamps[lampIndex].checked = true;
-            lamps[lampIndex].dispatchEvent(new Event('change', { bubbles: true }));
-          }, register);
-        }
+        scheduleTimer(time, () => onStep(lampIndex), register);
       }
 
       const velocity = Math.floor(Math.random() * (70 - 50 + 1) + 50);
