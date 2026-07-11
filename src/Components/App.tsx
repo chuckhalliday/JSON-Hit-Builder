@@ -411,16 +411,18 @@ function App() {
           </div>
           <div className={styles.bpmControls}>
             <label className={styles.fader}>
-              <span>BPM:{bpm}</span>
-              <input
-                className={styles.bpm}
-                type="range"
-                min={90}
-                max={150}
-                step={1}
-                onChange={(e) => dispatch(incrementByAmount(e.target.value))}
-                defaultValue={bpm}
-              />
+              <span className={styles.bpmRow}>BPM:{bpm}</span>
+              <div className={styles.bpmRow}>
+                <input
+                  className={styles.bpm}
+                  type="range"
+                  min={90}
+                  max={150}
+                  step={1}
+                  onChange={(e) => dispatch(incrementByAmount(e.target.value))}
+                  defaultValue={bpm}
+                />
+              </div>
             </label>
             {/*<label className={styles.fader}>
               <span>Volume</span>
