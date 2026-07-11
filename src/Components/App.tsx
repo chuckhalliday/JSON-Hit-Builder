@@ -290,7 +290,6 @@ function App() {
       {authenticated ? (
         // Render your app components when authenticated
         <div className={styles.rowContainer}>
-        <button className={styles.key} onClick={handleGenerateClick}>Key of :<br />{song.key}</button>
         {showGenerate && (
           <div className={styles.generateOverlay}>
             <Generate onClose={handleCloseGenerate}/>
@@ -338,6 +337,7 @@ function App() {
         </div>
         {/* Renders controls */}
         <div className={styles.controls}>
+          <button className={styles.key} onClick={handleGenerateClick}>Key of :<br />{song.key}</button>
           <div className={styles.songControls}>
             <button
               onClick={() => setIncludeChords(prev => !prev)}
