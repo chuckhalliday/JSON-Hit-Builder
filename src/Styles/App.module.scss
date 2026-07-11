@@ -81,6 +81,7 @@
     flex-direction: row;
     flex-wrap: nowrap;
     align-items: center;
+    justify-content: center;
     column-gap: 6px;
     flex: 1 1 auto;
     min-width: 0;
@@ -138,6 +139,14 @@
     display: flex;
     justify-content: center;
     align-items: flex-start;
+}
+
+.controls .key {
+    position: absolute;
+    left: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    margin-right: 0;
 }
 
 .songControls {
