@@ -15,7 +15,10 @@ export function useLampStep(
     const lamp = lampsRef.current[lampIndex];
     if (lamp) {
       lamp.checked = true;
-      lamp.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+      // Instant, not 'smooth': this fires on every 16th-note step during playback,
+      // and a smooth-scroll animation on that cadence is main-thread work that can
+      // delay pending sample-load promises past their scheduled audio-clock time.
+      lamp.scrollIntoView({ block: 'nearest', inline: 'center' });
     }
     const [drumPos, bassPos, chordPos] = lampToPositions(lampIndex, drumGroove, bassGroove, chordsGroove);
     dispatch(setCurrentBeat([part, drumPos, bassPos, chordPos]));

@@ -38,6 +38,12 @@ export function loadSoundFile(url: string, callback: (buffer: AudioBuffer) => vo
     loadBuffer(url).then(callback);
   }
 
+// Warms the sample cache for every drum voice so playback scheduling never
+// races a cold fetch+decode against SCHEDULE_LEAD (see scheduler.ts).
+export function preloadDrumSamples(): Promise<AudioBuffer[]> {
+  return Promise.all(Object.values(SAMPLE_URLS).map(loadBuffer));
+}
+
 export function playDrumSample(buffer: AudioBuffer, volume: number = 1.0 /*set the volume 0.0 - 1.0*/, time?: number): AudioBufferSourceNode {
     const audioContext = getAudioContext();
     const source = audioContext.createBufferSource();

@@ -7,6 +7,7 @@ import BassStaff from "./BassStaff";
 import Piano, { PlayHandle } from './Piano';
 import { useSelector, useDispatch } from "react-redux"
 import { playVerse } from '../Playback/playSong';
+import { preloadDrumSamples } from '../Playback/playDrums';
 import { useLampStep } from '../Playback/useLampStep';
 import { incrementByAmount, setIsPlaying, setMidi, SongState, setCurrentBeat, newSong } from '../reducers';
 import type { AppDispatch } from '../store'
@@ -75,6 +76,12 @@ function App() {
     }
     setAuthenticated(true);
   };
+
+  // Warm the drum sample cache as early as possible so the first playback of a
+  // session doesn't race a cold fetch+decode against the scheduler's lead time.
+  useEffect(() => {
+    preloadDrumSamples().catch(() => { /* first hit will just load it lazily */ });
+  }, []);
 
   useEffect(() => {
     const checkAuthentication = async () => {
