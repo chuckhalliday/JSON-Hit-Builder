@@ -135,6 +135,10 @@ function App() {
 
   const lampsRef = React.useRef<HTMLInputElement[]>([]);
   const stopRef = React.useRef(false);
+  // Bumped whenever the user manually picks a lamp position. Lets an in-flight
+  // pause (see stop-branch below) detect that its paused position is stale and
+  // avoid clobbering the newer manual selection.
+  const manualSeekEpochRef = React.useRef(0);
 
   const partGrooves = song.songStructure[verse] ?? { drumGroove: [], bassGroove: [], chordsGroove: [] };
   const handleStep = useLampStep(lampsRef, verse, partGrooves.drumGroove, partGrooves.bassGroove, partGrooves.chordsGroove);
@@ -156,6 +160,7 @@ function App() {
 
 
   async function playSong(song: SongState, verse: number, drumBeat: number, bassBeat: number, chordBeat: number) {
+    const seekEpochAtStart = manualSeekEpochRef.current;
     let tempo = song.bpm - 60;
     //const output = new midi.Output()
     //output.openPort(3)
@@ -189,16 +194,21 @@ function App() {
       );
 
       if (stopRef.current) {
-        const wrap = (idx: number, len: number) => (idx >= len ? 0 : idx);
-        const drumLen = song.songStructure[verse].drumGroove.length;
-        const bassLen = song.songStructure[verse].bassGroove.length;
-        const chordLen = song.songStructure[verse].chordsGroove.length;
-        dispatch(setCurrentBeat([
-          verse,
-          wrap(result.drumBeat, drumLen),
-          wrap(result.bassBeat, bassLen),
-          wrap(result.chordBeat, chordLen),
-        ]))
+        // If the user picked a new lamp position while this stop was still
+        // in flight, their selection is newer than where we stopped - don't
+        // overwrite it with the stale paused position.
+        if (manualSeekEpochRef.current === seekEpochAtStart) {
+          const wrap = (idx: number, len: number) => (idx >= len ? 0 : idx);
+          const drumLen = song.songStructure[verse].drumGroove.length;
+          const bassLen = song.songStructure[verse].bassGroove.length;
+          const chordLen = song.songStructure[verse].chordsGroove.length;
+          dispatch(setCurrentBeat([
+            verse,
+            wrap(result.drumBeat, drumLen),
+            wrap(result.bassBeat, bassLen),
+            wrap(result.chordBeat, chordLen),
+          ]))
+        }
         dispatch(setIsPlaying({ isPlaying: false }))
         return;
       }
@@ -315,6 +325,7 @@ function App() {
                     onRenderWidthChange={handleRenderWidthChange}
                     part={index}
                     lampsRef={lampsRef}
+                    manualSeekEpochRef={manualSeekEpochRef}
                   />
                 </div>
               )}

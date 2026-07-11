@@ -12,6 +12,7 @@ interface DrumMachineProps {
   part: number;
   lampsRef: React.MutableRefObject<HTMLInputElement[]>;
   onPlayingChange?: (isPlaying: boolean) => void;
+  manualSeekEpochRef?: React.MutableRefObject<number>;
 }
 
 const DrumMachine = forwardRef<PlayHandle, DrumMachineProps>(function DrumMachine({
@@ -19,6 +20,7 @@ const DrumMachine = forwardRef<PlayHandle, DrumMachineProps>(function DrumMachin
   part,
   lampsRef,
   onPlayingChange,
+  manualSeekEpochRef,
 }, ref) {
   const [isPlaying, setIsPlaying] = React.useState(false);
   const stopRef = useRef(false);
@@ -186,7 +188,18 @@ const DrumMachine = forwardRef<PlayHandle, DrumMachineProps>(function DrumMachin
                   lampsRef.current[stepId] = elm;
                 }}
                 className={styles.lamp__input}
-                onChange={() => handleStep(stepId)}
+                onClick={() => {
+                  // Not onChange: handleStep mutates lamp.checked directly (see
+                  // useLampStep) to avoid a re-render on every playback step.
+                  // That bypasses React's change-detection tracker for radios,
+                  // so a manual click on a lamp the playhead already visited
+                  // can look like a no-op change and silently drop onChange.
+                  // onClick fires unconditionally and isn't affected.
+                  if (manualSeekEpochRef) {
+                    manualSeekEpochRef.current++;
+                  }
+                  handleStep(stepId);
+                }}
               />
               <div className={styles.lamp__content} />
             </label>
