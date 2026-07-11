@@ -1,11 +1,11 @@
 import React, { forwardRef, useEffect, useImperativeHandle, useRef } from "react";
 import { playDrums } from "../Playback/playSong";
 import { setDrumState, SongState, setCurrentBeat } from "../reducers";
-import { lampToPositions } from "../SongStructure/beatMapping";
 import { useDispatch, useSelector } from "react-redux";
 import { PlayHandle } from "./Piano";
 import styles from "../Styles/DrumMachine.module.scss";
 import { DrumHit } from "../types";
+import { useLampStep } from "../Playback/useLampStep";
 
 interface DrumMachineProps {
   onRenderWidthChange: any;
@@ -31,7 +31,11 @@ const DrumMachine = forwardRef<PlayHandle, DrumMachineProps>(function DrumMachin
   const drums = song.songStructure[part].drums
   const steps = song.songStructure[part].stepIds
   const drumGroove = song.songStructure[part].drumGroove
+  const bassGroove = song.songStructure[part].bassGroove
+  const chordsGroove = song.songStructure[part].chordsGroove
   const numOfSteps = drumGroove.length
+
+  const handleStep = useLampStep(lampsRef, part, drumGroove, bassGroove, chordsGroove);
 
     const stepsRef = React.useRef<HTMLInputElement[][]>(
       Array.from({ length: drums.length }, () =>
@@ -106,7 +110,7 @@ const DrumMachine = forwardRef<PlayHandle, DrumMachineProps>(function DrumMachin
     stopRef.current = false;
     setIsPlaying(true);
     onPlayingChange?.(true);
-    const endBeat = await playDrums(bpm, midi, start, drumGroove, drumHits, lampsRef.current, () => stopRef.current);
+    const endBeat = await playDrums(bpm, midi, start, drumGroove, drumHits, handleStep, () => stopRef.current);
     setIsPlaying(false);
     onPlayingChange?.(false);
     const nextBeat = endBeat >= drumGroove.length ? 0 : endBeat;
@@ -147,30 +151,6 @@ const DrumMachine = forwardRef<PlayHandle, DrumMachineProps>(function DrumMachin
     }
   }, [onRenderWidthChange]);
 
-  useEffect(() => {
-    function handleLampChange(event: any) {
-      const lampId: number = parseInt(event.target.id);
-      const position = lampToPositions(
-        lampId,
-        song.songStructure[part].drumGroove,
-        song.songStructure[part].bassGroove,
-        song.songStructure[part].chordsGroove
-      )
-      dispatch(setCurrentBeat([part, position[0], position[1], position[2]]))
-      event.target.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
-    }
-
-    lampsRef.current.forEach((lamp) => {
-      lamp.addEventListener('change', handleLampChange);
-    });
-
-    return () => {
-      lampsRef.current.forEach((lamp) => {
-        lamp.removeEventListener('change', handleLampChange);
-      });
-    };
-  }, []);
-  
   return (
     <div className={styles.machine} ref={machineRef}>
       {/* Renders titles */}
@@ -206,6 +186,7 @@ const DrumMachine = forwardRef<PlayHandle, DrumMachineProps>(function DrumMachin
                   lampsRef.current[stepId] = elm;
                 }}
                 className={styles.lamp__input}
+                onChange={() => handleStep(stepId)}
               />
               <div className={styles.lamp__content} />
             </label>

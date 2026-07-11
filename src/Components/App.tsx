@@ -7,6 +7,7 @@ import BassStaff from "./BassStaff";
 import Piano, { PlayHandle } from './Piano';
 import { useSelector, useDispatch } from "react-redux"
 import { playVerse } from '../Playback/playSong';
+import { useLampStep } from '../Playback/useLampStep';
 import { incrementByAmount, setIsPlaying, setMidi, SongState, setCurrentBeat, newSong } from '../reducers';
 import type { AppDispatch } from '../store'
 import styles from "../Styles/App.module.scss"
@@ -128,6 +129,9 @@ function App() {
   const lampsRef = React.useRef<HTMLInputElement[]>([]);
   const stopRef = React.useRef(false);
 
+  const partGrooves = song.songStructure[verse] ?? { drumGroove: [], bassGroove: [], chordsGroove: [] };
+  const handleStep = useLampStep(lampsRef, verse, partGrooves.drumGroove, partGrooves.bassGroove, partGrooves.chordsGroove);
+
   const pianoRef = React.useRef<PlayHandle>(null);
   const bassStaffRef = React.useRef<PlayHandle>(null);
   const drumMachineRef = React.useRef<PlayHandle>(null);
@@ -170,7 +174,7 @@ function App() {
         song.songStructure[verse].chordsGroove,
         song.songStructure[verse].chords,
         song.songStructure[verse].chordTones,
-        lampsRef.current,
+        handleStep,
         () => stopRef.current,
         includeDrums,
         includeBass,

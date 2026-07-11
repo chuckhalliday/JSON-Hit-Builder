@@ -3,6 +3,7 @@ import { useSelector, useDispatch } from 'react-redux';
 import { SongState, setChordState, setCurrentBeat } from '../reducers';
 import { midiMap } from '../SongStructure/tone';
 import playChords from '../Playback/playChords';
+import { useLampStep } from '../Playback/useLampStep';
 
 import styles from "../Styles/Piano.module.scss"
 
@@ -30,9 +31,12 @@ const Piano = forwardRef<PlayHandle, PianoProps>(function Piano({ lampsRef, onPl
   const chordTones = song.songStructure[part].chordTones
   const chordsGroove = song.songStructure[part].chordsGroove
   const drumGroove = song.songStructure[part].drumGroove
+  const bassGroove = song.songStructure[part].bassGroove
 
   const [isPlaying, setIsPlaying] = useState(false);
   const stopRef = useRef(false);
+
+  const handleStep = useLampStep(lampsRef, part, drumGroove, bassGroove, chordsGroove);
 
   const handleStartClick = async () => {
     if (isPlaying) {
@@ -44,7 +48,7 @@ const Piano = forwardRef<PlayHandle, PianoProps>(function Piano({ lampsRef, onPl
     stopRef.current = false;
     setIsPlaying(true);
     onPlayingChange?.(true);
-    const endBeat = await playChords(midi, beat, chords, chordTones, chordsGroove, bpm, () => stopRef.current, lampsRef.current, drumGroove);
+    const endBeat = await playChords(midi, beat, chords, chordTones, chordsGroove, bpm, () => stopRef.current, handleStep, drumGroove);
     setIsPlaying(false);
     onPlayingChange?.(false);
     const nextBeat = endBeat >= chordsGroove.length ? 0 : endBeat;

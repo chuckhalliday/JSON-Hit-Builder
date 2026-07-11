@@ -4,21 +4,16 @@ import { getAudioContext } from "./audioContext";
 import { runPreScheduledSequence, scheduleTimer, Register } from "./scheduler";
 import { ChordTones } from "../types";
 
-export default async function playChords(midi: boolean, beat: number, pattern: string[], chords: ChordTones, groove: number[], bpm: number, shouldStop?: () => boolean, lamps?: HTMLInputElement[], drumGroove?: number[], mute?: boolean) {
+export default async function playChords(midi: boolean, beat: number, pattern: string[], chords: ChordTones, groove: number[], bpm: number, shouldStop?: () => boolean, onStep?: (lampIndex: number) => void, drumGroove?: number[], mute?: boolean) {
     const beatDuration = 60 / bpm; // duration of one beat in seconds
     const audioContext = getAudioContext();
 
     const getDuration = (index: number) => groove[index] * beatDuration;
 
     const scheduleLamp = (index: number, time: number, register: Register) => {
-      if (lamps && drumGroove) {
+      if (onStep && drumGroove) {
         const lampIndex = indexToLamp(groove, index, drumGroove);
-        if (lamps[lampIndex]) {
-          scheduleTimer(time, () => {
-            lamps[lampIndex].checked = true;
-            lamps[lampIndex].dispatchEvent(new Event('change', { bubbles: true }));
-          }, register);
-        }
+        scheduleTimer(time, () => onStep(lampIndex), register);
       }
     };
 

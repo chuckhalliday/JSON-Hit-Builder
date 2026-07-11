@@ -71,7 +71,7 @@ const MIDI_NOTES: Record<number, number> = {
   0: 36, 1: 38, 5: 42, 6: 46, 8: 49,
 };
 
-export default function playBeat(midi: boolean, beat: number, pattern: DrumHit[], groove: number[], bpm: number, stepsRef: DrumHit[][], lamps?: HTMLInputElement[], shouldStop?: () => boolean, mute?: boolean) {
+export default function playBeat(midi: boolean, beat: number, pattern: DrumHit[], groove: number[], bpm: number, stepsRef: DrumHit[][], onStep?: (index: number) => void, shouldStop?: () => boolean, mute?: boolean) {
     const beatDuration = 60 / bpm // duration of one beat in seconds
     const swingRatio = 3/3; // adjust as needed
 
@@ -99,11 +99,8 @@ export default function playBeat(midi: boolean, beat: number, pattern: DrumHit[]
       }
       const release = Math.floor(Math.random() * (70 - 50 + 1) + 50);
 
-      if (lamps) {
-        scheduleTimer(time, () => {
-          lamps[index].checked = true;
-          lamps[index].dispatchEvent(new Event('change', { bubbles: true }));
-        }, register);
+      if (onStep) {
+        scheduleTimer(time, () => onStep(index), register);
       }
 
       if (sampleUrl === undefined || !pattern[index].checked || mute) return;
