@@ -17,6 +17,13 @@ const noteMapping: { [key: number]: string } = {
   0.25: "../notes/sixteenthnote.webp",
 };
 
+// Accepted bounds for the optional BPM / song-length fields: one source of
+// truth for the input attributes, the placeholders, and the clamp.
+const minBpm = 40;
+const maxBpm = 240;
+const minLength = 60;
+const maxLength = 600;
+
 export default function Generate({ onClose }: GenerateProps) {
   const dispatch = useDispatch()
   const [grooves, setGrooves] = useState([
@@ -36,6 +43,8 @@ export default function Generate({ onClose }: GenerateProps) {
   const [modify, setModify] = useState<number>(0)
   const [toneModify, setToneModify] = useState<number>(0)
   const [keyAdjust, setKeyAdjust] = useState<number | undefined>()
+  const [bpm, setBpm] = useState<number | undefined>()
+  const [songLength, setSongLength] = useState<number | undefined>()
 
   const handleKeyChange = (e: ChangeEvent<HTMLSelectElement>) => {
     setSharpFlat('♮')
@@ -102,10 +111,13 @@ export default function Generate({ onClose }: GenerateProps) {
     }
   })
 
-  const generateNew = generateSong(grooves, arrangement, triplet, keyAdjust, tonality)
-  
+  // Number inputs only enforce min/max on the spinner arrows, not typed
+  // values, so clamp here — a too-short length would yield a zero-part song.
+  const clamp = (value: number | undefined, min: number, max: number) =>
+    value === undefined ? undefined : Math.min(max, Math.max(min, value));
+
   const updateSong = () => {
-    dispatch(setSong(generateNew))
+    dispatch(setSong(generateSong(grooves, arrangement, triplet, keyAdjust, tonality, clamp(bpm, minBpm, maxBpm), clamp(songLength, minLength, maxLength))))
     onClose()
   }
   const generateRef = useRef<HTMLDivElement | null>(null);
@@ -252,7 +264,7 @@ export default function Generate({ onClose }: GenerateProps) {
           defaultValue="0" // Set an initial value (e.g., 5)
           className={styles.circularDial} // Apply your custom dial styles
           onChange={(e) => {
-          const newValue = parseInt(e.target.value, 10);
+          const newValue = parseFloat(e.target.value);
           setTriplet(newValue)
           }}
         /></p>
@@ -284,13 +296,35 @@ export default function Generate({ onClose }: GenerateProps) {
           )}
         </p>
         {selectedKey && (
-        <p>Tonality: 
+        <p>Tonality:
           <select id="tonality" value={tonality} onChange = {handleTonalityChange}>
             <option>Major</option>
             <option>Minor</option>
           </select>
           </p>
-        )}   
+        )}
+        <p>BPM (optional):
+          <input
+            className={styles.numberInput}
+            type="number"
+            min={minBpm}
+            max={maxBpm}
+            placeholder={`${minBpm}-${maxBpm}`}
+            value={bpm ?? ''}
+            onChange={(e) => setBpm(e.target.value === '' ? undefined : Number(e.target.value))}
+          />
+        </p>
+        <p>Song Length (optional):
+          <input
+            className={styles.numberInput}
+            type="number"
+            min={minLength}
+            max={maxLength}
+            placeholder={`${minLength}-${maxLength}`}
+            value={songLength ?? ''}
+            onChange={(e) => setSongLength(e.target.value === '' ? undefined : Number(e.target.value))}
+          /> seconds
+        </p>
         <br/>
         <button onClick={() => updateSong()}>Regenerate</button>
       </div>

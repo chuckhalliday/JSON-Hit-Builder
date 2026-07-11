@@ -7,7 +7,7 @@ import { generateSongStructure } from './songStructure.js';
 import { DrumHit } from "../types";
 import { rng } from "./rng";
 
-export default function generateSong(bassGrooves: number[][], arrangement: number[][], tripMod: number, pickedKey?: number, tonality?: string){
+export default function generateSong(bassGrooves: number[][], arrangement: number[][], tripMod: number, pickedKey?: number, tonality?: string, pickedBpm?: number, pickedLength?: number){
 
   // Re-roll bass accidentals from the (seeded) RNG before building any lines.
   rollAccidentals();
@@ -94,8 +94,10 @@ export default function generateSong(bassGrooves: number[][], arrangement: numbe
   let chordsCA = transposeChordArray(chordsC, keyAdjust)
   let bassBA = transposeBassArray(bassB, keyAdjust)
 
-  const songtime: number = Math.round(rng() * (240 - 210) + 210);
-  const bpm: number = Math.round(rng() * (140 - 100) + 100);
+  // Like pickedKey above: an omitted value falls back to the same random
+  // range the on-load song uses, so unset menu fields keep load behavior.
+  const songtime: number = pickedLength ?? Math.round(rng() * (240 - 210) + 210);
+  const bpm: number = pickedBpm ?? Math.round(rng() * (140 - 100) + 100);
   const bps: number = bpm / 60;
   const beatstotal: number = bps * songtime;
   const measures: number = Math.round(beatstotal / 4 / 4) * 4;
