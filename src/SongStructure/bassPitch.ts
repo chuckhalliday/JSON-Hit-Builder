@@ -14,14 +14,9 @@ export interface Pitch {
 // inside the audio scheduler (playBass.ts), keyed on the exact staff-Y
 // constants that drawBass emits. Behaviour is intentionally identical.
 export function bassPitch(y: number, acc: string): Pitch {
-  // tone[name][octave] and midiTone[name][octave] are NOT the same note:
-  // midiTone's index is one octave lower than tone's for the same number
-  // (e.g. tone.E[1] is real E1 at 41.2Hz, but midiTone.E[1] is real E2 -
-  // real E1 is midiTone.E[0]). Subtracting 1 here corrects for that so the
-  // returned midi always names the same note as osc's frequency.
   const pick = (name: keyof typeof tone, octave: number): Pitch => ({
     osc: tone[name][octave],
-    midi: midiTone[name][octave - 1],
+    midi: midiTone[name][octave],
   });
 
   switch (y) {

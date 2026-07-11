@@ -15,7 +15,7 @@ export async function triggerMidi(bus: string, note: number, duration: number, v
     }
 
     if (!outputDevice) {
-      console.log("Output device 'IAC Driver Bus 1' not found.");
+      console.log(`Output device 'IAC Driver Bus ${bus}' not found.`);
       return;
     }
 
