@@ -722,7 +722,7 @@ const BassStaff = forwardRef<PlayHandle, BassStaffProps>(function BassStaff({ re
         onClick={() => onViewModeChange(viewMode === 'staff' ? 'tab' : 'staff')}
         className={viewMode === 'tab' ? `${appStyles.button} ${appStyles.openButton} ${appStyles.stickyToggle}` : `${appStyles.button} ${appStyles.stickyToggle}`}
       >
-        {viewMode === 'staff' ? 'Tab' : 'Staff'}
+        {viewMode === 'staff' ? 'Staff' : 'Tab'}
       </button>
       <canvas ref={canvasRef} id="myCanvas" />
     </div>
