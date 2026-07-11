@@ -116,12 +116,17 @@ describe('bassPitch (staff position -> pitch)', () => {
     [82.5, 'none', 'C', 2], [82.5, 'sharp', 'Db', 2],
     [30, 'none', 'C', 3], [30, 'sharp', 'Db', 3],
     [75, 'none', 'D', 2], [75, 'sharp', 'Eb', 2], [75, 'flat', 'Db', 2],
+    // 3 ledger lines above the staff
+    [22.5, 'none', 'D', 3], [22.5, 'sharp', 'Eb', 3], [22.5, 'flat', 'Db', 3],
+    [15, 'none', 'E', 3], [15, 'flat', 'Eb', 3],
+    [7.5, 'none', 'F', 3], [7.5, 'sharp', 'Gb', 3],
+    [0, 'none', 'G', 3], [0, 'sharp', 'Ab', 3], [0, 'flat', 'Gb', 3],
   ];
 
   it.each(cases)('y=%p acc=%p resolves to %p[%p]', (y, acc, name, octave) => {
     expect(bassPitch(y as number, acc as string)).toEqual({
       osc: tone[name as keyof typeof tone][octave as number],
-      midi: midiTone[name as keyof typeof midiTone][octave as number],
+      midi: midiTone[name as keyof typeof midiTone][(octave as number) - 1],
     });
   });
 
