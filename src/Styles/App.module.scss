@@ -291,6 +291,15 @@ input[type="range"].bpm::-moz-range-thumb {
     color: white;
   }
 
+  // Keeps the bass staff's Tab/Staff toggle pinned to the visible left edge
+  // as .openedPart is scrolled horizontally, instead of scrolling away with
+  // the (often much wider than the viewport) staff/tab canvas underneath it.
+  .stickyToggle {
+    position: sticky;
+    left: 0;
+    z-index: 1;
+  }
+
   .grooveButton {
     border: none;
     background-color: white;
