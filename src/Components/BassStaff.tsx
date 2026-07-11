@@ -11,10 +11,34 @@ import appStyles from '../Styles/App.module.scss';
 // already stored on notes (see bassPitch.ts), so no pixel/pitch translation
 // is needed here.
 const BASS_OPEN_MIDI = [28, 33, 38, 43];
-// Horizontal position of each tab line, top to bottom (G D A E) - the same
-// vertical band the 5-line staff occupies, so switching views doesn't reflow
-// the canvas.
-const TAB_LINE_Y = [52.5, 67.5, 82.5, 97.5];
+
+// Fixed vertical unit for one diatonic staff step. This is baked into every
+// note's stored `y` (and into bassPitch.ts's switch keys), so it must never
+// change - existing songs' note positions depend on it.
+const SPACING = 7.5;
+// Pitch-space y bounds a note can be placed at: 0 is the 3rd ledger line
+// above the staff (G3), 120 is the 1st ledger line below it (E1) - bass is a
+// transposing instrument, so the open low E string already lands just one
+// ledger line under the staff and is the lowest note a 4-string bass can
+// produce, so the range doesn't extend any further down. Everything in
+// between lines up with a case in bassPitch.ts.
+const NOTE_MIN_Y = 0;
+const NOTE_MAX_Y = 120;
+// Canvas-pixel margin above/below the mapped pitch range, so noteheads and
+// accidental symbols at the extremes have room to render without clipping.
+const STAFF_Y_OFFSET = 45;
+const CANVAS_HEIGHT = NOTE_MAX_Y + STAFF_Y_OFFSET * 2;
+// Pitch-space y of the 5 main staff lines (A2 F2 D2 B1 G1, top to bottom),
+// of the 3 extra ledger lines above them (reachable via frets further up the
+// neck), and of the single ledger line below (the open low E string).
+const MAIN_LINES_Y = [45, 60, 75, 90, 105];
+const LEDGER_LINES_ABOVE_Y = [30, 15, 0];
+const LEDGER_LINES_BELOW_Y = [120];
+
+// Horizontal position of each tab line, top to bottom (G D A E) - vertically
+// centered in the (now taller, to fit the bass staff's ledger lines) canvas
+// so switching views doesn't look lopsided.
+const TAB_LINE_Y = [52.5, 67.5, 82.5, 97.5].map((y) => y + STAFF_Y_OFFSET);
 
 type TabPosition = { stringIndex: number; fret: number };
 
@@ -154,7 +178,7 @@ const BassStaff = forwardRef<PlayHandle, BassStaffProps>(function BassStaff({ re
 
   function getAccidentalOptionLayout(location: { x: number, y: number, acc: string }, spacing: number, fontSize: number) {
     const x = location.x + spacing * -3.5;
-    const baseY = location.y - spacing * 2 + fontSize;
+    const baseY = location.y + STAFF_Y_OFFSET - spacing * 2 + fontSize;
     const gap = fontSize + 6;
     return getAccidentalOptions(location.acc).map((acc, i) => ({
       acc,
@@ -177,13 +201,42 @@ const BassStaff = forwardRef<PlayHandle, BassStaffProps>(function BassStaff({ re
     const CANVAS = canvasRef.current;
     if (CANVAS) {
       const aspectRatio = CLEF_IMAGE.width / CLEF_IMAGE.height;
-      const newHeight = CANVAS.height * 0.52;
+      // Fixed to the 5-line staff's own size, not the canvas's - the canvas
+      // is now taller than the staff to fit the ledger lines above/below it.
+      const newHeight = 78;
       const newWidth = aspectRatio * newHeight;
 
       ctx.drawImage(CLEF_IMAGE,
         location.x - newWidth / 2, location.y - newHeight / 2,
         newWidth, newHeight);
     }
+  }
+
+  // Short ledger-line segments through/around a single note, matching printed
+  // sheet music: a note ON a ledger line gets a line through it, a note in
+  // the space beyond one gets the line(s) it "steps over" but not one
+  // through itself. Nothing is drawn for notes within the 5-line staff.
+  function drawLedgerLines(ctx: CanvasRenderingContext2D, location: { x: number, y: number }) {
+    const staffTop = MAIN_LINES_Y[0];
+    const staffBottom = MAIN_LINES_Y[MAIN_LINES_Y.length - 1];
+    const needed =
+      location.y < staffTop ? LEDGER_LINES_ABOVE_Y.filter((y) => y >= location.y) :
+      location.y > staffBottom ? LEDGER_LINES_BELOW_Y.filter((y) => y <= location.y) :
+      [];
+    if (needed.length === 0) return;
+
+    const halfWidth = SPACING + 4;
+    ctx.save();
+    ctx.strokeStyle = 'black';
+    ctx.lineWidth = 1;
+    needed.forEach((pitchY) => {
+      const y = pitchY + STAFF_Y_OFFSET;
+      ctx.beginPath();
+      ctx.moveTo(location.x - halfWidth, y);
+      ctx.lineTo(location.x + halfWidth, y);
+      ctx.stroke();
+    });
+    ctx.restore();
   }
 
   function drawNote(ctx: CanvasRenderingContext2D, location: { x: number, y: number, acc: string }) {
@@ -198,7 +251,7 @@ const BassStaff = forwardRef<PlayHandle, BassStaffProps>(function BassStaff({ re
       }
     }
     if (CANVAS && match) {
-      const spacing = CANVAS.height / 20;
+      const spacing = SPACING;
       const groove = bassGroove[index];
       ctx.fillStyle = "black";
       ctx.strokeStyle = "black";
@@ -208,65 +261,67 @@ const BassStaff = forwardRef<PlayHandle, BassStaffProps>(function BassStaff({ re
       ctx.font = `${fontSize}px serif`;
 
       //draw notes
-      if (location.y >= 30) {
+      if (location.y >= NOTE_MIN_Y) {
+        // location.y is pitch-space (unshifted, as stored on the note); `py`
+        // is where that pitch actually lands on the canvas.
+        const py = location.y + STAFF_Y_OFFSET;
+        drawLedgerLines(ctx, location);
         //add line for notes up to dotted half
         if (groove <= 2.5) {
           ctx.beginPath();
           ctx.moveTo(location.x + spacing,
-            location.y);
+            py);
           ctx.lineTo(location.x + spacing,
-            location.y - spacing * 5);
+            py - spacing * 5);
           ctx.stroke();
           }
           //add flag for notes smaller than quarter note
           if(groove < 1){
             ctx.beginPath();
             ctx.moveTo(location.x + spacing,
-              location.y - spacing * 5);
+              py - spacing * 5);
             ctx.bezierCurveTo(
-              location.x + spacing * 2, location.y - spacing * 3,
-              location.x + spacing * 2.5, location.y - spacing * 3,
-              location.x + spacing * 2.5, location.y - spacing * 1);
+              location.x + spacing * 2, py - spacing * 3,
+              location.x + spacing * 2.5, py - spacing * 3,
+              location.x + spacing * 2.5, py - spacing * 1);
             ctx.bezierCurveTo(
-              location.x + spacing * 2.5, location.y - spacing * 2.7,
-              location.x + spacing * 2, location.y - spacing * 2.7,
-              location.x + spacing, location.y - spacing * 4.5);
+              location.x + spacing * 2.5, py - spacing * 2.7,
+              location.x + spacing * 2, py - spacing * 2.7,
+              location.x + spacing, py - spacing * 4.5);
             ctx.stroke();
             ctx.fill();
           }
           //add double flag for sixteenth notes
           if(groove === 0.25){
-            if (location.y >= 30) {
-              ctx.beginPath();
-              ctx.moveTo(location.x + spacing, location.y - spacing * 5 + 8);
-              ctx.bezierCurveTo(
-                location.x + spacing * 2, location.y - spacing * 3 + 7,
-                location.x + spacing * 2.5, location.y - spacing * 3 + 7,
-                location.x + spacing * 2.5, location.y - spacing * 1 + 4);
-              ctx.bezierCurveTo(
-                location.x + spacing * 2.5, location.y - spacing * 2.7 + 7,
-                location.x + spacing * 2, location.y - spacing * 2.7 + 7,
-                location.x + spacing, location.y - spacing * 4.5 + 4);
-              ctx.stroke();
-              ctx.fill();
-            } 
+            ctx.beginPath();
+            ctx.moveTo(location.x + spacing, py - spacing * 5 + 8);
+            ctx.bezierCurveTo(
+              location.x + spacing * 2, py - spacing * 3 + 7,
+              location.x + spacing * 2.5, py - spacing * 3 + 7,
+              location.x + spacing * 2.5, py - spacing * 1 + 4);
+            ctx.bezierCurveTo(
+              location.x + spacing * 2.5, py - spacing * 2.7 + 7,
+              location.x + spacing * 2, py - spacing * 2.7 + 7,
+              location.x + spacing, py - spacing * 4.5 + 4);
+            ctx.stroke();
+            ctx.fill();
           }
         if (location.acc === 'flat') {
-          ctx.fillText('♭', location.x + spacing * -3.5, location.y - spacing * 2 + fontSize);
+          ctx.fillText('♭', location.x + spacing * -3.5, py - spacing * 2 + fontSize);
         }
         if (location.acc === 'sharp') {
-          ctx.fillText('#', location.x + spacing * -2.5, location.y - spacing * 1.9 + fontSize );
+          ctx.fillText('#', location.x + spacing * -2.5, py - spacing * 1.9 + fontSize );
         }
         //add dots for syncopated notes
         if (groove === 2.5 || groove === 1.5 || groove === 0.75) {
           ctx.beginPath();
-          ctx.arc(location.x + spacing + 8, location.y - 3.8, 2.8, 0, Math.PI * 2);
+          ctx.arc(location.x + spacing + 8, py - 3.8, 2.8, 0, Math.PI * 2);
           ctx.fill();
         }
         //draw actual note
         ctx.beginPath();
         ctx.save();
-        ctx.translate(location.x, location.y);
+        ctx.translate(location.x, py);
         ctx.rotate(-0.2);
         ctx.scale(1.05, 0.8);
         ctx.arc(0, 0, spacing, 0, Math.PI * 2);
@@ -277,84 +332,88 @@ const BassStaff = forwardRef<PlayHandle, BassStaffProps>(function BassStaff({ re
         }
       //draw rests
       } else {
-        //half rest  
+        // Rests aren't pitched, so they're always drawn centered on the
+        // staff regardless of location - these pixel values are tuned
+        // relative to the (now offset) staff center, not location.y.
+        const REST_Y = STAFF_Y_OFFSET;
+        //half rest
         if (groove <= 2) {
           if (groove === 2) {
             ctx.beginPath();
             ctx.moveTo(location.x + spacing,
-              75);
+              REST_Y + 75);
             ctx.lineTo(location.x + spacing,
-              68);
+              REST_Y + 68);
             ctx.lineTo(location.x - spacing,
-              68);
+              REST_Y + 68);
             ctx.lineTo(location.x - spacing,
-              75);
+              REST_Y + 75);
             ctx.stroke()
             ctx.fill();
             //draw quarter rest
           } else if (groove >= 1) {
             ctx.beginPath();
-            ctx.moveTo(location.x - 5, 51);
-            ctx.lineTo(location.x + 5, 66);
-            ctx.lineTo(location.x + 1, 75);
-            ctx.lineTo(location.x + 7, 87);
-            ctx.quadraticCurveTo(location.x - 6, 83, location.x + 4, 98)
-            ctx.quadraticCurveTo(location.x - 15, 79, location.x + 4, 83)
-            ctx.lineTo(location.x - 5, 69)
-            ctx.quadraticCurveTo(location.x + 5, 68, location.x - 5, 52)
+            ctx.moveTo(location.x - 5, REST_Y + 51);
+            ctx.lineTo(location.x + 5, REST_Y + 66);
+            ctx.lineTo(location.x + 1, REST_Y + 75);
+            ctx.lineTo(location.x + 7, REST_Y + 87);
+            ctx.quadraticCurveTo(location.x - 6, REST_Y + 83, location.x + 4, REST_Y + 98)
+            ctx.quadraticCurveTo(location.x - 15, REST_Y + 79, location.x + 4, REST_Y + 83)
+            ctx.lineTo(location.x - 5, REST_Y + 69)
+            ctx.quadraticCurveTo(location.x + 5, REST_Y + 68, location.x - 5, REST_Y + 52)
             ctx.fillStyle = "black";
             ctx.fill();
             ctx.stroke();
             //dotted quarter
             if (groove === 1.5) {
               ctx.beginPath();
-              ctx.arc(location.x + 12, 70, 2.8, 0, Math.PI * 2);
+              ctx.arc(location.x + 12, REST_Y + 70, 2.8, 0, Math.PI * 2);
               ctx.fill();
             }
           } else if (groove < 1) {
             //eighth
             ctx.beginPath();
-            ctx.moveTo(location.x - 1, 88);
-            ctx.lineTo(location.x + 8, 65);
+            ctx.moveTo(location.x - 1, REST_Y + 88);
+            ctx.lineTo(location.x + 8, REST_Y + 65);
             ctx.stroke();
-            
+
             ctx.beginPath();
-            ctx.arc(location.x - 6, 67, 3.5, 0, Math.PI * 2);
+            ctx.arc(location.x - 6, REST_Y + 67, 3.5, 0, Math.PI * 2);
             ctx.fill();
-            
+
             ctx.beginPath();
-            ctx.moveTo(location.x - 8, 69);
-            ctx.quadraticCurveTo(location.x - 5, 72, location.x + 8, 65);
+            ctx.moveTo(location.x - 8, REST_Y + 69);
+            ctx.quadraticCurveTo(location.x - 5, REST_Y + 72, location.x + 8, REST_Y + 65);
             ctx.stroke();
             //dotted eigth
             if (groove === 0.75) {
               ctx.beginPath();
-              ctx.arc(location.x + 14, 67, 2.8, 0, Math.PI * 2);
+              ctx.arc(location.x + 14, REST_Y + 67, 2.8, 0, Math.PI * 2);
               ctx.fill();
             }
             //sixteenth rest
             if(groove === 0.25) {
               ctx.beginPath();
-              ctx.moveTo(location.x - 6, 103);
-              ctx.lineTo(location.x + 8, 65);
+              ctx.moveTo(location.x - 6, REST_Y + 103);
+              ctx.lineTo(location.x + 8, REST_Y + 65);
               ctx.stroke();
-              
+
               ctx.beginPath();
-              ctx.arc(location.x - 6, 67, 3.5, 0, Math.PI * 2);
+              ctx.arc(location.x - 6, REST_Y + 67, 3.5, 0, Math.PI * 2);
               ctx.fill();
-              
+
               ctx.beginPath();
-              ctx.moveTo(location.x - 8, 69);
-              ctx.quadraticCurveTo(location.x - 5, 72, location.x + 8, 65);
+              ctx.moveTo(location.x - 8, REST_Y + 69);
+              ctx.quadraticCurveTo(location.x - 5, REST_Y + 72, location.x + 8, REST_Y + 65);
               ctx.stroke();
-              
+
               ctx.beginPath();
-              ctx.arc(location.x - 9, 82, 3.5, 0, Math.PI * 2);
+              ctx.arc(location.x - 9, REST_Y + 82, 3.5, 0, Math.PI * 2);
               ctx.fill();
-              
+
               ctx.beginPath();
-              ctx.moveTo(location.x - 10, 83);
-              ctx.quadraticCurveTo(location.x - 8, 87, location.x + 2, 81);
+              ctx.moveTo(location.x - 10, REST_Y + 83);
+              ctx.quadraticCurveTo(location.x - 8, REST_Y + 87, location.x + 2, REST_Y + 81);
               ctx.stroke();
             }
           }
@@ -368,15 +427,16 @@ const BassStaff = forwardRef<PlayHandle, BassStaffProps>(function BassStaff({ re
   function displayChord(ctx: CanvasRenderingContext2D, location: number, bassGrid: number[], chordName: string) {
     const CANVAS = canvasRef.current;
     if (CANVAS) {
-      const spacing = CANVAS.height / 20;
+      const spacing = SPACING;
       const fontSize = 20;
       ctx.fillStyle = "black";
       ctx.font = `${fontSize}px serif`;
-  
+
       for (let i = 1; i < bassGrid.length; i++) {
         const isMatch = location === bassGrid[i];
         if (isMatch) {
-          ctx.fillText(chordName, location - spacing, CANVAS.height - 136);
+          // Sits just above the highest ledger line, independent of note pitch.
+          ctx.fillText(chordName, location - spacing, STAFF_Y_OFFSET - 16);
         }
       }
     }
@@ -396,9 +456,9 @@ const BassStaff = forwardRef<PlayHandle, BassStaffProps>(function BassStaff({ re
     ctx.fillStyle = 'black';
     ctx.font = '11px sans-serif';
     ctx.textAlign = 'center';
-    ctx.fillText('T', 20, 62);
-    ctx.fillText('A', 20, 75);
-    ctx.fillText('B', 20, 88);
+    ctx.fillText('T', 20, 62 + STAFF_Y_OFFSET);
+    ctx.fillText('A', 20, 75 + STAFF_Y_OFFSET);
+    ctx.fillText('B', 20, 88 + STAFF_Y_OFFSET);
     ctx.textAlign = 'left';
   }
 
@@ -448,8 +508,9 @@ const BassStaff = forwardRef<PlayHandle, BassStaffProps>(function BassStaff({ re
     const CANVAS = canvasRef.current;
     if (CANVAS) {
       CANVAS.width = renderWidth; // Set canvas width based on renderWidth prop
+      CANVAS.height = CANVAS_HEIGHT;
       const ctx = CANVAS.getContext('2d');
-      const spacing = CANVAS.height / 20;
+      const spacing = SPACING;
       if (ctx) {
         ctx.clearRect(0, 0, CANVAS.width, CANVAS.height);
         ctx.strokeStyle = 'black';
@@ -459,8 +520,8 @@ const BassStaff = forwardRef<PlayHandle, BassStaffProps>(function BassStaff({ re
           drawTabLines(ctx);
           for (let i = 0; i < measureLines.length; i++){
             ctx.beginPath();
-            ctx.moveTo(measureLines[i], 45);
-            ctx.lineTo(measureLines[i], 105);
+            ctx.moveTo(measureLines[i], STAFF_Y_OFFSET + 45);
+            ctx.lineTo(measureLines[i], STAFF_Y_OFFSET + 105);
             ctx.stroke();
           }
 
@@ -468,23 +529,31 @@ const BassStaff = forwardRef<PlayHandle, BassStaffProps>(function BassStaff({ re
 
           drawTabNotes(ctx);
         } else {
-          for (let i = -2; i <= 2; i++) {
-            const y = CANVAS.height / 2 + i * spacing * 2;
+          MAIN_LINES_Y.forEach((pitchY) => {
+            const y = pitchY + STAFF_Y_OFFSET;
             ctx.beginPath();
             ctx.moveTo(0, y);
             ctx.lineTo(renderWidth, y);
             ctx.stroke();
-          }
+          });
+          // The extra ledger lines above/below the staff are drawn per-note
+          // in drawNote/drawLedgerLines, not as permanent lines here - notes
+          // can still be placed on them and in the spaces around them.
+
           for (let i = 0; i < measureLines.length; i++){
             ctx.beginPath();
-            ctx.moveTo(measureLines[i], 45);
-            ctx.lineTo(measureLines[i], 105);
+            ctx.moveTo(measureLines[i], STAFF_Y_OFFSET + MAIN_LINES_Y[0]);
+            ctx.lineTo(measureLines[i], STAFF_Y_OFFSET + MAIN_LINES_Y[MAIN_LINES_Y.length - 1]);
             ctx.stroke();
           }
 
-          const index = Math.round(MOUSE.y / spacing);
+          const rawIndex = Math.round((MOUSE.y - STAFF_Y_OFFSET) / spacing);
+          const index = Math.min(NOTE_MAX_Y / spacing, Math.max(NOTE_MIN_Y / spacing, rawIndex));
 
-          drawClef(ctx, { x: 45, y: CANVAS.height / 2, acc:'none' });
+          // Centered on the staff's actual middle line (D2), not the canvas's
+          // geometric center - the canvas isn't vertically symmetric around
+          // the staff since it has 3 ledger lines above but only 1 below.
+          drawClef(ctx, { x: 45, y: MAIN_LINES_Y[2] + STAFF_Y_OFFSET, acc:'none' });
 
           bassNoteGrid.forEach((note) => {
             drawNote(ctx, note);
@@ -533,7 +602,7 @@ const BassStaff = forwardRef<PlayHandle, BassStaffProps>(function BassStaff({ re
       if (viewMode === 'tab') return;
       const CANVAS = canvasRef.current;
       if (CANVAS) {
-        const spacing = CANVAS.height / 20;
+        const spacing = SPACING;
         const fontSize = 20;
 
         // Accidental options are currently on display for a note - this click
@@ -556,13 +625,14 @@ const BassStaff = forwardRef<PlayHandle, BassStaffProps>(function BassStaff({ re
           return;
         }
 
-        const index = Math.round(MOUSE.y / spacing);
+        const rawIndex = Math.round((MOUSE.y - STAFF_Y_OFFSET) / spacing);
+        const index = Math.min(NOTE_MAX_Y / spacing, Math.max(NOTE_MIN_Y / spacing, rawIndex));
         const x = mouseX(bassGrid);
 
         // A note (not a rest) already sits in the exact cell being clicked -
         // show its two other accidental options instead of repositioning it.
         const clickedNote = bassNoteGrid.find(
-          (note) => note.x === x && note.y === index * spacing && note.y >= 30
+          (note) => note.x === x && note.y === index * spacing && note.y >= NOTE_MIN_Y
         );
 
         if (clickedNote) {
