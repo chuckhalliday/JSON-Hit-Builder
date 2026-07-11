@@ -152,6 +152,10 @@ function App() {
   const [includeChords, setIncludeChords] = useState(true);
   const [includeBass, setIncludeBass] = useState(true);
   const [includeDrums, setIncludeDrums] = useState(true);
+  // Lifted above BassStaff (rather than local state there) because each part's
+  // BassStaff only mounts while its part is open - a local toggle would reset
+  // to "staff" every time the user switched parts.
+  const [bassViewMode, setBassViewMode] = useState<'staff' | 'tab'>('staff');
 
   const dispatch = useDispatch<AppDispatch>()
 
@@ -364,7 +368,14 @@ function App() {
               {isOpen && currentPart === index && (
                 <div className={styles.openedPart}>
                   <h3>{songProps.type} ({songProps.repeat})</h3>
-                  <BassStaff ref={bassStaffRef} renderWidth={renderWidth} part={index} lampsRef={lampsRef} />
+                  <BassStaff
+                    ref={bassStaffRef}
+                    renderWidth={renderWidth}
+                    part={index}
+                    lampsRef={lampsRef}
+                    viewMode={bassViewMode}
+                    onViewModeChange={setBassViewMode}
+                  />
                   <DrumMachine
                     ref={drumMachineRef}
                     onRenderWidthChange={handleRenderWidthChange}

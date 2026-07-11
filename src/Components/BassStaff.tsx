@@ -4,16 +4,98 @@ import playBass from '../Playback/playBass';
 import { setBassState, setCurrentBeat, SongState } from '../reducers';
 import { PlayHandle } from './Piano';
 import { useLampStep } from '../Playback/useLampStep';
+import appStyles from '../Styles/App.module.scss';
+
+// Standard 4-string bass tuning (E1 A1 D2 G2), lowest to highest, expressed as
+// the real MIDI note number of each open string - matches the `midi` values
+// already stored on notes (see bassPitch.ts), so no pixel/pitch translation
+// is needed here.
+const BASS_OPEN_MIDI = [28, 33, 38, 43];
+// Horizontal position of each tab line, top to bottom (G D A E) - the same
+// vertical band the 5-line staff occupies, so switching views doesn't reflow
+// the canvas.
+const TAB_LINE_Y = [52.5, 67.5, 82.5, 97.5];
+
+type TabPosition = { stringIndex: number; fret: number };
+
+// Frets at or below this are considered an easy, open-ish position - used to
+// pick a sensible starting spot when there's no previous note to stay close to.
+const COMFORTABLE_FRET_SPAN = 12;
+const MAX_FRET = 20;
+
+function candidateTabPositions(midi: number): TabPosition[] {
+  const candidates: TabPosition[] = [];
+  BASS_OPEN_MIDI.forEach((open, i) => {
+    const fret = midi - open;
+    if (fret >= 0 && fret <= MAX_FRET) {
+      candidates.push({ stringIndex: i, fret });
+    }
+  });
+  return candidates;
+}
+
+// Clamps into a playable position when a note falls outside every string's
+// 0-20 fret range, rather than rendering nothing.
+function clampedTabPosition(midi: number): TabPosition {
+  let closestIndex = 0;
+  let closestDistance = Infinity;
+  BASS_OPEN_MIDI.forEach((open, i) => {
+    const fret = midi - open;
+    const distance = fret < 0 ? -fret : fret - MAX_FRET;
+    if (distance < closestDistance) {
+      closestDistance = distance;
+      closestIndex = i;
+    }
+  });
+  const clampedFret = Math.min(MAX_FRET, Math.max(0, midi - BASS_OPEN_MIDI[closestIndex]));
+  return { stringIndex: closestIndex, fret: clampedFret };
+}
+
+// Picks a string/fret for `midi`. With a previous note in hand, stays as close
+// as possible to that fret (minimizing hand movement across a phrase),
+// favoring the lower string on ties. With no previous note (start of a part,
+// or after a rest), favors the lowest string that lands in a comfortable
+// low position rather than always reaching for the highest string.
+function midiToTabPosition(midi: number, previous: TabPosition | null): TabPosition | null {
+  if (midi <= 0) return null;
+
+  const candidates = candidateTabPositions(midi);
+  if (candidates.length === 0) return clampedTabPosition(midi);
+
+  if (previous) {
+    let best = candidates[0];
+    let bestCost = Infinity;
+    candidates.forEach((candidate) => {
+      const fretCost = Math.abs(candidate.fret - previous.fret);
+      const stringChangeCost = Math.abs(candidate.stringIndex - previous.stringIndex) * 0.1;
+      const cost = fretCost + stringChangeCost;
+      if (cost < bestCost || (cost === bestCost && candidate.stringIndex < best.stringIndex)) {
+        best = candidate;
+        bestCost = cost;
+      }
+    });
+    return best;
+  }
+
+  const lowestComfortable = candidates
+    .filter((c) => c.fret <= COMFORTABLE_FRET_SPAN)
+    .sort((a, b) => a.stringIndex - b.stringIndex)[0];
+  if (lowestComfortable) return lowestComfortable;
+
+  return candidates.sort((a, b) => a.stringIndex - b.stringIndex)[0];
+}
 
 interface BassStaffProps {
   renderWidth: number;
   part: number;
   lampsRef: React.MutableRefObject<HTMLInputElement[]>;
   onPlayingChange?: (isPlaying: boolean) => void;
+  viewMode: 'staff' | 'tab';
+  onViewModeChange: (viewMode: 'staff' | 'tab') => void;
 }
 
 
-const BassStaff = forwardRef<PlayHandle, BassStaffProps>(function BassStaff({ renderWidth, part, lampsRef, onPlayingChange }, ref) {
+const BassStaff = forwardRef<PlayHandle, BassStaffProps>(function BassStaff({ renderWidth, part, lampsRef, onPlayingChange, viewMode, onViewModeChange }, ref) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const CLEF_IMAGE = new Image();
   CLEF_IMAGE.src = "/BassClef.png";
@@ -301,6 +383,67 @@ const BassStaff = forwardRef<PlayHandle, BassStaffProps>(function BassStaff({ re
   }
 
 
+  function drawTabLines(ctx: CanvasRenderingContext2D) {
+    TAB_LINE_Y.forEach((y) => {
+      ctx.beginPath();
+      ctx.moveTo(0, y);
+      ctx.lineTo(renderWidth, y);
+      ctx.stroke();
+    });
+  }
+
+  function drawTabLabel(ctx: CanvasRenderingContext2D) {
+    ctx.fillStyle = 'black';
+    ctx.font = '11px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('T', 20, 62);
+    ctx.fillText('A', 20, 75);
+    ctx.fillText('B', 20, 88);
+    ctx.textAlign = 'left';
+  }
+
+  function drawTabNotes(ctx: CanvasRenderingContext2D) {
+    // Walked left to right so each note's string/fret choice can favor
+    // staying close to wherever the previous note left the hand, rather than
+    // being picked in isolation.
+    const orderedNotes = [...bassNoteGrid].sort((a, b) => a.x - b.x);
+    let previous: TabPosition | null = null;
+
+    orderedNotes.forEach((note) => {
+      let match = false;
+      for (let i = 1; i < bassGrid.length; i++) {
+        if (note.x === bassGrid[i]) {
+          match = true;
+          break;
+        }
+      }
+      if (!match) return;
+
+      const position = midiToTabPosition(note.midi, previous);
+      if (!position) return; // rest - leave the hand position as-is
+
+      previous = position;
+
+      // Strings are numbered low (E) to high (G); the tab lines are drawn top
+      // (G) to bottom (E), so the display row is the mirror of the string index.
+      const displayRow = BASS_OPEN_MIDI.length - 1 - position.stringIndex;
+      const y = TAB_LINE_Y[displayRow];
+
+      // Blank out the line under the number so it reads clearly, matching how
+      // printed tab renders fret numbers directly on the string.
+      ctx.fillStyle = 'white';
+      ctx.fillRect(note.x - 8, y - 7, 16, 14);
+
+      ctx.fillStyle = 'black';
+      ctx.font = '13px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(String(position.fret), note.x, y + 1);
+      ctx.textAlign = 'left';
+      ctx.textBaseline = 'alphabetic';
+    });
+  }
+
   function drawScene() {
     const CANVAS = canvasRef.current;
     if (CANVAS) {
@@ -311,43 +454,59 @@ const BassStaff = forwardRef<PlayHandle, BassStaffProps>(function BassStaff({ re
         ctx.clearRect(0, 0, CANVAS.width, CANVAS.height);
         ctx.strokeStyle = 'black';
         ctx.lineWidth = 1;
-        for (let i = -2; i <= 2; i++) {
-          const y = CANVAS.height / 2 + i * spacing * 2;
-          ctx.beginPath();
-          ctx.moveTo(0, y);
-          ctx.lineTo(renderWidth, y);
-          ctx.stroke();
-        }
-        for (let i = 0; i < measureLines.length; i++){
-          ctx.beginPath();
-          ctx.moveTo(measureLines[i], 45);
-          ctx.lineTo(measureLines[i], 105);
-          ctx.stroke();
-        }
 
-        const index = Math.round(MOUSE.y / spacing);
-
-        drawClef(ctx, { x: 45, y: CANVAS.height / 2, acc:'none' });
-
-        bassNoteGrid.forEach((note) => {
-          drawNote(ctx, note);
-        });
-        if (pendingNote) {
-          const note = bassNoteGrid.find((n) => n.x === pendingNote.x && n.y === pendingNote.y);
-          if (note) {
-            drawAccidentalOptions(ctx, note, spacing);
+        if (viewMode === 'tab') {
+          drawTabLines(ctx);
+          for (let i = 0; i < measureLines.length; i++){
+            ctx.beginPath();
+            ctx.moveTo(measureLines[i], 45);
+            ctx.lineTo(measureLines[i], 105);
+            ctx.stroke();
           }
+
+          drawTabLabel(ctx);
+
+          drawTabNotes(ctx);
+        } else {
+          for (let i = -2; i <= 2; i++) {
+            const y = CANVAS.height / 2 + i * spacing * 2;
+            ctx.beginPath();
+            ctx.moveTo(0, y);
+            ctx.lineTo(renderWidth, y);
+            ctx.stroke();
+          }
+          for (let i = 0; i < measureLines.length; i++){
+            ctx.beginPath();
+            ctx.moveTo(measureLines[i], 45);
+            ctx.lineTo(measureLines[i], 105);
+            ctx.stroke();
+          }
+
+          const index = Math.round(MOUSE.y / spacing);
+
+          drawClef(ctx, { x: 45, y: CANVAS.height / 2, acc:'none' });
+
+          bassNoteGrid.forEach((note) => {
+            drawNote(ctx, note);
+          });
+          if (pendingNote) {
+            const note = bassNoteGrid.find((n) => n.x === pendingNote.x && n.y === pendingNote.y);
+            if (note) {
+              drawAccidentalOptions(ctx, note, spacing);
+            }
+          }
+
+          const location = {
+            x: mouseX(bassGrid),
+            y: index * spacing,
+            acc: 'none'
+          };
+          drawNote(ctx, location);
         }
+
         chordGrid.forEach((chord, i) => {
           displayChord(ctx, chord, bassGrid, chords[i])
         })
-
-        const location = {
-          x: mouseX(bassGrid),
-          y: index * spacing,
-          acc: 'none'
-        };
-        drawNote(ctx, location);
       }
     }
   }
@@ -369,6 +528,9 @@ const BassStaff = forwardRef<PlayHandle, BassStaffProps>(function BassStaff({ re
 
     function onMouseDown() {
       MOUSE.isDown = true;
+      // Tab view is a read-only conversion of the staff - pitch editing (which
+      // repositions notes by staff row) doesn't apply to it.
+      if (viewMode === 'tab') return;
       const CANVAS = canvasRef.current;
       if (CANVAS) {
         const spacing = CANVAS.height / 20;
@@ -434,7 +596,7 @@ const BassStaff = forwardRef<PlayHandle, BassStaffProps>(function BassStaff({ re
         CANVAS.removeEventListener('mouseup', onMouseUp as any);
       }
     };
-  }, [MOUSE]);
+  }, [MOUSE, viewMode]);
 
   const [isPlaying, setIsPlaying] = React.useState(false);
   const stopRef = useRef(false);
@@ -476,10 +638,22 @@ const BassStaff = forwardRef<PlayHandle, BassStaffProps>(function BassStaff({ re
       }
     }
     main();
-  }, [renderWidth, bassNoteGrid, bassGroove, chords, chordGrid, bassGrid, pendingNote, MOUSE]);
+  }, [renderWidth, bassNoteGrid, bassGroove, chords, chordGrid, bassGrid, pendingNote, MOUSE, viewMode]);
 
   return (
-    <div>
+    // Sticky positioning can only carry the button as far as this container's
+    // own box extends. Left unset, the div shrinks to the visible viewport
+    // width (the canvas merely overflows it visually), so the button would
+    // stop sticking a screen-width into the scroll. Matching the canvas's
+    // actual rendered width here gives it room to stick the whole way.
+    <div style={{ width: renderWidth || '100%' }}>
+      <button
+        type="button"
+        onClick={() => onViewModeChange(viewMode === 'staff' ? 'tab' : 'staff')}
+        className={viewMode === 'tab' ? `${appStyles.button} ${appStyles.openButton} ${appStyles.stickyToggle}` : `${appStyles.button} ${appStyles.stickyToggle}`}
+      >
+        {viewMode === 'staff' ? 'Tab' : 'Staff'}
+      </button>
       <canvas ref={canvasRef} id="myCanvas" />
     </div>
   )
