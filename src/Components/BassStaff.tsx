@@ -35,6 +35,12 @@ const BassStaff = forwardRef<PlayHandle, BassStaffProps>(function BassStaff({ re
 
   const handleStep = useLampStep(lampsRef, part, drumGroove, bassGroove, chordsGroove);
 
+  const [pendingNote, setPendingNote] = React.useState<{ x: number, y: number } | null>(null);
+
+  useEffect(() => {
+    setPendingNote(null);
+  }, [part]);
+
   const MOUSE = {
     x: -10,
     y: -10,
@@ -55,6 +61,33 @@ const BassStaff = forwardRef<PlayHandle, BassStaffProps>(function BassStaff({ re
     }
   
     return closest;
+  }
+
+  const ACCIDENTAL_SYMBOLS: Record<string, string> = { flat: '♭', sharp: '#', none: '♮' };
+
+  function getAccidentalOptions(acc: string): string[] {
+    return ['flat', 'none', 'sharp'].filter((a) => a !== acc);
+  }
+
+  function getAccidentalOptionLayout(location: { x: number, y: number, acc: string }, spacing: number, fontSize: number) {
+    const x = location.x + spacing * -3.5;
+    const baseY = location.y - spacing * 2 + fontSize;
+    const gap = fontSize + 6;
+    return getAccidentalOptions(location.acc).map((acc, i) => ({
+      acc,
+      symbol: ACCIDENTAL_SYMBOLS[acc],
+      x,
+      y: baseY + (i === 0 ? -gap : gap)
+    }));
+  }
+
+  function drawAccidentalOptions(ctx: CanvasRenderingContext2D, location: { x: number, y: number, acc: string }, spacing: number) {
+    const fontSize = 20;
+    ctx.font = `${fontSize}px serif`;
+    ctx.fillStyle = "black";
+    getAccidentalOptionLayout(location, spacing, fontSize).forEach((opt) => {
+      ctx.fillText(opt.symbol, opt.x, opt.y);
+    });
   }
 
   function drawClef(ctx: CanvasRenderingContext2D, location: { x: number, y: number, acc: string }) {
@@ -298,6 +331,12 @@ const BassStaff = forwardRef<PlayHandle, BassStaffProps>(function BassStaff({ re
         bassNoteGrid.forEach((note) => {
           drawNote(ctx, note);
         });
+        if (pendingNote) {
+          const note = bassNoteGrid.find((n) => n.x === pendingNote.x && n.y === pendingNote.y);
+          if (note) {
+            drawAccidentalOptions(ctx, note, spacing);
+          }
+        }
         chordGrid.forEach((chord, i) => {
           displayChord(ctx, chord, bassGrid, chords[i])
         })
@@ -332,29 +371,39 @@ const BassStaff = forwardRef<PlayHandle, BassStaffProps>(function BassStaff({ re
       const CANVAS = canvasRef.current;
       if (CANVAS) {
         const spacing = CANVAS.height / 20;
+        const fontSize = 20;
+
+        // Accidental options are currently on display for a note - this click
+        // either picks one of the two offered symbols or dismisses them.
+        if (pendingNote) {
+          const note = bassNoteGrid.find((n) => n.x === pendingNote.x && n.y === pendingNote.y);
+          if (note) {
+            const hit = getAccidentalOptionLayout(note, spacing, fontSize).find((opt) =>
+              MOUSE.x >= opt.x - 10 && MOUSE.x <= opt.x + fontSize &&
+              MOUSE.y >= opt.y - fontSize && MOUSE.y <= opt.y + 6
+            );
+            if (hit) {
+              const updatedBassNotes = bassNoteGrid.map((n) =>
+                n.x === note.x && n.y === note.y ? { ...n, acc: hit.acc } : n
+              );
+              dispatch(setBassState({ index: part, bassNoteLocations: updatedBassNotes }));
+            }
+          }
+          setPendingNote(null);
+          return;
+        }
+
         const index = Math.round(MOUSE.y / spacing);
         const x = mouseX(bassGrid);
 
         // A note (not a rest) already sits in the exact cell being clicked -
-        // treat this as an accidental toggle rather than a reposition.
+        // show its two other accidental options instead of repositioning it.
         const clickedNote = bassNoteGrid.find(
           (note) => note.x === x && note.y === index * spacing && note.y >= 30
         );
 
         if (clickedNote) {
-          const nextAcc =
-            clickedNote.acc === 'flat' ? 'none' :
-            clickedNote.acc === 'none' ? 'sharp' :
-            'flat';
-
-          const updatedBassNotes = bassNoteGrid.map((note) => {
-            if (note.x === x) {
-              return { ...note, acc: nextAcc };
-            }
-            return note;
-          });
-
-          dispatch(setBassState({ index: part, bassNoteLocations: updatedBassNotes }));
+          setPendingNote({ x: clickedNote.x, y: clickedNote.y });
         } else {
           const updatedBassNotes = bassNoteGrid.map((note) => {
             if (note.x === x) {
@@ -426,7 +475,7 @@ const BassStaff = forwardRef<PlayHandle, BassStaffProps>(function BassStaff({ re
       }
     }
     main();
-  }, [renderWidth, bassNoteGrid, bassGroove, chords, chordGrid, bassGrid, MOUSE]);
+  }, [renderWidth, bassNoteGrid, bassGroove, chords, chordGrid, bassGrid, pendingNote, MOUSE]);
 
   return (
     <div>

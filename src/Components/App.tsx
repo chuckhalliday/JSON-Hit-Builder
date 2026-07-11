@@ -400,10 +400,10 @@ function App() {
         </div>
       ) : (
         <div>
-          <button className="login" onClick={login}>Log In with Google</button>
           {import.meta.env.DEV && (
             <button className="login" onClick={devLogin}>Dev Login</button>
           )}
+          <button className="login" onClick={login}>Log In with Google</button>
         </div>
       )}
     </div>
