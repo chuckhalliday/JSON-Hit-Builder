@@ -113,7 +113,15 @@
       color: black;
     }
 }
-  
+
+.draggingPart {
+    opacity: 0.4;
+}
+
+.dragOverPart {
+    box-shadow: 0 0 0 2px rgb(71, 182, 71) inset;
+}
+
 .openedPart {
     position: absolute;
     top: 200px;

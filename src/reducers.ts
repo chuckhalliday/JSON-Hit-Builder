@@ -70,13 +70,21 @@ const song = createSlice({
       setCurrentBeat: (state, action: PayloadAction<number[]>) => {
         state.selectedBeat = action.payload;
       },
+      reorderParts: (state, action: PayloadAction<{ from: number, to: number }>) => {
+        const { from, to } = action.payload;
+        if (from === to || from < 0 || to < 0 || from >= state.songStructure.length || to >= state.songStructure.length) {
+          return;
+        }
+        const [moved] = state.songStructure.splice(from, 1);
+        state.songStructure.splice(to, 0, moved);
+      },
       incrementByAmount: (state, action: PayloadAction<string>) => {
         state.bpm = parseFloat(action.payload);
       },
     },
   });
 
-export const { setIsPlaying, setMidi, setSong, setBassState, setDrumState, setChordState, setCurrentBeat, incrementByAmount } = song.actions;
+export const { setIsPlaying, setMidi, setSong, setBassState, setDrumState, setChordState, setCurrentBeat, reorderParts, incrementByAmount } = song.actions;
 
 // Thunk: generate a fresh random song and load it into the store. Replaces the
 // old module-load side effect; dispatched on mount (and reusable for a
