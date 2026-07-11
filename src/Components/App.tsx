@@ -9,7 +9,7 @@ import { useSelector, useDispatch } from "react-redux"
 import { playVerse } from '../Playback/playSong';
 import { preloadDrumSamples } from '../Playback/playDrums';
 import { useLampStep } from '../Playback/useLampStep';
-import { incrementByAmount, setIsPlaying, setMidi, SongState, setCurrentBeat, newSong } from '../reducers';
+import { incrementByAmount, setIsPlaying, setMidi, SongState, setCurrentBeat, newSong, reorderParts } from '../reducers';
 import type { AppDispatch } from '../store'
 import styles from "../Styles/App.module.scss"
 import { supabase } from '../supabaseClient'
@@ -39,6 +39,8 @@ function onMIDIFailure(msg: string) {
 function App() {
   const [openedParts, setOpenedParts] = useState<{ [key: string]: boolean }>({});
   const [currentPart, setCurrentPart] = useState<number>(0); // Track current open part
+  const [draggedPartIndex, setDraggedPartIndex] = useState<number | null>(null);
+  const [dragOverPartIndex, setDragOverPartIndex] = useState<number | null>(null);
   const [showInfoScreen, setShowInfoScreen] = useState(true);
   const [showGenerate, setShowGenerate] = useState(false);
   const [authenticated, setAuthenticated] = useState(false);
@@ -246,6 +248,34 @@ function App() {
     }
   };
 
+  const handlePartDragStart = (index: number) => {
+    setDraggedPartIndex(index);
+  };
+
+  const handlePartDragOver = (e: React.DragEvent<HTMLButtonElement>, index: number) => {
+    e.preventDefault();
+    if (draggedPartIndex !== null && draggedPartIndex !== index) {
+      setDragOverPartIndex(index);
+    }
+  };
+
+  const handlePartDrop = (e: React.DragEvent<HTMLButtonElement>, index: number) => {
+    e.preventDefault();
+    if (draggedPartIndex !== null && draggedPartIndex !== index) {
+      dispatch(reorderParts({ from: draggedPartIndex, to: index }));
+      // Index-to-part associations are now stale, so close whatever was open.
+      setOpenedParts({});
+      setCurrentPart(-1);
+    }
+    setDraggedPartIndex(null);
+    setDragOverPartIndex(null);
+  };
+
+  const handlePartDragEnd = () => {
+    setDraggedPartIndex(null);
+    setDragOverPartIndex(null);
+  };
+
   const [renderWidth, setRenderWidth] = useState(0);
 
   // Stable identity so DrumMachine's width-measuring effect (which lists this in
@@ -311,7 +341,17 @@ function App() {
             <div key={key} className={styles.parts}>
               <button
                 onClick={() => handlePartOpen(key)}
-                className={isOpen ? `${styles.partButton} ${styles.openButton}` : styles.partButton}
+                draggable
+                onDragStart={() => handlePartDragStart(index)}
+                onDragOver={(e) => handlePartDragOver(e, index)}
+                onDrop={(e) => handlePartDrop(e, index)}
+                onDragEnd={handlePartDragEnd}
+                className={[
+                  styles.partButton,
+                  isOpen ? styles.openButton : '',
+                  draggedPartIndex === index ? styles.draggingPart : '',
+                  dragOverPartIndex === index ? styles.dragOverPart : '',
+                ].filter(Boolean).join(' ')}
               >
                 {songProps.type.charAt(0)}
               </button>
