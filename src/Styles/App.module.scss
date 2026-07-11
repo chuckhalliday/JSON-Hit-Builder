@@ -157,6 +157,13 @@
     margin-right: 0;
 }
 
+.controls .oscToggle {
+    position: absolute;
+    right: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+}
+
 .songControls {
     display: inline-flex;
     flex-direction: column;

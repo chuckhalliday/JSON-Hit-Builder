@@ -27,6 +27,7 @@ const Piano = forwardRef<PlayHandle, PianoProps>(function Piano({ lampsRef, onPl
 
   const bpm = song.bpm
   const midi = song.midi
+  const acoustic = song.acoustic
   const chords = song.songStructure[part].chords
   const chordTones = song.songStructure[part].chordTones
   const chordsGroove = song.songStructure[part].chordsGroove
@@ -48,7 +49,7 @@ const Piano = forwardRef<PlayHandle, PianoProps>(function Piano({ lampsRef, onPl
     stopRef.current = false;
     setIsPlaying(true);
     onPlayingChange?.(true);
-    const endBeat = await playChords(midi, beat, chords, chordTones, chordsGroove, bpm, () => stopRef.current, handleStep, drumGroove);
+    const endBeat = await playChords(midi, beat, chords, chordTones, chordsGroove, bpm, () => stopRef.current, handleStep, drumGroove, undefined, acoustic);
     setIsPlaying(false);
     onPlayingChange?.(false);
     const nextBeat = endBeat >= chordsGroove.length ? 0 : endBeat;

@@ -11,7 +11,8 @@ for (let i = 0; i < 65536; i++) {
   distortionCurve[i] = Math.tanh(x * distortionAmount);
 }
 
-function playBassOsc(audioContext: AudioContext, startTime: number, bass: number, duration: number, _velocity: number, _release: number): OscillatorNode[] {
+// "Synth" voice: the original growly, distorted saw + harmonics patch.
+function playSynthBassOsc(audioContext: AudioContext, startTime: number, bass: number, duration: number, _velocity: number, _release: number): OscillatorNode[] {
     const osc = audioContext.createOscillator();
     const gainNode = audioContext.createGain();
     const filterNode = audioContext.createBiquadFilter();
@@ -74,7 +75,97 @@ function playBassOsc(audioContext: AudioContext, startTime: number, bass: number
     return oscillators;
   }
 
-  function playBass(midi: boolean, beat: number, pattern: NoteLocation[], groove: number[], bpm: number, shouldStop?: () => boolean, onStep?: (lampIndex: number) => void, drumGroove?: number[], mute?: boolean) {
+  // "Acoustic" voice: smooth plucked bass - saw + detuned saw for thickness, a unison
+  // sine and a true sub-octave sine for a full, round low end, and a filter envelope
+  // that opens bright on the pluck and settles into a warm sustain.
+  function playAcousticBassOsc(audioContext: AudioContext, startTime: number, bass: number, duration: number, _velocity: number, _release: number): OscillatorNode[] {
+    const fundamentalFreq = bass;
+
+    const osc = audioContext.createOscillator();
+    osc.type = "sawtooth";
+    osc.frequency.value = fundamentalFreq;
+
+    const detuneOsc = audioContext.createOscillator();
+    detuneOsc.type = "sawtooth";
+    detuneOsc.frequency.value = fundamentalFreq;
+    detuneOsc.detune.value = 8;
+    const detuneGain = audioContext.createGain();
+    detuneGain.gain.value = 0.6;
+
+    const subOsc = audioContext.createOscillator();
+    subOsc.type = "sine";
+    subOsc.frequency.value = fundamentalFreq;
+    const subGain = audioContext.createGain();
+    subGain.gain.value = 0.6;
+
+    const subOctaveOsc = audioContext.createOscillator();
+    subOctaveOsc.type = "sine";
+    subOctaveOsc.frequency.value = fundamentalFreq / 2;
+    const subOctaveGain = audioContext.createGain();
+    subOctaveGain.gain.value = 0.5;
+
+    const gainNode = audioContext.createGain();
+    const filterNode = audioContext.createBiquadFilter();
+    filterNode.type = "lowpass";
+    filterNode.Q.value = 0.8;
+
+    // Compressor lets the note sit louder without the combined layers clipping.
+    const compressor = audioContext.createDynamicsCompressor();
+    compressor.threshold.value = -22;
+    compressor.knee.value = 12;
+    compressor.ratio.value = 4;
+    compressor.attack.value = 0.003;
+    compressor.release.value = 0.18;
+
+    osc.connect(filterNode);
+    detuneOsc.connect(detuneGain);
+    detuneGain.connect(filterNode);
+    subOsc.connect(subGain);
+    subGain.connect(filterNode);
+    subOctaveOsc.connect(subOctaveGain);
+    subOctaveGain.connect(filterNode);
+    filterNode.connect(gainNode);
+    gainNode.connect(compressor);
+    compressor.connect(audioContext.destination);
+
+    // Filter opens bright on the pluck, then decays quickly into a warm, smooth sustain.
+    const sweepTime = Math.min(0.22, duration * 0.6);
+    const brightCutoff = Math.min(fundamentalFreq * 10, 3200);
+    const darkCutoff = Math.max(fundamentalFreq * 2.2, 220);
+    filterNode.frequency.setValueAtTime(brightCutoff, startTime);
+    filterNode.frequency.exponentialRampToValueAtTime(darkCutoff, startTime + sweepTime);
+
+    // Amplitude follows a natural plucked-string decay rather than a held sustain.
+    const attackTime = 0.004;
+    const peakLevel = 0.75;
+    const decayFloor = 0.001;
+    const releaseTime = Math.min(0.06, duration * 0.3);
+    const decayEnd = Math.max(startTime + attackTime + 0.01, startTime + duration - releaseTime);
+    const noteEnd = decayEnd + releaseTime;
+
+    gainNode.gain.setValueAtTime(0, startTime);
+    gainNode.gain.linearRampToValueAtTime(peakLevel, startTime + attackTime);
+    gainNode.gain.exponentialRampToValueAtTime(decayFloor, decayEnd);
+    gainNode.gain.linearRampToValueAtTime(0, noteEnd);
+
+    const oscillators: OscillatorNode[] = [osc, detuneOsc, subOsc, subOctaveOsc];
+
+    for (const o of oscillators) o.start(startTime);
+    for (const o of oscillators) o.stop(noteEnd);
+    osc.onended = () => {
+      for (const o of oscillators) o.disconnect();
+      detuneGain.disconnect();
+      subGain.disconnect();
+      subOctaveGain.disconnect();
+      gainNode.disconnect();
+      filterNode.disconnect();
+      compressor.disconnect();
+    };
+
+    return oscillators;
+  }
+
+  function playBass(midi: boolean, beat: number, pattern: NoteLocation[], groove: number[], bpm: number, shouldStop?: () => boolean, onStep?: (lampIndex: number) => void, drumGroove?: number[], mute?: boolean, acoustic = true) {
     const beatDuration = 60 / bpm; // duration of one beat in seconds
     const audioContext = getAudioContext();
 
@@ -96,7 +187,8 @@ function playBassOsc(audioContext: AudioContext, startTime: number, bass: number
       if (bass <= 0 || mute) return;
 
       if (!midi) {
-        const oscillators = playBassOsc(audioContext, time, bass, duration, velocity, release);
+        const playOsc = acoustic ? playAcousticBassOsc : playSynthBassOsc;
+        const oscillators = playOsc(audioContext, time, bass, duration, velocity, release);
         register(() => {
           for (const o of oscillators) {
             try { o.stop(); } catch { /* already stopped */ }
