@@ -9,7 +9,7 @@ import { useSelector, useDispatch } from "react-redux"
 import { playVerse } from '../Playback/playSong';
 import { preloadDrumSamples } from '../Playback/playDrums';
 import { useLampStep } from '../Playback/useLampStep';
-import { incrementByAmount, setIsPlaying, setMidi, SongState, setCurrentBeat, newSong, reorderParts } from '../reducers';
+import { incrementByAmount, setIsPlaying, setMidi, setAcoustic, SongState, setCurrentBeat, newSong, reorderParts } from '../reducers';
 import type { AppDispatch } from '../store'
 import styles from "../Styles/App.module.scss"
 import { supabase } from '../supabaseClient'
@@ -130,6 +130,7 @@ function App() {
   const bpm = song.bpm
   const isPlaying = song.isPlaying
   const midi = song.midi
+  const acoustic = song.acoustic
   let verse = song.selectedBeat[0]
   let drumBeat = song.selectedBeat[1];
   let bassBeat = song.selectedBeat[2]
@@ -192,7 +193,8 @@ function App() {
         () => stopRef.current,
         includeDrums,
         includeBass,
-        includeChords
+        includeChords,
+        acoustic
       );
 
       if (stopRef.current) {
@@ -305,6 +307,10 @@ function App() {
     }
   };
 
+  const handleAcoustic = () => {
+    dispatch(setAcoustic({ acoustic: !acoustic }));
+  };
+
   const handleMidi = async () => {
     if (midi) {
       dispatch(setMidi({midi: false}));
@@ -378,6 +384,11 @@ function App() {
         {/* Renders controls */}
         <div className={styles.controls}>
           <button className={styles.key} onClick={handleGenerateClick}>Key of :<br />{song.key}</button>
+          {!midi && (
+            <button className={`${styles.button} ${styles.oscToggle}`} onClick={handleAcoustic}>
+              {acoustic ? "Acoustic" : "Synth"}
+            </button>
+          )}
           <div className={styles.songControls}>
             <button
               onClick={() => setIncludeChords(prev => !prev)}
@@ -400,16 +411,18 @@ function App() {
           </div>
           <div className={styles.bpmControls}>
             <label className={styles.fader}>
-              <span>BPM:{bpm}</span>
-              <input
-                className={styles.bpm}
-                type="range"
-                min={90}
-                max={150}
-                step={1}
-                onChange={(e) => dispatch(incrementByAmount(e.target.value))}
-                defaultValue={bpm}
-              />
+              <span className={styles.bpmRow}>BPM:{bpm}</span>
+              <div className={styles.bpmRow}>
+                <input
+                  className={styles.bpm}
+                  type="range"
+                  min={90}
+                  max={150}
+                  step={1}
+                  onChange={(e) => dispatch(incrementByAmount(e.target.value))}
+                  defaultValue={bpm}
+                />
+              </div>
             </label>
             {/*<label className={styles.fader}>
               <span>Volume</span>

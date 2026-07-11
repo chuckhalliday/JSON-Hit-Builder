@@ -8,6 +8,7 @@ export interface SongState {
     bpm: number,
     key: string,
     midi: boolean,
+    acoustic: boolean,
     selectedBeat: number[],
     songStructure: SongStructure,
     seed: number | null
@@ -21,6 +22,7 @@ const initialState: SongState = {
     bpm: 120,
     key: '',
     midi: false,
+    acoustic: true,
     selectedBeat: [0, 0, 0, 0],
     songStructure: [],
     seed: null
@@ -35,6 +37,9 @@ const song = createSlice({
       },
       setMidi: (state, action: PayloadAction<{ midi: boolean }>) => {
         state.midi = action.payload.midi;
+      },
+      setAcoustic: (state, action: PayloadAction<{ acoustic: boolean }>) => {
+        state.acoustic = action.payload.acoustic;
       },
       setSong: (state, action: PayloadAction<{ songStructure: SongStructure, key: string, bpm: number, seed?: number | null }>) => {
         state.songStructure = action.payload.songStructure;
@@ -84,7 +89,7 @@ const song = createSlice({
     },
   });
 
-export const { setIsPlaying, setMidi, setSong, setBassState, setDrumState, setChordState, setCurrentBeat, reorderParts, incrementByAmount } = song.actions;
+export const { setIsPlaying, setMidi, setAcoustic, setSong, setBassState, setDrumState, setChordState, setCurrentBeat, reorderParts, incrementByAmount } = song.actions;
 
 // Thunk: generate a fresh random song and load it into the store. Replaces the
 // old module-load side effect; dispatched on mount (and reusable for a

@@ -140,10 +140,11 @@
     position: fixed;
     bottom: 0;
     left: 0;
-    padding: 10px;
+    padding: 10px 90px;
     z-index: 2;
     background-color: #fff;
     width: 100%;
+    box-sizing: border-box;
     display: flex;
     justify-content: center;
     align-items: flex-start;
@@ -157,8 +158,25 @@
     margin-right: 0;
 }
 
+.controls .oscToggle {
+    position: absolute;
+    right: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 60px;
+    height: 60px;
+    font-size: 10px;
+    line-height: 1.3;
+    text-align: center;
+    overflow: hidden;
+}
+
 .songControls {
     display: inline-flex;
+    flex: 0 0 auto;
     flex-direction: column;
     row-gap: 4px;
     vertical-align: middle;
@@ -167,25 +185,35 @@
 
 .fader {
     display: flex;
+    flex-direction: column;
+    row-gap: 4px;
+    width: 100%;
+    min-width: 0;
+}
+
+/* Matches the rendered height of .button so the BPM label and slider rows land
+   on the same lines as Chords/Bass/Drums and Use Midi/Save-Load/Log Out. */
+.bpmRow {
+    height: 28.6562px;
+    display: flex;
     align-items: center;
-    column-gap: 8px;
-    margin-left: 16px;
-    margin-top: 21.66px;
+    justify-content: center;
+    font-weight: 700;
 }
 
 .bpmControls {
     display: inline-flex;
+    flex: 1 1 auto;
     flex-direction: column;
     align-items: center;
+    row-gap: 4px;
+    min-width: 90px;
     vertical-align: middle;
-}
-
-.bpmControls .button {
-    margin-top: 25.66px;
 }
 
 .midiControls {
     display: inline-flex;
+    flex: 0 0 auto;
     flex-direction: column;
     row-gap: 4px;
     vertical-align: middle;
@@ -197,7 +225,9 @@ input[type="range"].bpm {
   -webkit-appearance: none; /* Safari and Chrome */
   -moz-appearance: none; /* Firefox */
   appearance: none; /* Standard */
-  width: 180px;
+  width: 100%;
+  min-width: 40px;
+  max-width: 180px;
   height: 8px;
   border-radius: 5px;
   background: linear-gradient(to right, blue, rgb(187, 187, 254)) no-repeat center;

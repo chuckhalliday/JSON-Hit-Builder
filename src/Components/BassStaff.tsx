@@ -22,6 +22,7 @@ const BassStaff = forwardRef<PlayHandle, BassStaffProps>(function BassStaff({ re
   const song = useSelector((state: { song: SongState }) => state.song);
   const bpm = song.bpm
   const midi = song.midi
+  const acoustic = song.acoustic
   const beat = song.selectedBeat[2]
 
   const bassGrid = song.songStructure[part].bassGrid
@@ -448,7 +449,7 @@ const BassStaff = forwardRef<PlayHandle, BassStaffProps>(function BassStaff({ re
     stopRef.current = false;
     setIsPlaying(true);
     onPlayingChange?.(true);
-    const endBeat = await playBass(midi, beat, bassNoteGrid, bassGroove, bpm, () => stopRef.current, handleStep, drumGroove);
+    const endBeat = await playBass(midi, beat, bassNoteGrid, bassGroove, bpm, () => stopRef.current, handleStep, drumGroove, undefined, acoustic);
     setIsPlaying(false);
     onPlayingChange?.(false);
     const nextBeat = endBeat >= bassGroove.length ? 0 : endBeat;

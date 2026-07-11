@@ -22,15 +22,15 @@ export interface VersePlaybackResult {
 
 export async function playVerse(bpm: number, midi: boolean, drumBeat: number, bassBeat: number, chordBeat: number, verseDrumGroove: number[], verseDrums: DrumHit[][],
   verseBassGroove: number[], verseBass: NoteLocation[], verseChordGroove: number[], verseChords: string[], verseChordTones: ChordTones, onStep: (lampIndex: number) => void, shouldStop?: () => boolean,
-  includeDrums = true, includeBass = true, includeChords = true): Promise<VersePlaybackResult> {
+  includeDrums = true, includeBass = true, includeChords = true, acoustic = true): Promise<VersePlaybackResult> {
   const [drumEnd, , , , , bassEnd, chordEnd] = await Promise.all([
     playBeat(midi, drumBeat, verseDrums[0], verseDrumGroove, bpm, verseDrums, onStep, shouldStop, !includeDrums),
     playBeat(midi, drumBeat, verseDrums[1], verseDrumGroove, bpm, verseDrums, undefined, shouldStop, !includeDrums),
     playBeat(midi, drumBeat, verseDrums[5], verseDrumGroove, bpm, verseDrums, undefined, shouldStop, !includeDrums),
     playBeat(midi, drumBeat, verseDrums[6], verseDrumGroove, bpm, verseDrums, undefined, shouldStop, !includeDrums),
     playBeat(midi, drumBeat, verseDrums[8], verseDrumGroove, bpm, verseDrums, undefined, shouldStop, !includeDrums),
-    playBass(midi, bassBeat, verseBass, verseBassGroove, bpm, shouldStop, onStep, verseDrumGroove, !includeBass),
-    playChords(midi, chordBeat, verseChords, verseChordTones, verseChordGroove, bpm, shouldStop, onStep, verseDrumGroove, !includeChords)
+    playBass(midi, bassBeat, verseBass, verseBassGroove, bpm, shouldStop, onStep, verseDrumGroove, !includeBass, acoustic),
+    playChords(midi, chordBeat, verseChords, verseChordTones, verseChordGroove, bpm, shouldStop, onStep, verseDrumGroove, !includeChords, acoustic)
   ])
   return { drumBeat: drumEnd, bassBeat: bassEnd, chordBeat: chordEnd }
 }
