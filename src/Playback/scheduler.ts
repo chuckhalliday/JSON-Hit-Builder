@@ -1,4 +1,4 @@
-import { getAudioContext } from "./audioContext";
+import { getAudioContext, ensureAudioRunning } from "./audioContext";
 
 // How far in the future the first note is placed, giving all parallel parts
 // time to finish synchronous scheduling before any note fires. All parts sample
@@ -28,17 +28,21 @@ export function scheduleTimer(time: number, callback: () => void, register: Regi
 // arrived while they were in flight.
 // Resolves with the final note index (either `length`, or the index reached at
 // the moment of stop).
-export function runPreScheduledSequence(
+export async function runPreScheduledSequence(
   startIndex: number,
   length: number,
   getDuration: (index: number) => number,
   onSchedule: (index: number, time: number, duration: number, register: Register, isCancelled: () => boolean) => void,
   shouldStop?: () => boolean,
 ): Promise<number> {
-  const audioContext = getAudioContext();
+  // Sample currentTime only once the context is truly rendering (see
+  // ensureAudioRunning) so scheduled times can't start in the past. When the
+  // context is already running this awaits nothing, and parallel parts still
+  // sample the clock in the same synchronous batch, staying phase-aligned.
+  const audioContext = await ensureAudioRunning();
 
   if (startIndex >= length) {
-    return Promise.resolve(startIndex);
+    return startIndex;
   }
 
   const startTime = audioContext.currentTime + SCHEDULE_LEAD;
