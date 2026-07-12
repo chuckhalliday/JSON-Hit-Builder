@@ -2,10 +2,16 @@ import { useState, useEffect, useRef, ChangeEvent } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { setSong, SongState } from "../reducers";
 import generateSong from "../SongStructure/generateSong";
+import { defaultTuning, normalizeTuning, tuningBounds } from "../SongStructure/tuning";
+import { GenerationTuning } from "../types";
+import Dial from "./Dial";
 import styles from "../Styles/App.module.scss";
 
 interface GenerateProps {
   onClose: () => void;
+  // Gates the "Advanced" button below - only the dev-login and test Google
+  // accounts get access to the additional generation settings it opens.
+  showAdvanced?: boolean;
 }
 
 const noteMapping: { [key: number]: string } = {
@@ -55,7 +61,7 @@ const defaultArrangement = () => [
   [0, 0, 0, 0],
 ];
 
-export default function Generate({ onClose }: GenerateProps) {
+export default function Generate({ onClose, showAdvanced = false }: GenerateProps) {
   const dispatch = useDispatch()
   // Pre-load the controls with the recipe that produced the current song
   // (grooves copied: the store freezes its arrays, the menu splices in place).
@@ -76,6 +82,14 @@ export default function Generate({ onClose }: GenerateProps) {
   const [keyAdjust, setKeyAdjust] = useState<number | undefined>()
   const [bpm, setBpm] = useState<number | undefined>(params?.bpm)
   const [songLength, setSongLength] = useState<number | undefined>(params?.songLength)
+  // Advanced-panel dials, resolved from the recipe. normalizeTuning maps
+  // recipes from the retired single drum dial, fills fields older saves
+  // don't have with the stock defaults, and clamps anything out of bounds,
+  // so the dials always open on safe values.
+  const recipeTuning = normalizeTuning(params?.tuning);
+  const [tuning, setTuning] = useState<GenerationTuning>(recipeTuning)
+  const setTuningField = (key: keyof GenerationTuning) => (value: number) =>
+    setTuning(current => ({ ...current, [key]: value }));
 
   // Revert every control to the blank state (random key/BPM/length, single
   // half-note groove) — the refresh button next to the title.
@@ -91,6 +105,7 @@ export default function Generate({ onClose }: GenerateProps) {
     setToneModify(0);
     setBpm(undefined);
     setSongLength(undefined);
+    setTuning({ ...defaultTuning });
   };
 
   const handleKeyChange = (e: ChangeEvent<HTMLSelectElement>) => {
@@ -164,7 +179,7 @@ export default function Generate({ onClose }: GenerateProps) {
     value === undefined ? undefined : Math.min(max, Math.max(min, value));
 
   const updateSong = () => {
-    dispatch(setSong(generateSong(grooves, arrangement, triplet, keyAdjust, tonality, clamp(bpm, minBpm, maxBpm), clamp(songLength, minLength, maxLength))))
+    dispatch(setSong(generateSong(grooves, arrangement, triplet, keyAdjust, tonality, clamp(bpm, minBpm, maxBpm), clamp(songLength, minLength, maxLength), tuning)))
     onClose()
   }
 
@@ -183,9 +198,31 @@ export default function Generate({ onClose }: GenerateProps) {
     songLength === params.songLength &&
     selectedKey === (parsedKey?.letter ?? '') &&
     sharpFlat === (parsedKey?.accidental ?? '♮') &&
-    tonality === parsedKey?.tonality;
+    tonality === parsedKey?.tonality &&
+    (Object.keys(defaultTuning) as (keyof GenerationTuning)[]).every(key => tuning[key] === recipeTuning[key]);
 
   const [showShuffleWarning, setShowShuffleWarning] = useState(false);
+  const [showAdvancedPanel, setShowAdvancedPanel] = useState(false);
+  const shuffleWarningRef = useRef<HTMLDivElement | null>(null);
+
+  // The warning renders at the bottom of a fixed-height, scrollable panel —
+  // with the Advanced dials pushing the panel taller, it can appear entirely
+  // below the fold. Without this, clicking Regenerate on an unchanged recipe
+  // looks like a no-op: the warning fires but nobody scrolls down to see it.
+  useEffect(() => {
+    if (showShuffleWarning) {
+      shuffleWarningRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+  }, [showShuffleWarning]);
+
+  // Range, step, and reset value for a dial come from the same tables the
+  // sanitizer enforces, so the UI can never offer an out-of-bounds value.
+  const dialProps = (key: keyof GenerationTuning) => ({
+    ...tuningBounds[key],
+    value: tuning[key],
+    defaultValue: defaultTuning[key],
+    onChange: setTuningField(key),
+  });
 
   const handleRegenerate = () => {
     if (recipeUnchanged) {
@@ -400,9 +437,63 @@ export default function Generate({ onClose }: GenerateProps) {
           /> seconds
         </p>
         <br/>
+        {showAdvanced && (
+          <button onClick={() => setShowAdvancedPanel(prev => !prev)}>Advanced</button>
+        )}
+        {showAdvancedPanel && (
+          <div className={styles.advancedSettings}>
+            <p>
+              Deep algorithm odds. The × dials scale the generator's dice rolls
+              (×1.00 is stock behavior) and every value is clamped to a safe
+              range. Drag a dial up or down; double-click resets it.
+            </p>
+            <p className={styles.dialGroupLabel}>Drum-hit odds</p>
+            <div className={styles.dialRow}>
+              <Dial
+                label="Kick"
+                hint="Scales every optional kick: strong-beat, syncopated, and bass-rest kicks. The downbeat accent always lands."
+                format={(v) => `×${v.toFixed(2)}`}
+                {...dialProps('kickOdds')}
+              />
+              <Dial
+                label="Snare"
+                hint="Scales backbeat snares and off-beat ghost hits."
+                format={(v) => `×${v.toFixed(2)}`}
+                {...dialProps('snareOdds')}
+              />
+              <Dial
+                label="Crash"
+                hint="Scales mid-section crashes and section-ending crash accents."
+                format={(v) => `×${v.toFixed(2)}`}
+                {...dialProps('crashOdds')}
+              />
+            </div>
+            <p className={styles.dialGroupLabel}>Harmony &amp; structure</p>
+            <div className={styles.dialRow}>
+              <Dial
+                label="Chord Substitutions"
+                hint="How often plain triads get swapped for substitutions (maj7/m7/9th and borrowed chords): 0 keeps everything diatonic."
+                format={(v) => `×${v.toFixed(2)}`}
+                {...dialProps('chordSubstitutionRate')}
+              />
+              <Dial
+                label="Chord Changes"
+                hint="How eagerly chords change: 0 holds each chord a full two beats, ×2 changes on every beat the bass allows."
+                format={(v) => `×${v.toFixed(2)}`}
+                {...dialProps('chordChangeRate')}
+              />
+              <Dial
+                label="Part Repeats"
+                hint="Longest run of the same Verse/Chorus/Bridge back-to-back: 1 forces strict alternation."
+                format={(v) => `max ${v}`}
+                {...dialProps('maxPartRepeats')}
+              />
+            </div>
+          </div>
+        )}
         <button onClick={handleRegenerate}>Regenerate</button>
         {showShuffleWarning && recipeUnchanged && (
-          <div className={styles.shuffleWarning}>
+          <div className={styles.shuffleWarning} ref={shuffleWarningRef}>
             <p>
               Every visible setting matches the current song, but the parts of the
               algorithm the menu doesn't expose still get rerolled:

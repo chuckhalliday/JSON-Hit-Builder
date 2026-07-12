@@ -4,12 +4,18 @@ transposeBassArray, bassArray1B, bassArray1C, bassArray2C, bassArray3C, bassArra
 import { createChords, chordArray, transposeChordArray } from "./chords.js";
 import { setKey, findKey } from './key.js';
 import { generateSongStructure } from './songStructure.js';
-import { DrumHit } from "../types";
+import { DrumHit, GenerationTuning } from "../types";
 import { rng } from "./rng";
+import { setTuning, normalizeTuning } from "./tuning";
 
-export default function generateSong(bassGrooves: number[][], arrangement: number[][], tripMod: number, pickedKey?: number, tonality?: string, pickedBpm?: number, pickedLength?: number){
+export default function generateSong(bassGrooves: number[][], arrangement: number[][], tripMod: number, pickedKey?: number, tonality?: string, pickedBpm?: number, pickedLength?: number, tuning?: GenerationTuning){
 
-  // Re-roll bass accidentals from the (seeded) RNG before building any lines.
+  // Resolve the Advanced-panel odds (normalizing fills gaps with the stock
+  // defaults and clamps out-of-range values) and install them before any
+  // generator rolls against them, then re-roll bass accidentals from the
+  // (seeded) RNG before building any lines.
+  const resolvedTuning = normalizeTuning(tuning);
+  setTuning(resolvedTuning);
   rollAccidentals();
 
   const bassGrooveBySection = arrangement.map(section =>
@@ -131,6 +137,9 @@ export default function generateSong(bassGrooves: number[][], arrangement: numbe
     triplet: tripMod,
     bpm: bpm,
     songLength: songtime,
+    // Recorded post-normalization so recipes always carry the current,
+    // in-bounds shape (legacy or corrupt inputs self-heal on regenerate).
+    tuning: { ...resolvedTuning },
   },
   }
   return songVariables

@@ -1,7 +1,13 @@
 import { chordToneMappings, chordMidiMappings } from "./tone"
 import { ChordTones, NoteLocation } from "../types"
 import { rng } from "./rng"
+import { subOdds, chordChangeOdds } from "./tuning"
 
+// Chunks the bass groove into chord durations. A chord always commits once
+// two beats accumulate; between one and two beats it commits early with the
+// chord-change odds (stock 0.5, scaled by the Advanced panel's dial — 0
+// holds every chord the full two beats, saturated changes on every beat the
+// bass allows). Total duration is preserved at any setting.
 export function createChords(bassGroove: number[]) {
   let chordArray = []
   let sum = bassGroove[0]
@@ -11,7 +17,7 @@ export function createChords(bassGroove: number[]) {
       chordArray.push(sum)
       sum = 0
       sum += bassGroove[i]
-    } else if (sum >= 1 && roll < 0.5) {
+    } else if (sum >= 1 && roll < chordChangeOdds(0.5)) {
       chordArray.push(sum)
       sum = 0
       sum += bassGroove[i]
@@ -27,12 +33,18 @@ export function createChords(bassGroove: number[]) {
 
 export function chordArray(chordsGroove: number[], bassGroove: number[], bassString: string[]) {
 
-const cmajCmaj7 = rng() < 0.9 ? "1" : "!";
+// Rolls that swap a plain diatonic triad for a substitute go through
+// subOdds(base): the stock substitution rate scaled by the Advanced panel's
+// chord dial, written as the complement (1 - subOdds(x)) so the keep-branch
+// shape — and therefore seed replay at the default tuning — is unchanged.
+// The two-substitute pickers below (Dm7-vs-C9 etc.) only choose WHICH
+// substitute flavors this section, so they stay at their stock odds.
+const cmajCmaj7 = rng() < 1 - subOdds(0.1) ? "1" : "!";
 const dmin7C9 = rng() < 0.8 ? "@" : "9";
 const emin7Emaj = rng() < 0.8 ? "#" : "8";
 const f7Fmin = rng() < 0.5 ? "$" : "0";
 const g7Bdim = rng() < 0.7 ? "%" : "7";
-const aminCmaj = rng() < 0.8 ? "6" : "1";
+const aminCmaj = rng() < 1 - subOdds(0.2) ? "6" : "1";
 
 let chords = ""
 let chordSum = 0;
@@ -48,21 +60,21 @@ for (let i = 0; i < bassGroove.length; i++) {
         if (note === "c") {
           chords += cmajCmaj7;
         } else if (note === "d") {
-          chords += rng() < 0.8 ? "2" : dmin7C9;
+          chords += rng() < 1 - subOdds(0.2) ? "2" : dmin7C9;
         } else if (note === "e") {
-          chords += rng() < 0.8 ? "3" : emin7Emaj;
+          chords += rng() < 1 - subOdds(0.2) ? "3" : emin7Emaj;
         } else if (note === "f") {
-          chords += rng() < 0.8 ? "4" : f7Fmin;
+          chords += rng() < 1 - subOdds(0.2) ? "4" : f7Fmin;
         } else if (note === "g") {
-          chords += rng() < 0.8 ? "5" : g7Bdim;
+          chords += rng() < 1 - subOdds(0.2) ? "5" : g7Bdim;
         } else if (note === "a") {
           chords += aminCmaj;
         } else if (note === "b") {
           chords += g7Bdim;
         } else if (note === "o") {
-          chords += rng() < 0.8 ? "4" : f7Fmin;
+          chords += rng() < 1 - subOdds(0.2) ? "4" : f7Fmin;
         } else if (note === "p") {
-          chords += rng() < 0.8 ? "5" : g7Bdim;
+          chords += rng() < 1 - subOdds(0.2) ? "5" : g7Bdim;
         } else if (note === "|") {
           chords = chords;
         } else if (note === "-") {

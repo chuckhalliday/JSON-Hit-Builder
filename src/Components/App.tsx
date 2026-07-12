@@ -14,8 +14,9 @@ import type { AppDispatch } from '../store'
 import styles from "../Styles/App.module.scss"
 import { supabase } from '../supabaseClient'
 
-// User ids allowed to see the T1-T10 song-generation tabs: the dev-login
-// account and the one Google account used for testing multi-song playback.
+// User ids allowed to see internal-only features (the T1-T10 song-generation
+// tabs and the Advanced generation settings): the dev-login account and the
+// one Google account used for testing.
 const DEV_USER_ID = '073e2300-29ac-429d-af14-f1b34b44802a';
 const TEST_GOOGLE_USER_ID = '92fcd2d4-cc80-4d8e-8246-7f645800492c';
 const SONG_TAB_COUNT = 10;
@@ -59,7 +60,8 @@ function App() {
   // tab keeps its own independent structure, edits, and playback position.
   const [currentTabIndex, setCurrentTabIndex] = useState(0);
   const [tabSongs, setTabSongs] = useState<Array<SongState | null>>(() => new Array(SONG_TAB_COUNT).fill(null));
-  const canUseSongTabs = userId === DEV_USER_ID || userId === TEST_GOOGLE_USER_ID;
+  const isPrivilegedUser = userId === DEV_USER_ID || userId === TEST_GOOGLE_USER_ID;
+  const canUseSongTabs = isPrivilegedUser;
 
   const login = async () => {
     if (!authenticated) {
@@ -383,7 +385,7 @@ function App() {
         <div className={styles.rowContainer}>
         {showGenerate && (
           <div className={styles.generateOverlay}>
-            <Generate onClose={handleCloseGenerate}/>
+            <Generate onClose={handleCloseGenerate} showAdvanced={isPrivilegedUser}/>
           </div>
         )}
         {saveScreen && (
