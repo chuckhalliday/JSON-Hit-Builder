@@ -7,7 +7,7 @@ import BassStaff from "./BassStaff";
 import Piano, { PlayHandle } from './Piano';
 import { useSelector, useDispatch } from "react-redux"
 import { playVerse } from '../Playback/playSong';
-import { preloadDrumSamples } from '../Playback/playDrums';
+import { getAudioContext } from '../Playback/audioContext';
 import { useLampStep } from '../Playback/useLampStep';
 import { incrementByAmount, setIsPlaying, setMidi, setAcoustic, SongState, setCurrentBeat, newSong, reorderParts, loadSong } from '../reducers';
 import type { AppDispatch } from '../store'
@@ -96,10 +96,14 @@ function App() {
     setUserId(data.user?.id ?? null);
   };
 
-  // Warm the drum sample cache as early as possible so the first playback of a
-  // session doesn't race a cold fetch+decode against the scheduler's lead time.
+  // Create the shared AudioContext at mount, not lazily inside the first
+  // Play. Autoplay policy keeps it suspended (clock frozen at 0) until the
+  // first user-gesture resume, which protects the opening notes: a context
+  // created mid-gesture instead reports "running" while its output stream is
+  // still opening, and the clock burst-advances past anything just scheduled
+  // (heard as several silent measures before sound starts on Linux).
   useEffect(() => {
-    preloadDrumSamples().catch(() => { /* first hit will just load it lazily */ });
+    getAudioContext();
   }, []);
 
   useEffect(() => {
@@ -219,7 +223,8 @@ function App() {
         includeDrums,
         includeBass,
         includeChords,
-        acoustic
+        acoustic,
+        song.key
       );
 
       if (stopRef.current) {

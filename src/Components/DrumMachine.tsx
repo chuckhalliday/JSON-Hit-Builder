@@ -30,6 +30,7 @@ const DrumMachine = forwardRef<PlayHandle, DrumMachineProps>(function DrumMachin
   const bpm = song.bpm
   const start = song.selectedBeat[1]
   const midi = song.midi
+  const acoustic = song.acoustic
   const drums = song.songStructure[part].drums
   const steps = song.songStructure[part].stepIds
   const drumGroove = song.songStructure[part].drumGroove
@@ -112,7 +113,7 @@ const DrumMachine = forwardRef<PlayHandle, DrumMachineProps>(function DrumMachin
     stopRef.current = false;
     setIsPlaying(true);
     onPlayingChange?.(true);
-    const endBeat = await playDrums(bpm, midi, start, drumGroove, drumHits, handleStep, () => stopRef.current);
+    const endBeat = await playDrums(bpm, midi, start, drumGroove, drumHits, handleStep, () => stopRef.current, acoustic, song.key);
     setIsPlaying(false);
     onPlayingChange?.(false);
     const nextBeat = endBeat >= drumGroove.length ? 0 : endBeat;
