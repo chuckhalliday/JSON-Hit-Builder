@@ -1,6 +1,7 @@
 import { rng } from "./rng";
 import { bassPitch } from "./bassPitch";
 import { NoteLocation } from "../types";
+import { bassTonalityOdds } from "./tuning";
 
 //calculates an array of x-coordinates where the measure lines should be drawn on bass staff canvas
 export function bassMeasures(bassGroove: number[], drumGroove: number[]) {
@@ -74,7 +75,9 @@ export function bassArray1V(bassGroove: number[], tonality?: string) {
   } else if (tonality === 'Minor') {
     a_c = "a"
   } else {
-    a_c = rng() < 0.5 ? "a" : "c";
+    // Stock 50/50 major/minor split when the menu left tonality to chance,
+    // scaled by the Advanced panel's Bass Tonality dial.
+    a_c = rng() < bassTonalityOdds(0.5) ? "a" : "c";
   }
   let bass: string[] = [a_c];
 

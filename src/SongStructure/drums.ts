@@ -1,7 +1,7 @@
 import { subdivideArray } from "./groove";
 import { DrumHit } from "../types";
 import { rng } from "./rng";
-import { kickOdds, snareOdds, crashOdds } from "./tuning";
+import { kickOdds, snareOdds, crashOdds, hiHatOpenOdds } from "./tuning";
 
 export function createDrums(bassGroove: number[][], tripMod: number) {
   let drumArr: number[][] = [];
@@ -82,7 +82,10 @@ export function drumArray(drumHits: DrumHit[][], drumBeat: number[], bassBeat: n
     }
     if (drumBeat[i] === 0.08 || drumBeat[i] === 0.09 ||
       drumBeat[i] === 0.16 || drumBeat[i] === 0.17) {
-      rng() < 0.5 ? (pushHit(hiHatC, i), pushRest(hiHatO, i)) : (pushHit(hiHatO, i), pushRest(hiHatC, i));
+      // Stock closed/open split (0.5/0.5), written as the complement of the
+      // open odds so the closed-branch shape is unchanged at the default
+      // tuning; the Hi-Hat Open dial scales how often it opens instead.
+      rng() < 1 - hiHatOpenOdds(0.5) ? (pushHit(hiHatC, i), pushRest(hiHatO, i)) : (pushHit(hiHatO, i), pushRest(hiHatC, i));
     } else if (Math.abs(drumSum % 0.5 - Math.round(drumSum % 0.5)) <= 0.1) {
       pushHit(hiHatC, i)
       pushRest(hiHatO, i)

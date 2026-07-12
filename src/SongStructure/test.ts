@@ -129,7 +129,7 @@ describe('generation tuning (Advanced panel dials)', () => {
 
   it('records the tuning actually used in the song recipe', () => {
     expect(makeSong().params.tuning).toEqual(defaultTuning);
-    const tuning = { kickOdds: 0.5, snareOdds: 1.2, crashOdds: 0.8, chordSubstitutionRate: 1.5, chordChangeRate: 0.7, maxPartRepeats: 2 };
+    const tuning = { ...defaultTuning, kickOdds: 0.5, snareOdds: 1.2, crashOdds: 0.8, chordSubstitutionRate: 1.5, chordChangeRate: 0.7, maxPartRepeats: 2 };
     expect(makeSong(tuning).params.tuning).toEqual(tuning);
   });
 
