@@ -1,7 +1,7 @@
 import { chordToneMappings, chordMidiMappings } from "./tone"
 import { ChordTones, NoteLocation } from "../types"
 import { rng } from "./rng"
-import { subOdds, chordChangeOdds } from "./tuning"
+import { subOdds, chordChangeOdds, chordVoicingOdds } from "./tuning"
 
 // Chunks the bass groove into chord durations. A chord always commits once
 // two beats accumulate; between one and two beats it commits early with the
@@ -40,10 +40,12 @@ export function chordArray(chordsGroove: number[], bassGroove: number[], bassStr
 // The two-substitute pickers below (Dm7-vs-C9 etc.) only choose WHICH
 // substitute flavors this section, so they stay at their stock odds.
 const cmajCmaj7 = rng() < 1 - subOdds(0.1) ? "1" : "!";
-const dmin7C9 = rng() < 0.8 ? "@" : "9";
-const emin7Emaj = rng() < 0.8 ? "#" : "8";
-const f7Fmin = rng() < 0.5 ? "$" : "0";
-const g7Bdim = rng() < 0.7 ? "%" : "7";
+// Stock odds (0.8/0.8/0.5/0.7) for which flavor a substitute lands on,
+// scaled by the Advanced panel's Chord Voicings dial.
+const dmin7C9 = rng() < chordVoicingOdds(0.8) ? "@" : "9";
+const emin7Emaj = rng() < chordVoicingOdds(0.8) ? "#" : "8";
+const f7Fmin = rng() < chordVoicingOdds(0.5) ? "$" : "0";
+const g7Bdim = rng() < chordVoicingOdds(0.7) ? "%" : "7";
 const aminCmaj = rng() < 1 - subOdds(0.2) ? "6" : "1";
 
 let chords = ""

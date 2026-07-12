@@ -43,8 +43,12 @@ export interface GenerationTuning {
   kickOdds: number;
   snareOdds: number;
   crashOdds: number;
+  hiHatOpenRate: number;
   chordSubstitutionRate: number;
   chordChangeRate: number;
+  chordVoicingRate: number;
+  tripletSubdivisionRate: number;
+  bassTonalityBias: number;
   maxPartRepeats: number;
 }
 

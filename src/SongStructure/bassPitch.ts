@@ -16,7 +16,7 @@ export interface Pitch {
 export function bassPitch(y: number, acc: string): Pitch {
   const pick = (name: keyof typeof tone, octave: number): Pitch => ({
     osc: tone[name][octave],
-    midi: midiTone[name][octave],
+    midi: midiTone[name][octave - 1],
   });
 
   switch (y) {

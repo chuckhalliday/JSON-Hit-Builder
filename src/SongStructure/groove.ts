@@ -1,4 +1,5 @@
 import { rng } from "./rng";
+import { tripletSubdivisionOdds } from "./tuning";
 
 export function randomGroove() {
   const initBass: number[] = [0.5];
@@ -70,7 +71,9 @@ export function subdivideArray(groove: number[]) {
   let newArr: number[] = [];
 
   for (let i = 0; i < groove.length; i++) {
-    if ((groove[i] === 0.5 || groove[i] === 0.25) && rng() < 0.2) {
+    // Stock triplet-subdivision odds (0.2), scaled by the Advanced panel's
+    // Triplet Subdivision dial.
+    if ((groove[i] === 0.5 || groove[i] === 0.25) && rng() < tripletSubdivisionOdds(0.2)) {
       // randomly subdivide element
       let val = groove[i] / 3;
       let trip = parseFloat(val.toFixed(2));

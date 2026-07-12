@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, ChangeEvent } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { setSong, SongState } from "../reducers";
 import generateSong from "../SongStructure/generateSong";
-import { defaultTuning, normalizeTuning, tuningBounds } from "../SongStructure/tuning";
+import { defaultTuning, normalizeTuning, tuningBounds, genrePresets } from "../SongStructure/tuning";
 import { GenerationTuning } from "../types";
 import Dial from "./Dial";
 import styles from "../Styles/App.module.scss";
@@ -88,8 +88,21 @@ export default function Generate({ onClose, showAdvanced = false }: GenerateProp
   // so the dials always open on safe values.
   const recipeTuning = normalizeTuning(params?.tuning);
   const [tuning, setTuning] = useState<GenerationTuning>(recipeTuning)
-  const setTuningField = (key: keyof GenerationTuning) => (value: number) =>
+  // The Genre picker's current selection, shown alongside the dials. Hand-
+  // moving any dial (including a double-click reset) falls back to "Custom" —
+  // a genre and a manually-assembled set of dials are otherwise the same
+  // thing, so the label just tracks which one the user asked for last.
+  const [selectedGenre, setSelectedGenre] = useState('');
+  const setTuningField = (key: keyof GenerationTuning) => (value: number) => {
+    setSelectedGenre('');
     setTuning(current => ({ ...current, [key]: value }));
+  };
+  const applyGenre = (genre: string) => {
+    setSelectedGenre(genre);
+    if (genrePresets[genre]) {
+      setTuning({ ...genrePresets[genre] });
+    }
+  };
 
   // Revert every control to the blank state (random key/BPM/length, single
   // half-note groove) — the refresh button next to the title.
@@ -106,6 +119,7 @@ export default function Generate({ onClose, showAdvanced = false }: GenerateProp
     setBpm(undefined);
     setSongLength(undefined);
     setTuning({ ...defaultTuning });
+    setSelectedGenre('');
   };
 
   const handleKeyChange = (e: ChangeEvent<HTMLSelectElement>) => {
@@ -447,6 +461,18 @@ export default function Generate({ onClose, showAdvanced = false }: GenerateProp
               (×1.00 is stock behavior) and every value is clamped to a safe
               range. Drag a dial up or down; double-click resets it.
             </p>
+            <p>
+              <label>
+                Genre:{' '}
+                <select value={selectedGenre} onChange={(e) => applyGenre(e.target.value)}>
+                  <option value="">Custom</option>
+                  {Object.keys(genrePresets).map(genre => (
+                    <option key={genre} value={genre}>{genre}</option>
+                  ))}
+                </select>
+              </label>
+              {' '}sets every dial below to that genre's starting point; adjusting any dial afterward switches back to Custom.
+            </p>
             <p className={styles.dialGroupLabel}>Drum-hit odds</p>
             <div className={styles.dialRow}>
               <Dial
@@ -468,6 +494,14 @@ export default function Generate({ onClose, showAdvanced = false }: GenerateProp
                 {...dialProps('crashOdds')}
               />
             </div>
+            <div className={styles.dialRow}>
+              <Dial
+                label="Hi-Hat Open"
+                hint="How often an eligible hi-hat opens instead of staying closed: 0 keeps every hi-hat closed, ×2 opens almost every one."
+                format={(v) => `×${v.toFixed(2)}`}
+                {...dialProps('hiHatOpenRate')}
+              />
+            </div>
             <p className={styles.dialGroupLabel}>Harmony &amp; structure</p>
             <div className={styles.dialRow}>
               <Dial
@@ -487,6 +521,29 @@ export default function Generate({ onClose, showAdvanced = false }: GenerateProp
                 hint="Longest run of the same Verse/Chorus/Bridge back-to-back: 1 forces strict alternation."
                 format={(v) => `max ${v}`}
                 {...dialProps('maxPartRepeats')}
+              />
+            </div>
+            <div className={styles.dialRow}>
+              <Dial
+                label="Chord Voicings"
+                hint="Once a chord substitutes, how often it lands on the richer flavor (Dm7, Em7, F7, G7) over the plainer alternate (C9, E major, Fm, B°)."
+                format={(v) => `×${v.toFixed(2)}`}
+                {...dialProps('chordVoicingRate')}
+              />
+            </div>
+            <p className={styles.dialGroupLabel}>Feel</p>
+            <div className={styles.dialRow}>
+              <Dial
+                label="Triplet Subdivision"
+                hint="How often an eligible eighth/sixteenth note swings into a triplet: 0 stays perfectly straight, ×2 swings almost every eligible note."
+                format={(v) => `×${v.toFixed(2)}`}
+                {...dialProps('tripletSubdivisionRate')}
+              />
+              <Dial
+                label="Bass Tonality"
+                hint="When no key is picked, how often the bass leans minor instead of major: 0 always resolves major, ×2 always resolves minor."
+                format={(v) => `×${v.toFixed(2)}`}
+                {...dialProps('bassTonalityBias')}
               />
             </div>
           </div>

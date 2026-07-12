@@ -24,8 +24,12 @@ export const defaultTuning: GenerationTuning = {
   kickOdds: 1,
   snareOdds: 1,
   crashOdds: 1,
+  hiHatOpenRate: 1,
   chordSubstitutionRate: 1,
   chordChangeRate: 1,
+  chordVoicingRate: 1,
+  tripletSubdivisionRate: 1,
+  bassTonalityBias: 1,
   maxPartRepeats: 3,
 };
 
@@ -35,9 +39,69 @@ export const tuningBounds: { [K in keyof GenerationTuning]: { min: number; max: 
   kickOdds: { min: 0, max: 2, step: 0.05 },
   snareOdds: { min: 0, max: 2, step: 0.05 },
   crashOdds: { min: 0, max: 2, step: 0.05 },
+  hiHatOpenRate: { min: 0, max: 2, step: 0.05 },
   chordSubstitutionRate: { min: 0, max: 2, step: 0.05 },
   chordChangeRate: { min: 0, max: 2, step: 0.05 },
+  chordVoicingRate: { min: 0, max: 2, step: 0.05 },
+  tripletSubdivisionRate: { min: 0, max: 2, step: 0.05 },
+  bassTonalityBias: { min: 0, max: 2, step: 0.05 },
   maxPartRepeats: { min: 1, max: 6, step: 1 },
+};
+
+// Named starting points for the dials, tuned by ear per genre. The Advanced
+// panel's Genre picker applies one of these as a bulk update to the dials —
+// it's a shortcut for setting all of them at once, not a distinct code path,
+// so a genre and hand-tuned dials are otherwise indistinguishable to the
+// generators.
+export const genrePresets: { [genre: string]: GenerationTuning } = {
+  Rock: {
+    kickOdds: 1.1,
+    snareOdds: 1.15,
+    crashOdds: 1.2,
+    hiHatOpenRate: 0.8,
+    chordSubstitutionRate: 0.4,
+    chordChangeRate: 0.7,
+    chordVoicingRate: 0.6,
+    tripletSubdivisionRate: 0.3,
+    bassTonalityBias: 1.1,
+    maxPartRepeats: 3,
+  },
+  Pop: {
+    kickOdds: 1.0,
+    snareOdds: 1.0,
+    crashOdds: 0.7,
+    hiHatOpenRate: 0.5,
+    chordSubstitutionRate: 0.3,
+    chordChangeRate: 0.6,
+    chordVoicingRate: 0.5,
+    tripletSubdivisionRate: 0.15,
+    bassTonalityBias: 0.7,
+    maxPartRepeats: 4,
+  },
+  Jazz: {
+    kickOdds: 0.7,
+    snareOdds: 0.8,
+    crashOdds: 0.6,
+    hiHatOpenRate: 0.4,
+    chordSubstitutionRate: 1.8,
+    chordChangeRate: 1.4,
+    chordVoicingRate: 1.7,
+    tripletSubdivisionRate: 1.6,
+    bassTonalityBias: 1.0,
+    maxPartRepeats: 5,
+  },
+  Blues: {
+    kickOdds: 0.9,
+    snareOdds: 0.9,
+    crashOdds: 0.7,
+    hiHatOpenRate: 0.9,
+    chordSubstitutionRate: 1.2,
+    chordChangeRate: 0.5,
+    chordVoicingRate: 1.8,
+    tripletSubdivisionRate: 1.8,
+    bassTonalityBias: 1.4,
+    maxPartRepeats: 6,
+  },
 };
 
 // Missing or non-finite values fall back to the default; everything else is
@@ -60,8 +124,12 @@ export function normalizeTuning(stored?: StoredTuning): GenerationTuning {
     kickOdds: sanitizeField("kickOdds", stored?.kickOdds ?? legacyDrum),
     snareOdds: sanitizeField("snareOdds", stored?.snareOdds ?? legacyDrum),
     crashOdds: sanitizeField("crashOdds", stored?.crashOdds ?? legacyDrum),
+    hiHatOpenRate: sanitizeField("hiHatOpenRate", stored?.hiHatOpenRate),
     chordSubstitutionRate: sanitizeField("chordSubstitutionRate", stored?.chordSubstitutionRate),
     chordChangeRate: sanitizeField("chordChangeRate", stored?.chordChangeRate),
+    chordVoicingRate: sanitizeField("chordVoicingRate", stored?.chordVoicingRate),
+    tripletSubdivisionRate: sanitizeField("tripletSubdivisionRate", stored?.tripletSubdivisionRate),
+    bassTonalityBias: sanitizeField("bassTonalityBias", stored?.bassTonalityBias),
     maxPartRepeats: sanitizeField("maxPartRepeats", stored?.maxPartRepeats),
   };
 }
@@ -85,12 +153,27 @@ export const kickOdds = (base: number) => scaleOdds(base, current.kickOdds);
 export const snareOdds = (base: number) => scaleOdds(base, current.snareOdds);
 export const crashOdds = (base: number) => scaleOdds(base, current.crashOdds);
 
+// Probability that an eligible hi-hat opens instead of staying closed.
+export const hiHatOpenOdds = (base: number) => scaleOdds(base, current.hiHatOpenRate);
+
 // Probability that a chord deviates from the plain diatonic triad.
 export const subOdds = (base: number) => scaleOdds(base, current.chordSubstitutionRate);
 
 // Probability that a chord change commits after one beat instead of holding
 // for two — higher means busier harmony.
 export const chordChangeOdds = (base: number) => scaleOdds(base, current.chordChangeRate);
+
+// Probability that a substituted chord picks its richer flavor (Dm7, Em7,
+// F7, G7) over the plainer alternate (C9, E major, Fm, B°).
+export const chordVoicingOdds = (base: number) => scaleOdds(base, current.chordVoicingRate);
+
+// Probability that an eligible eighth/sixteenth note subdivides into a
+// swung triplet.
+export const tripletSubdivisionOdds = (base: number) => scaleOdds(base, current.tripletSubdivisionRate);
+
+// Probability that an unspecified tonality resolves to a minor root instead
+// of major — only rolled when the menu's key/tonality was left to chance.
+export const bassTonalityOdds = (base: number) => scaleOdds(base, current.bassTonalityBias);
 
 // Longest run of the same part type the structure generator may emit.
 // normalizeTuning guarantees an integer >= 1, so the structure loop's
