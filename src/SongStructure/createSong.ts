@@ -1,13 +1,14 @@
 import { randomGroove, randomArrangement } from "./groove";
 import generateSong from "./generateSong";
 import { seedRng, rng, randomSeed } from "./rng";
-import { SongStructure } from "../types";
+import { SongStructure, SongParams } from "../types";
 
 export interface GeneratedSong {
   songStructure: SongStructure;
   bpm: number;
   key: string;
   seed: number;
+  params: SongParams;
 }
 
 // Builds a fresh random song that is fully reproducible from `seed`.
@@ -24,6 +25,6 @@ export function createRandomSong(seed: number = randomSeed()): GeneratedSong {
     randomGroove(),
     randomGroove(),
   ];
-  const { songStructure, bpm, key } = generateSong(bassGrooves, randomArrangement(), rng() / 4);
-  return { songStructure, bpm, key, seed };
+  const { songStructure, bpm, key, params } = generateSong(bassGrooves, randomArrangement(), rng() / 4);
+  return { songStructure, bpm, key, seed, params };
 }

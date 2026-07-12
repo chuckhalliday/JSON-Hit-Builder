@@ -34,6 +34,18 @@ export interface ChordTones {
 // A rhythmic pattern expressed as note durations in beats.
 export type Groove = number[];
 
+// The generation recipe that produced a song — every choice the Generate New
+// Song menu can edit, with random fallbacks resolved to the values actually
+// used. Stored alongside the song so the menu can pre-load with them. (The
+// key is not duplicated here; it lives on the song as the key string.)
+export interface SongParams {
+  grooves: number[][];
+  arrangement: number[][];
+  triplet: number;
+  bpm: number;
+  songLength: number;
+}
+
 // One rendered section of the song (a Verse/Chorus/Bridge instance).
 export interface Part {
   type: string;

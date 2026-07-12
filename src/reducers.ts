@@ -1,5 +1,5 @@
 import { createSlice, PayloadAction, Dispatch } from "@reduxjs/toolkit";
-import { SongStructure, NoteLocation, DrumHit } from "./types";
+import { SongStructure, NoteLocation, DrumHit, SongParams } from "./types";
 import { createRandomSong } from "./SongStructure/createSong";
 import { bassPitch } from "./SongStructure/bassPitch";
 
@@ -11,7 +11,10 @@ export interface SongState {
     acoustic: boolean,
     selectedBeat: number[],
     songStructure: SongStructure,
-    seed: number | null
+    seed: number | null,
+    // Generation recipe behind the current song; null for songs saved before
+    // recipes were recorded (the Generate menu then opens blank).
+    params: SongParams | null
 }
 
 // The song tree starts empty and deterministic. The first song is produced by
@@ -25,7 +28,8 @@ const initialState: SongState = {
     acoustic: true,
     selectedBeat: [0, 0, 0, 0],
     songStructure: [],
-    seed: null
+    seed: null,
+    params: null
 };
 
 const song = createSlice({
@@ -41,11 +45,12 @@ const song = createSlice({
       setAcoustic: (state, action: PayloadAction<{ acoustic: boolean }>) => {
         state.acoustic = action.payload.acoustic;
       },
-      setSong: (state, action: PayloadAction<{ songStructure: SongStructure, key: string, bpm: number, seed?: number | null }>) => {
+      setSong: (state, action: PayloadAction<{ songStructure: SongStructure, key: string, bpm: number, seed?: number | null, params?: SongParams | null }>) => {
         state.songStructure = action.payload.songStructure;
         state.key = action.payload.key;
         state.bpm = action.payload.bpm;
         state.seed = action.payload.seed ?? null;
+        state.params = action.payload.params ?? null;
       },
       setBassState: (state, action: PayloadAction<{ index: number, bassNoteLocations: NoteLocation[] }>) => {
         // Recompute each note's pitch from its (possibly edited) staff position
@@ -86,17 +91,21 @@ const song = createSlice({
       incrementByAmount: (state, action: PayloadAction<string>) => {
         state.bpm = parseFloat(action.payload);
       },
+      // Wholesale-replaces the active song state. Used to swap in a
+      // previously-generated song tab (see App.tsx's T1-T10 slots), where the
+      // whole SongState - not just the generation recipe - needs restoring.
+      loadSong: (_state, action: PayloadAction<SongState>) => action.payload,
     },
   });
 
-export const { setIsPlaying, setMidi, setAcoustic, setSong, setBassState, setDrumState, setChordState, setCurrentBeat, reorderParts, incrementByAmount } = song.actions;
+export const { setIsPlaying, setMidi, setAcoustic, setSong, setBassState, setDrumState, setChordState, setCurrentBeat, reorderParts, incrementByAmount, loadSong } = song.actions;
 
 // Thunk: generate a fresh random song and load it into the store. Replaces the
 // old module-load side effect; dispatched on mount (and reusable for a
 // "new song" button). Pass a seed to reproduce a specific song.
 export const newSong = (seed?: number) => (dispatch: Dispatch) => {
-  const { songStructure, key, bpm, seed: usedSeed } = createRandomSong(seed);
-  dispatch(setSong({ songStructure, key, bpm, seed: usedSeed }));
+  const { songStructure, key, bpm, seed: usedSeed, params } = createRandomSong(seed);
+  dispatch(setSong({ songStructure, key, bpm, seed: usedSeed, params }));
 };
 
 export default song;

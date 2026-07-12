@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, ChangeEvent } from "react";
-import { useDispatch} from "react-redux";
-import { setSong } from "../reducers";
+import { useDispatch, useSelector } from "react-redux";
+import { setSong, SongState } from "../reducers";
 import generateSong from "../SongStructure/generateSong";
 import styles from "../Styles/App.module.scss";
 
@@ -24,27 +24,74 @@ const maxBpm = 240;
 const minLength = 60;
 const maxLength = 600;
 
+// Semitone offset each key letter maps to (same values handleKeyChange uses).
+const keyOffsets: { [letter: string]: number } = { A: -3, B: -1, C: 0, D: 2, E: 4, F: -7, G: -5 };
+
+// Parse a stored key string like "D# Minor" back into the menu's key
+// controls. Anything unparseable (no song yet, or a mode the menu can't
+// express) returns null and the controls open blank.
+function parseKey(keyString: string) {
+  const [note, mode] = keyString.split(' ');
+  if (!note || !(note[0] in keyOffsets) || (mode !== 'Major' && mode !== 'Minor')) {
+    return null;
+  }
+  const accidental = note[1] === '#' ? '#' : note[1] === 'b' ? '♭' : '♮';
+  return {
+    letter: note[0],
+    accidental,
+    tonality: mode,
+    key: keyOffsets[note[0]],
+    modify: accidental === '#' ? 1 : accidental === '♭' ? -1 : 0,
+    toneModify: mode === 'Minor' ? 3 : 0,
+  };
+}
+
+// The blank "surprise me" state the menu opened with before recipes were
+// pre-loaded; fresh arrays each call because the menu mutates them in place.
+const defaultGrooves = () => [[2, 2, 2, 2]];
+const defaultArrangement = () => [
+  [0, 0, 0, 0],
+  [0, 0, 0, 0],
+  [0, 0, 0, 0],
+];
+
 export default function Generate({ onClose }: GenerateProps) {
   const dispatch = useDispatch()
-  const [grooves, setGrooves] = useState([
-    // Initial primary bass groove
-    [2, 2, 2, 2],
-  ]);
-  const [arrangement, setArrangement] = useState([
-    [0, 0, 0, 0],
-    [0, 0, 0, 0],
-    [0, 0, 0, 0],
-  ]);
-  const [triplet, setTriplet] = useState(0.0)
-  const [selectedKey, setSelectedKey] = useState('');
-  const [sharpFlat, setSharpFlat] = useState<string>('♮')
-  const [tonality, setTonality] = useState<string | undefined>()
-  const [key, setKey] = useState<number | undefined>()
-  const [modify, setModify] = useState<number>(0)
-  const [toneModify, setToneModify] = useState<number>(0)
+  // Pre-load the controls with the recipe that produced the current song
+  // (grooves copied: the store freezes its arrays, the menu splices in place).
+  // Songs without a stored recipe (e.g. older saves) open the blank state.
+  const params = useSelector((state: { song: SongState }) => state.song.params);
+  const songKey = useSelector((state: { song: SongState }) => state.song.key);
+  const parsedKey = parseKey(songKey);
+
+  const [grooves, setGrooves] = useState(params ? params.grooves.map(groove => [...groove]) : defaultGrooves());
+  const [arrangement, setArrangement] = useState(params ? params.arrangement.map(section => [...section]) : defaultArrangement());
+  const [triplet, setTriplet] = useState(params ? params.triplet : 0.0)
+  const [selectedKey, setSelectedKey] = useState(parsedKey?.letter ?? '');
+  const [sharpFlat, setSharpFlat] = useState<string>(parsedKey?.accidental ?? '♮')
+  const [tonality, setTonality] = useState<string | undefined>(parsedKey?.tonality)
+  const [key, setKey] = useState<number | undefined>(parsedKey?.key)
+  const [modify, setModify] = useState<number>(parsedKey?.modify ?? 0)
+  const [toneModify, setToneModify] = useState<number>(parsedKey?.toneModify ?? 0)
   const [keyAdjust, setKeyAdjust] = useState<number | undefined>()
-  const [bpm, setBpm] = useState<number | undefined>()
-  const [songLength, setSongLength] = useState<number | undefined>()
+  const [bpm, setBpm] = useState<number | undefined>(params?.bpm)
+  const [songLength, setSongLength] = useState<number | undefined>(params?.songLength)
+
+  // Revert every control to the blank state (random key/BPM/length, single
+  // half-note groove) — the refresh button next to the title.
+  const resetDefaults = () => {
+    setGrooves(defaultGrooves());
+    setArrangement(defaultArrangement());
+    setTriplet(0.0);
+    setSelectedKey('');
+    setSharpFlat('♮');
+    setTonality(undefined);
+    setKey(undefined);
+    setModify(0);
+    setToneModify(0);
+    setBpm(undefined);
+    setSongLength(undefined);
+  };
 
   const handleKeyChange = (e: ChangeEvent<HTMLSelectElement>) => {
     setSharpFlat('♮')
@@ -120,6 +167,33 @@ export default function Generate({ onClose }: GenerateProps) {
     dispatch(setSong(generateSong(grooves, arrangement, triplet, keyAdjust, tonality, clamp(bpm, minBpm, maxBpm), clamp(songLength, minLength, maxLength))))
     onClose()
   }
+
+  const sameArrays = (a: number[][], b: number[][]) =>
+    a.length === b.length && a.every((row, i) => row.length === b[i].length && row.every((value, j) => value === b[i][j]));
+
+  // True while every control still matches the pre-loaded recipe — the user
+  // is effectively asking for "the same song again", which the un-pinned
+  // randomness won't deliver. Compared by value so editing a control and
+  // putting it back counts as unchanged.
+  const recipeUnchanged = params != null &&
+    sameArrays(grooves, params.grooves) &&
+    sameArrays(arrangement, params.arrangement) &&
+    triplet === params.triplet &&
+    bpm === params.bpm &&
+    songLength === params.songLength &&
+    selectedKey === (parsedKey?.letter ?? '') &&
+    sharpFlat === (parsedKey?.accidental ?? '♮') &&
+    tonality === parsedKey?.tonality;
+
+  const [showShuffleWarning, setShowShuffleWarning] = useState(false);
+
+  const handleRegenerate = () => {
+    if (recipeUnchanged) {
+      setShowShuffleWarning(true);
+    } else {
+      updateSong();
+    }
+  };
   const generateRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
@@ -199,7 +273,7 @@ export default function Generate({ onClose }: GenerateProps) {
     <div className={styles.generateContainer} ref={generateRef}>
       <button onClick={onClose}>x</button>
       <div>
-        <h2>Generate New Song</h2>
+        <h2>Generate New Song <button onClick={resetDefaults} title="Reset to blank defaults">↺</button></h2>
         <p>~Under Construction~</p>     
         {grooves.map((groove, grooveIndex) => (
           <div key={grooveIndex}>
@@ -261,7 +335,7 @@ export default function Generate({ onClose }: GenerateProps) {
           min="0"
           max="1"
           step="0.1"
-          defaultValue="0" // Set an initial value (e.g., 5)
+          value={triplet} // Controlled so pre-load and reset move the thumb
           className={styles.circularDial} // Apply your custom dial styles
           onChange={(e) => {
           const newValue = parseFloat(e.target.value);
@@ -269,7 +343,7 @@ export default function Generate({ onClose }: GenerateProps) {
           }}
         /></p>
         <p>Key (optional): 
-          <select id="note" onChange = {handleKeyChange}>
+          <select id="note" value={selectedKey} onChange = {handleKeyChange}>
             <option></option>
             <option>A</option>
             <option>B</option>
@@ -326,7 +400,24 @@ export default function Generate({ onClose }: GenerateProps) {
           /> seconds
         </p>
         <br/>
-        <button onClick={() => updateSong()}>Regenerate</button>
+        <button onClick={handleRegenerate}>Regenerate</button>
+        {showShuffleWarning && recipeUnchanged && (
+          <div className={styles.shuffleWarning}>
+            <p>
+              Every visible setting matches the current song, but the parts of the
+              algorithm the menu doesn't expose still get rerolled:
+            </p>
+            <ul>
+              <li>Bass note choices (the grooves only pin the rhythm, not the pitches)</li>
+              <li>Drum hit patterns (kick, snare, hi-hat, crash placement)</li>
+              <li>Chord change timing, chord substitutions, and voicings</li>
+              <li>Bass note accidentals (sharp/flat spelling)</li>
+              <li>The Verse/Chorus/Bridge part order and repeat counts</li>
+            </ul>
+            <button onClick={updateSong}>Regenerate Anyway</button>
+            <button onClick={() => setShowShuffleWarning(false)}>Cancel</button>
+          </div>
+        )}
       </div>
     </div>
   );

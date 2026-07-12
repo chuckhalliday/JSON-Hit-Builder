@@ -9,10 +9,16 @@ import { useSelector, useDispatch } from "react-redux"
 import { playVerse } from '../Playback/playSong';
 import { preloadDrumSamples } from '../Playback/playDrums';
 import { useLampStep } from '../Playback/useLampStep';
-import { incrementByAmount, setIsPlaying, setMidi, setAcoustic, SongState, setCurrentBeat, newSong, reorderParts } from '../reducers';
+import { incrementByAmount, setIsPlaying, setMidi, setAcoustic, SongState, setCurrentBeat, newSong, reorderParts, loadSong } from '../reducers';
 import type { AppDispatch } from '../store'
 import styles from "../Styles/App.module.scss"
 import { supabase } from '../supabaseClient'
+
+// User ids allowed to see the T1-T10 song-generation tabs: the dev-login
+// account and the one Google account used for testing multi-song playback.
+const DEV_USER_ID = '073e2300-29ac-429d-af14-f1b34b44802a';
+const TEST_GOOGLE_USER_ID = '92fcd2d4-cc80-4d8e-8246-7f645800492c';
+const SONG_TAB_COUNT = 10;
 
 function listInputsAndOutputs(midiAccess: WebMidi.MIDIAccess) {
   console.log("MIDI ready!");
@@ -44,8 +50,16 @@ function App() {
   const [showInfoScreen, setShowInfoScreen] = useState(true);
   const [showGenerate, setShowGenerate] = useState(false);
   const [authenticated, setAuthenticated] = useState(false);
+  const [userId, setUserId] = useState<string | null>(null);
   const [saveScreen, setSaveScreen] = useState(false);
   const anyPartOpen = Object.values(openedParts).some(Boolean);
+
+  // T1-T10 song-generation slots. Only the active tab's song lives in Redux;
+  // the other nine are parked here and swapped back in via loadSong() so each
+  // tab keeps its own independent structure, edits, and playback position.
+  const [currentTabIndex, setCurrentTabIndex] = useState(0);
+  const [tabSongs, setTabSongs] = useState<Array<SongState | null>>(() => new Array(SONG_TAB_COUNT).fill(null));
+  const canUseSongTabs = userId === DEV_USER_ID || userId === TEST_GOOGLE_USER_ID;
 
   const login = async () => {
     if (!authenticated) {
@@ -71,12 +85,13 @@ function App() {
       alert('Set VITE_DEV_EMAIL and VITE_DEV_PASSWORD in .env.local to use dev login.');
       return;
     }
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) {
       alert(`Dev login failed: ${error.message}`);
       return;
     }
     setAuthenticated(true);
+    setUserId(data.user?.id ?? null);
   };
 
   // Warm the drum sample cache as early as possible so the first playback of a
@@ -94,6 +109,7 @@ function App() {
       }
       if (session) {
         setAuthenticated(true);
+        setUserId(session.user.id);
       }
     };
 
@@ -108,6 +124,9 @@ function App() {
       return;
     }
     setAuthenticated(false)
+    setUserId(null)
+    setCurrentTabIndex(0)
+    setTabSongs(new Array(SONG_TAB_COUNT).fill(null))
   }
 
   const handleGenerateClick = () => {
@@ -202,9 +221,10 @@ function App() {
       );
 
       if (stopRef.current) {
-        // If the user picked a new lamp position while this stop was still
-        // in flight, their selection is newer than where we stopped - don't
-        // overwrite it with the stale paused position.
+        // If the user picked a new lamp position, or switched song tabs,
+        // while this stop was still in flight, their action is newer than
+        // where we stopped - don't overwrite the (possibly now-different
+        // tab's) state with this stale paused position.
         if (manualSeekEpochRef.current === seekEpochAtStart) {
           const wrap = (idx: number, len: number) => (idx >= len ? 0 : idx);
           const drumLen = song.songStructure[verse].drumGroove.length;
@@ -216,8 +236,8 @@ function App() {
             wrap(result.bassBeat, bassLen),
             wrap(result.chordBeat, chordLen),
           ]))
+          dispatch(setIsPlaying({ isPlaying: false }))
         }
-        dispatch(setIsPlaying({ isPlaying: false }))
         return;
       }
 
@@ -297,6 +317,37 @@ function App() {
     }
   }, [isPlaying, verse]);
 
+
+ // Switches to song tab `index`, saving the outgoing tab's full state (so its
+ // edits and playback position survive) and either restoring the incoming
+ // tab's previously-saved state or generating a fresh song for it.
+ const handleTabSwitch = (index: number) => {
+    if (index === currentTabIndex) return;
+
+    // Signal any in-flight playback to stop scheduling, and invalidate its
+    // stale-write guard so it can't clobber the tab we're switching to.
+    stopRef.current = true;
+    manualSeekEpochRef.current++;
+    dispatch(setIsPlaying({ isPlaying: false }));
+
+    setTabSongs(prev => {
+      const next = [...prev];
+      next[currentTabIndex] = { ...song, isPlaying: false };
+      return next;
+    });
+
+    const incoming = tabSongs[index];
+    if (incoming) {
+      dispatch(loadSong(incoming));
+    } else {
+      dispatch(newSong());
+      dispatch(setCurrentBeat([0, 0, 0, 0]));
+    }
+
+    setCurrentTabIndex(index);
+    setOpenedParts({});
+    setCurrentPart(-1);
+  };
 
  const handleStartClick = () => {
     if (isPlaying) {
@@ -393,6 +444,7 @@ function App() {
           {showInfoScreen && !anyPartOpen && <Info />}
         </div>
         {/* Renders controls */}
+        <div className={styles.footer}>
         <div className={styles.controls}>
           <button className={styles.key} onClick={handleGenerateClick}>Key of :<br />{song.key}</button>
           {!midi && (
@@ -460,6 +512,20 @@ function App() {
             <button onClick={handleSaveClick} className={styles.button}>Save/Load</button>
             <button onClick={logout} className={styles.button}>Log Out</button>
           </div>
+        </div>
+        {canUseSongTabs && (
+          <div className={styles.songTabs}>
+            {Array.from({ length: SONG_TAB_COUNT }, (_, index) => (
+              <button
+                key={index}
+                onClick={() => handleTabSwitch(index)}
+                className={currentTabIndex === index ? `${styles.tabButton} ${styles.openButton}` : styles.tabButton}
+              >
+                T{index + 1}
+              </button>
+            ))}
+          </div>
+        )}
         </div>
         </div>
       ) : (
