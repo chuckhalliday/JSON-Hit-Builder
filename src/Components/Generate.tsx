@@ -6,6 +6,9 @@ import styles from "../Styles/App.module.scss";
 
 interface GenerateProps {
   onClose: () => void;
+  // Gates the "Advanced" button below - only the dev-login and test Google
+  // accounts get access to the additional generation settings it opens.
+  showAdvanced?: boolean;
 }
 
 const noteMapping: { [key: number]: string } = {
@@ -55,7 +58,7 @@ const defaultArrangement = () => [
   [0, 0, 0, 0],
 ];
 
-export default function Generate({ onClose }: GenerateProps) {
+export default function Generate({ onClose, showAdvanced = false }: GenerateProps) {
   const dispatch = useDispatch()
   // Pre-load the controls with the recipe that produced the current song
   // (grooves copied: the store freezes its arrays, the menu splices in place).
@@ -186,6 +189,7 @@ export default function Generate({ onClose }: GenerateProps) {
     tonality === parsedKey?.tonality;
 
   const [showShuffleWarning, setShowShuffleWarning] = useState(false);
+  const [showAdvancedPanel, setShowAdvancedPanel] = useState(false);
 
   const handleRegenerate = () => {
     if (recipeUnchanged) {
@@ -400,6 +404,14 @@ export default function Generate({ onClose }: GenerateProps) {
           /> seconds
         </p>
         <br/>
+        {showAdvanced && (
+          <button onClick={() => setShowAdvancedPanel(prev => !prev)}>Advanced</button>
+        )}
+        {showAdvancedPanel && (
+          <div className={styles.advancedSettings}>
+            <p>More generation settings coming soon.</p>
+          </div>
+        )}
         <button onClick={handleRegenerate}>Regenerate</button>
         {showShuffleWarning && recipeUnchanged && (
           <div className={styles.shuffleWarning}>
