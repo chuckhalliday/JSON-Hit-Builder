@@ -91,10 +91,14 @@ const song = createSlice({
       incrementByAmount: (state, action: PayloadAction<string>) => {
         state.bpm = parseFloat(action.payload);
       },
+      // Wholesale-replaces the active song state. Used to swap in a
+      // previously-generated song tab (see App.tsx's T1-T10 slots), where the
+      // whole SongState - not just the generation recipe - needs restoring.
+      loadSong: (_state, action: PayloadAction<SongState>) => action.payload,
     },
   });
 
-export const { setIsPlaying, setMidi, setAcoustic, setSong, setBassState, setDrumState, setChordState, setCurrentBeat, reorderParts, incrementByAmount } = song.actions;
+export const { setIsPlaying, setMidi, setAcoustic, setSong, setBassState, setDrumState, setChordState, setCurrentBeat, reorderParts, incrementByAmount, loadSong } = song.actions;
 
 // Thunk: generate a fresh random song and load it into the store. Replaces the
 // old module-load side effect; dispatched on mount (and reusable for a
