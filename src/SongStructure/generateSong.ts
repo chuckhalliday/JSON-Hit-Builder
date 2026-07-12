@@ -122,6 +122,16 @@ export default function generateSong(bassGrooves: number[][], arrangement: numbe
   songStructure: songStructure,
   bpm: bpm,
   key: key,
+  // The recipe that produced this song, so the Generate menu can pre-load
+  // it. Grooves/arrangement are copied because the store freezes its state:
+  // the menu mutates its working arrays in place and must never share them.
+  params: {
+    grooves: bassGrooves.map(groove => [...groove]),
+    arrangement: arrangement.map(section => [...section]),
+    triplet: tripMod,
+    bpm: bpm,
+    songLength: songtime,
+  },
   }
   return songVariables
 }
