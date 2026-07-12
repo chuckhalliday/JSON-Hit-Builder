@@ -1,9 +1,13 @@
-import { randomGroove } from './groove'
-import { createDrums } from './drums'
-import { createChords } from './chords';
+import { randomGroove, randomArrangement } from './groove'
+import { createDrums, drumArray } from './drums'
+import { createChords, chordArray } from './chords';
 import { createRandomSong } from './createSong';
+import generateSong from './generateSong';
 import { bassPitch } from './bassPitch';
 import { tone, midiTone } from './tone';
+import { seedRng } from './rng';
+import { setTuning, defaultTuning, normalizeTuning, tuningBounds } from './tuning';
+import { GenerationTuning, DrumHit } from '../types';
 
 describe('primaryGroove', () => {
   it('should return an array with total duration equal to or less than 8', () => {
@@ -96,6 +100,127 @@ describe('createRandomSong (seeded generation)', () => {
     expect(typeof a.seed).toBe('number');
     const b = createRandomSong(a.seed);
     expect(JSON.stringify(b.songStructure)).toEqual(JSON.stringify(a.songStructure));
+  });
+});
+
+describe('generation tuning (Advanced panel dials)', () => {
+  // Direct drumArray/chordArray tests set the module-level tuning; restore
+  // the defaults so state never leaks into other suites.
+  afterEach(() => setTuning());
+
+  // Same seed, same recipe — only the tuning differs.
+  const makeSong = (tuning?: GenerationTuning) => {
+    seedRng(4242);
+    const grooves = [randomGroove(), randomGroove(), randomGroove(), randomGroove()];
+    return generateSong(grooves, randomArrangement(), 0, undefined, undefined, 120, 240, tuning);
+  };
+
+  it('produces the identical song when the dials sit at their defaults', () => {
+    const implicit = makeSong();
+    const explicit = makeSong({ ...defaultTuning });
+    expect(JSON.stringify(explicit.songStructure)).toEqual(JSON.stringify(implicit.songStructure));
+  });
+
+  it('changes the song when a dial moves, for the same seed', () => {
+    const stock = makeSong();
+    const cranked = makeSong({ ...defaultTuning, kickOdds: 2, snareOdds: 2, crashOdds: 2, chordSubstitutionRate: 2, chordChangeRate: 2, maxPartRepeats: 6 });
+    expect(JSON.stringify(cranked.songStructure)).not.toEqual(JSON.stringify(stock.songStructure));
+  });
+
+  it('records the tuning actually used in the song recipe', () => {
+    expect(makeSong().params.tuning).toEqual(defaultTuning);
+    const tuning = { kickOdds: 0.5, snareOdds: 1.2, crashOdds: 0.8, chordSubstitutionRate: 1.5, chordChangeRate: 0.7, maxPartRepeats: 2 };
+    expect(makeSong(tuning).params.tuning).toEqual(tuning);
+  });
+
+  it('forces strict part alternation when maxPartRepeats is 1', () => {
+    const { songStructure } = makeSong({ ...defaultTuning, maxPartRepeats: 1 });
+    for (let i = 1; i < songStructure.length; i++) {
+      expect(songStructure[i].type).not.toEqual(songStructure[i - 1].type);
+    }
+  });
+
+  it('silences every optional drum hit at per-drum odds 0', () => {
+    setTuning({ ...defaultTuning, kickOdds: 0, snareOdds: 0, crashOdds: 0 });
+    const hits = drumArray(Array.from({ length: 9 }, () => [] as DrumHit[]),
+      [0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5], [2, 2], ['c', 'e']);
+    const checkedSteps = (drum: DrumHit[]) => drum.filter(hit => hit.checked).length;
+    // Only the unconditional downbeat kick accent survives.
+    expect(checkedSteps(hits[0])).toBe(1);
+    expect(hits[0][0]).toEqual({ index: 0, checked: true, accent: true });
+    expect(checkedSteps(hits[1])).toBe(0); // snare
+    expect(checkedSteps(hits[8])).toBe(0); // crash
+  });
+
+  it('lands every strong-beat kick and backbeat snare at per-drum odds 2', () => {
+    setTuning({ ...defaultTuning, kickOdds: 2, snareOdds: 2 });
+    const hits = drumArray(Array.from({ length: 9 }, () => [] as DrumHit[]),
+      [0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5], [2, 2], ['c', 'e']);
+    // Kicks fall on the integer beats (even steps), snares on the backbeats
+    // (odd steps): those rolls saturate to certainty at x2.
+    [0, 2, 4, 6].forEach(step => expect(hits[0][step].checked).toBe(true));
+    [1, 3, 5, 7].forEach(step => expect(hits[1][step].checked).toBe(true));
+  });
+
+  it('keeps every chord a plain diatonic triad at substitution rate 0', () => {
+    setTuning({ ...defaultTuning, chordSubstitutionRate: 0 });
+    const chords = chordArray([2, 2, 2, 2], [2, 2, 2, 2], ['c', 'd', 'f', 'a']);
+    expect(chords).toBe('1246');
+  });
+
+  it('pins chord-change timing at the chord-change rate extremes', () => {
+    const groove = [0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5];
+    // Rate 0: never commit early, every chord holds the full two beats.
+    setTuning({ ...defaultTuning, chordChangeRate: 0 });
+    expect(createChords(groove)).toEqual([2, 2]);
+    // Saturated: commit on every beat the bass allows.
+    setTuning({ ...defaultTuning, chordChangeRate: 2 });
+    expect(createChords(groove)).toEqual([1, 1, 1, 1]);
+  });
+});
+
+describe('normalizeTuning (recipe safety)', () => {
+  // The corrupt-recipe test below drives generateSong, which installs its
+  // tuning into module state; restore the defaults for later suites.
+  afterEach(() => setTuning());
+
+  it('returns the stock defaults for missing or empty tunings', () => {
+    expect(normalizeTuning()).toEqual(defaultTuning);
+    expect(normalizeTuning({})).toEqual(defaultTuning);
+  });
+
+  it('fans a retired single drum dial out to the per-drum dials', () => {
+    const legacy = normalizeTuning({ drumHitOdds: 0.5, chordSubstitutionRate: 1.5, maxPartRepeats: 2 });
+    expect(legacy).toEqual({ ...defaultTuning, kickOdds: 0.5, snareOdds: 0.5, crashOdds: 0.5, chordSubstitutionRate: 1.5, maxPartRepeats: 2 });
+    // Explicit per-drum values win over the legacy field.
+    expect(normalizeTuning({ drumHitOdds: 0.5, snareOdds: 1.8 }).snareOdds).toBe(1.8);
+  });
+
+  it('clamps out-of-range values and replaces non-finite ones with defaults', () => {
+    expect(normalizeTuning({ kickOdds: -3 }).kickOdds).toBe(tuningBounds.kickOdds.min);
+    expect(normalizeTuning({ snareOdds: Infinity }).snareOdds).toBe(defaultTuning.snareOdds);
+    expect(normalizeTuning({ crashOdds: NaN }).crashOdds).toBe(defaultTuning.crashOdds);
+    expect(normalizeTuning({ maxPartRepeats: -5 }).maxPartRepeats).toBe(tuningBounds.maxPartRepeats.min);
+    expect(normalizeTuning({ maxPartRepeats: 99 }).maxPartRepeats).toBe(tuningBounds.maxPartRepeats.max);
+    expect(normalizeTuning({ maxPartRepeats: 2.6 }).maxPartRepeats).toBe(3);
+    expect(normalizeTuning({ maxPartRepeats: NaN }).maxPartRepeats).toBe(defaultTuning.maxPartRepeats);
+  });
+
+  it('generates a complete, valid song even from a corrupt recipe tuning', () => {
+    // maxPartRepeats < 1 would stall generateSongStructure's countdown if it
+    // reached the generator unsanitized; NaN rates would poison every roll.
+    seedRng(99);
+    const grooves = [randomGroove(), randomGroove(), randomGroove(), randomGroove()];
+    const corrupt = { kickOdds: NaN, snareOdds: -1, crashOdds: Infinity, chordSubstitutionRate: 5, chordChangeRate: NaN, maxPartRepeats: -2 } as GenerationTuning;
+    const { songStructure, params } = generateSong(grooves, randomArrangement(), 0, undefined, undefined, 120, 240, corrupt);
+    expect(songStructure.length).toBeGreaterThan(0);
+    // The recipe self-heals: what gets recorded is the sanitized tuning.
+    expect(params.tuning).toEqual({ ...defaultTuning, kickOdds: defaultTuning.kickOdds, snareOdds: 0, crashOdds: defaultTuning.crashOdds, chordSubstitutionRate: 2, chordChangeRate: defaultTuning.chordChangeRate, maxPartRepeats: 1 });
+    // maxPartRepeats clamped to 1 -> strict alternation, and the structure
+    // countdown terminated.
+    for (let i = 1; i < songStructure.length; i++) {
+      expect(songStructure[i].type).not.toEqual(songStructure[i - 1].type);
+    }
   });
 });
 

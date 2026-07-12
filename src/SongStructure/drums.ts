@@ -1,6 +1,7 @@
 import { subdivideArray } from "./groove";
 import { DrumHit } from "../types";
 import { rng } from "./rng";
+import { kickOdds, snareOdds, crashOdds } from "./tuning";
 
 export function createDrums(bassGroove: number[][], tripMod: number) {
   let drumArr: number[][] = [];
@@ -49,6 +50,12 @@ export function drumArray(drumHits: DrumHit[][], drumBeat: number[], bassBeat: n
     drumHits[drum].push({ index: beat + count, checked: false, accent: false })
   }
 
+  // Every optional hit rolls against its voice's odds helper: the base
+  // probability the algorithm always used, scaled by that drum's Advanced
+  // dial. Rest-form rolls keep their shape via the complement
+  // (1 - odds(x)) so a given rng() value takes the same branch it did
+  // before tuning existed. The downbeat kick accent stays unconditional —
+  // it anchors the part.
   for (let i = 0; i < drumBeat.length; i++) {
     const note = bassString[bassBeatIndex];
     if (drumSum.toFixed(1) === bassSum.toFixed(1)) {
@@ -57,21 +64,21 @@ export function drumArray(drumHits: DrumHit[][], drumBeat: number[], bassBeat: n
       if (drumSum === 0) {
         pushAccent(kick, i)
       } else if (Number.isInteger(drumSum)) {
-        rng() < 0.95 ? pushHit(kick, i) : pushRest(kick, i);
+        rng() < kickOdds(0.95) ? pushHit(kick, i) : pushRest(kick, i);
       }else if (note === "-") {
-        rng() < 0.9 ? pushRest(kick, i) : pushHit(kick, i);
+        rng() < 1 - kickOdds(0.1) ? pushRest(kick, i) : pushHit(kick, i);
       } else {
-        rng() < 0.6 ? pushHit(kick, i) : pushRest(kick, i);
-      } 
+        rng() < kickOdds(0.6) ? pushHit(kick, i) : pushRest(kick, i);
+      }
     } else if (Number.isInteger(drumSum)) {
-      rng() < 0.9 ? pushHit(kick, i) : pushRest(kick, i);
+      rng() < kickOdds(0.9) ? pushHit(kick, i) : pushRest(kick, i);
     } else {
       pushRest(kick, i)
     }
     if (Number.isInteger(drumSum + 0.5)) {
-      rng() < 0.8 ? pushHit(snare, i) : pushRest(snare, i);
+      rng() < snareOdds(0.8) ? pushHit(snare, i) : pushRest(snare, i);
     } else {
-      rng() < 0.9 ? pushRest(snare, i) : pushHit(snare, i);
+      rng() < 1 - snareOdds(0.1) ? pushRest(snare, i) : pushHit(snare, i);
     }
     if (drumBeat[i] === 0.08 || drumBeat[i] === 0.09 ||
       drumBeat[i] === 0.16 || drumBeat[i] === 0.17) {
@@ -84,9 +91,9 @@ export function drumArray(drumHits: DrumHit[][], drumBeat: number[], bassBeat: n
       pushRest(hiHatO, i)
     }
     if (drumSum === 7.75 || drumSum === 23.75) {
-      rng() < 0.3 ? pushHit(crash, i) : pushRest(crash, i);
+      rng() < crashOdds(0.3) ? pushHit(crash, i) : pushRest(crash, i);
     } else if (drumSum >= 31.75 || drumSum === 15.75) {
-      rng() < 0.6 ? pushAccent(crash, i) : pushRest(crash, i);
+      rng() < crashOdds(0.6) ? pushAccent(crash, i) : pushRest(crash, i);
     } else {
       pushRest(crash, i)
     }

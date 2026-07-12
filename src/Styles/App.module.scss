@@ -78,6 +78,87 @@
   max-width: 420px;
 }
 
+.dialGroupLabel {
+  margin: 14px 0 0;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #666;
+}
+
+.dialRow {
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+  justify-content: space-around;
+  column-gap: 12px;
+  margin: 8px 0 4px;
+}
+
+.dial {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  row-gap: 6px;
+  width: 110px;
+  text-align: center;
+}
+
+.dialLabel {
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.2;
+  /* Reserve two label lines so a wrapping label doesn't push its knob out of
+     line with the other dials in the row. */
+  min-height: 2.4em;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+
+.dialValue {
+  font-size: 12px;
+  color: #333;
+}
+
+/* The knob face is painted in two layers: a conic-gradient ring that fills
+   green from the start of the 270° sweep up to --sweep (set inline by the
+   Dial component), left blank below so the classic dead zone shows at the
+   bottom, under a radial-gradient face disc the indicator rotates over. */
+.dialKnob {
+  position: relative;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  cursor: ns-resize;
+  user-select: none;
+  touch-action: none;
+  background:
+    radial-gradient(closest-side, #fff 0 79%, transparent 80%),
+    conic-gradient(from -135deg, rgb(71, 182, 71) 0 var(--sweep, 135deg), #dfe3e8 var(--sweep, 135deg) 270deg, #f5f5f5 270deg);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
+
+  &:focus {
+    outline: 2px solid #4281b2;
+    outline-offset: 2px;
+  }
+}
+
+/* Pointer line from just inside the rim to the knob center; transform-origin
+   sits at the center (28px) so rotate() sweeps it like a clock hand. */
+.dialIndicator {
+  position: absolute;
+  left: calc(50% - 1.5px);
+  top: 6px;
+  width: 3px;
+  height: 22px;
+  border-radius: 2px;
+  background: black;
+  transform-origin: 1.5px 22px;
+  pointer-events: none;
+}
+
 .key {
   display: flex;
   flex-direction: column;

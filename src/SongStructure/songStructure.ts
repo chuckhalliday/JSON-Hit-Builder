@@ -2,6 +2,7 @@ import { drawBass, bassMeasures } from "./bass";
 import { chordLocation, createChordTones } from "./chords";
 import { SongStructure, NoteLocation, DrumHit } from "../types";
 import { rng } from "./rng";
+import { maxPartRepeats } from "./tuning";
 
 export function generateSongStructure(partsLength: number, bassVA: string[], bassGrooveV: number[], bassCA: string[], bassGrooveC: number[], bassBA: string[], bassGrooveB: number[], chordsVA: string[], chordsGrooveV: number[], chordsCA: string[], chordsGrooveC: number[], chordsBA: string[], chordsGrooveB: number[], 
 drumVerse: DrumHit[][], drumGrooveV: number[], drumChorus: DrumHit[][], drumGrooveC: number[], drumBridge: DrumHit[][], drumGrooveB: number[]) {
@@ -22,7 +23,9 @@ drumVerse: DrumHit[][], drumGrooveV: number[], drumChorus: DrumHit[][], drumGroo
   let partChords: string[];
   let partChordsGroove: number[];
 
-  let randomPartLength = Math.min(remainingParts, Math.floor(rng() * 3) + 1);
+  // Each block repeats its part 1..maxPartRepeats() times (the Advanced
+  // panel's repeat dial; stock bound is 3).
+  let randomPartLength = Math.min(remainingParts, Math.floor(rng() * maxPartRepeats()) + 1);
 
   // drawBass returns one more note-location than the groove has durations: the
   // bass grid carries an extra leading coordinate (the clef offset), so the last
@@ -75,7 +78,7 @@ drumVerse: DrumHit[][], drumGrooveV: number[], drumChorus: DrumHit[][], drumGroo
       partDrumsGroove = drumGrooveB
     }
 
-    randomPartLength = Math.min(remainingParts, Math.floor(rng() * 3) + 1);
+    randomPartLength = Math.min(remainingParts, Math.floor(rng() * maxPartRepeats()) + 1);
     [bassGrid, measureLines] = bassMeasures(partBassGroove, partDrumsGroove)
     bassNoteLocations = trimToGroove(drawBass(partBass, bassGrid), partBassGroove)
     chordLocations = (chordLocation(bassNoteLocations, partBassGroove, partChordsGroove))
