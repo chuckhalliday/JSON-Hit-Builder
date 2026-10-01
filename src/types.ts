@@ -23,6 +23,9 @@ export interface NoteLocation {
   acc: string;
   osc: number;
   midi: number;
+  // String the note is played on in tab view (0 = low E ... 3 = G), when
+  // chosen by hand; otherwise tab picks a comfortable position itself.
+  string?: number;
 }
 
 // Concurrent chord voicings per beat: oscillator frequencies and MIDI notes.
@@ -89,6 +92,15 @@ export interface Part {
   chordTones: ChordTones;
   chordsGroove: Groove;
   chordsLocation: number[];
+  // Present on parts realized from a sculpted SongDoc (src/Core): which
+  // section definition this instance plays, its chords as Roman numerals,
+  // the guide-tone line (MIDI, one per chord), and the instance's energy and
+  // key lift. Parts from the classic generator or older saves lack them.
+  sectionId?: string;
+  roman?: string[];
+  guideTones?: number[];
+  energy?: number;
+  transpose?: number;
 }
 
 export type SongStructure = Part[];
