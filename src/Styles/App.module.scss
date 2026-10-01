@@ -242,8 +242,10 @@
     box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.1);
     overflow: auto;
     width: 100%;
-    height: 500px;
-    max-height: calc(100vh - 380px);
+    // Fill the window down to the footer (its live height is published as
+    // --footer-height), so a taller window shows more of the part rather
+    // than empty space; scroll inside when the part is taller still.
+    max-height: calc(100vh - 200px - var(--footer-height, 150px) - 26px);
 }
 
 .footer {
@@ -452,3 +454,425 @@ input[type="range"].bpm::-moz-range-thumb {
   .resize {
     height: 30px;
   }
+// Arrangement blocks: the part buttons double as the song's timeline.
+.partButton {
+    position: relative;
+    overflow: hidden;
+    white-space: nowrap;
+
+    sup {
+      font-size: 9px;
+      margin-left: 1px;
+    }
+}
+
+.energyBar {
+    position: absolute;
+    left: 0;
+    bottom: 0;
+    height: 3px;
+    background-color: #4281b2;
+    pointer-events: none;
+}
+
+// Section panel: progression, layer locks/re-rolls, instance energy.
+.sectionPanel {
+    margin: 0 0 10px;
+    padding: 8px 10px;
+    border: 1px solid #e2e6ea;
+    border-radius: 6px;
+    background-color: #fafbfc;
+    font-size: 13px;
+}
+
+.sectionHeader {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    column-gap: 12px;
+    row-gap: 4px;
+    color: #555;
+
+    strong {
+      color: #222;
+    }
+}
+
+.energyControl {
+    display: flex;
+    align-items: center;
+    column-gap: 6px;
+    margin-left: auto;
+}
+
+.progression {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    margin: 8px 0;
+}
+
+.chordCell {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    flex-basis: 48px;
+    padding: 3px 6px;
+    border-left: 2px solid #4281b2;
+    background-color: #fff;
+}
+
+// Chord symbol, numeral and bass note are buttons that open their menus,
+// styled as the text they show.
+.chordSymbol, .chordRoman, .chordBass {
+    border: none;
+    background: none;
+    padding: 0 2px;
+    margin: 0 -2px;
+    border-radius: 3px;
+    cursor: pointer;
+    text-align: left;
+    font-family: inherit;
+
+    &:hover {
+      background-color: #e8f0f8;
+    }
+}
+
+.chordSymbol {
+    font-weight: 700;
+    font-size: 13px;
+    color: #222;
+}
+
+.chordRoman {
+    font-size: 11px;
+    color: #4281b2;
+}
+
+.chordBass {
+    font-size: 10px;
+    color: #555;
+}
+
+// Chord menus.
+.chordMenu {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    z-index: 20;
+    width: 360px;
+    max-height: 340px;
+    overflow-y: auto;
+    padding: 8px;
+    background: #fff;
+    border: 1px solid #ccd5df;
+    border-radius: 6px;
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.18);
+}
+
+.chordMenuRight {
+    left: auto;
+    right: 0;
+}
+
+.menuGroup + .menuGroup {
+    margin-top: 8px;
+}
+
+.menuTitle {
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #777;
+    margin-bottom: 4px;
+}
+
+.menuOptions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+}
+
+.menuOption {
+    display: inline-flex;
+    flex-direction: column;
+    align-items: flex-start;
+    min-width: 46px;
+    padding: 3px 6px;
+    border: 1px solid #dde3ea;
+    border-radius: 4px;
+    background: #f8fafc;
+    cursor: pointer;
+    font-family: inherit;
+
+    &:hover {
+      background: #e3eefa;
+      border-color: #4281b2;
+    }
+}
+
+.menuCurrent {
+    background: #fff3cd;
+    border-color: #d9a300;
+}
+
+.menuRoman {
+    font-size: 12px;
+    font-weight: 700;
+    color: #222;
+}
+
+.menuSymbol {
+    font-size: 10px;
+    color: #4281b2;
+}
+
+.guideTone {
+    font-size: 10px;
+    color: #888;
+}
+
+.layerRow {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 14px;
+}
+
+.layerControl {
+    display: inline-flex;
+    align-items: center;
+    column-gap: 4px;
+}
+
+.lockButton {
+    border: 1px solid #ccc;
+    background: #fff;
+    border-radius: 4px;
+    cursor: pointer;
+    padding: 2px 4px;
+    font-size: 12px;
+}
+
+.locked {
+    background-color: #fff3cd;
+    border-color: #d9a300;
+}
+
+.rerollButton {
+    border: none;
+    border-radius: 4px;
+    padding: 4px 8px;
+    cursor: pointer;
+    background-color: rgb(71, 182, 71);
+    color: black;
+
+    &:hover:not(:disabled) {
+      background-color: #4281b2;
+    }
+
+    &:disabled {
+      background-color: #e5e5e5;
+      color: #999;
+      cursor: not-allowed;
+    }
+}
+
+.layerNote {
+    font-size: 11px;
+    color: #888;
+}
+
+.sectionNote {
+    margin: 6px 0 0;
+    font-size: 11px;
+    color: #888;
+}
+
+// Loop: blocks inside the loop region, transport controls, readout.
+.inLoop {
+    box-shadow: inset 0 -3px 0 #ff8c00, 0 0 0 2px #ff8c00;
+}
+
+.inLoopOff {
+    box-shadow: 0 0 0 2px #bbb;
+}
+
+.loopControls {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    row-gap: 4px;
+    margin: 0 16px;
+}
+
+.loopButtons {
+    display: flex;
+    column-gap: 4px;
+
+    .button {
+      width: auto;
+      padding: 0 10px;
+    }
+
+    .button:disabled {
+      background-color: #e5e5e5;
+      color: #999;
+      cursor: not-allowed;
+    }
+}
+
+.loopReadout {
+    font-size: 11px;
+    color: #555;
+    max-width: 260px;
+    text-align: center;
+}
+
+.loopingSection {
+    background-color: #ff8c00;
+}
+
+// Opened part: title + section panel pinned to the visible area while the
+// staff and drum grid scroll horizontally. Viewport-wide (less the part
+// view's padding) rather than content-wide.
+.stickyHeader {
+    position: sticky;
+    left: 0;
+    z-index: 2;
+    width: calc(100vw - 20px);
+    max-width: 100%;
+    box-sizing: border-box;
+    background-color: #fff;
+}
+
+// Set Start / Set End armed: waiting for a step or bar click.
+.pickArmed {
+    background-color: #ff8c00 !important;
+    color: #fff;
+}
+
+// Fret editor over a tab string.
+.tabInput {
+    position: absolute;
+    z-index: 3;
+    width: 30px;
+    height: 24px;
+    box-sizing: border-box;
+    padding: 0;
+    border: 2px solid #4281b2;
+    border-radius: 4px;
+    background: #fff;
+    font: 700 13px sans-serif;
+    text-align: center;
+    outline: none;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+}
+
+// Part title with the edit-scope toggle beside it.
+.partTitleRow {
+    display: flex;
+    align-items: center;
+    column-gap: 14px;
+
+    h3 {
+      margin: 12px 0;
+    }
+}
+
+.scopeToggle {
+    display: inline-flex;
+    border: 1px solid #4281b2;
+    border-radius: 5px;
+    overflow: hidden;
+
+    button {
+      border: none;
+      padding: 4px 10px;
+      background: #fff;
+      color: #4281b2;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+
+      & + button {
+        border-left: 1px solid #4281b2;
+      }
+    }
+
+    .scopeOn {
+      background: #4281b2;
+      color: #fff;
+    }
+}
+
+// Menu of the open part's block: duplicate / delete / close.
+.partMenu {
+    position: fixed;
+    z-index: 1100;
+    display: flex;
+    flex-direction: column;
+    min-width: 140px;
+    padding: 6px;
+    background: #fff;
+    border: 1px solid #ccd5df;
+    border-radius: 6px;
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.18);
+
+    button {
+      border: none;
+      background: none;
+      padding: 6px 8px;
+      border-radius: 4px;
+      text-align: left;
+      font: inherit;
+      font-size: 13px;
+      cursor: pointer;
+
+      &:hover:not(:disabled) {
+        background: #e3eefa;
+      }
+
+      &:disabled {
+        color: #aaa;
+        cursor: not-allowed;
+      }
+    }
+}
+
+.partMenuTitle {
+    padding: 2px 8px 6px;
+    font-size: 11px;
+    font-weight: 700;
+    color: #777;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.partMenuDanger:not(:disabled) {
+    color: #c0392b;
+}
+
+// Undo: far right of the parts row, shown when there's a change to undo.
+.undoButton {
+    position: fixed;
+    top: 10px;
+    right: 14px;
+    z-index: 5;
+    height: 30px;
+    padding: 0 12px;
+    border: none;
+    border-radius: 6px;
+    background-color: #eef1f4;
+    color: #333;
+    font-weight: 700;
+    font-size: 13px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+
+    &:hover {
+      background-color: rgb(71, 182, 71);
+    }
+}
