@@ -135,6 +135,28 @@ interface TransportProps {
   onSounds: () => void;
   onExport: () => void;
   onLogout: () => void;
+  // Song tabs, for users who have them. On phones they collapse into a
+  // picker beside the source switch instead of their own row under the bar.
+  songTabs?: { count: number, current: number, onSwitch: (index: number) => void };
+}
+
+// Closes a popup on a press outside `wrapRef` or on Escape.
+function useDismiss(open: boolean, close: () => void, wrapRef: React.RefObject<HTMLElement>) {
+  const closeRef = useRef(close);
+  closeRef.current = close;
+  useEffect(() => {
+    if (!open) return;
+    const onDown = (e: MouseEvent) => {
+      if (!wrapRef.current?.contains(e.target as Node)) closeRef.current();
+    };
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') closeRef.current(); };
+    document.addEventListener('mousedown', onDown);
+    window.addEventListener('keydown', onKey);
+    return () => {
+      document.removeEventListener('mousedown', onDown);
+      window.removeEventListener('keydown', onKey);
+    };
+  }, [open, wrapRef]);
 }
 
 const TRACKS: Array<{ id: Track, label: string }> = [
@@ -170,37 +192,17 @@ function Transport(props: TransportProps) {
   useEffect(() => {
     if (props.source !== 'midi') setMidiMenuOpen(false);
   }, [props.source]);
-  useEffect(() => {
-    if (!midiMenuOpen) return;
-    const onDown = (e: MouseEvent) => {
-      if (!sourceWrapRef.current?.contains(e.target as Node)) setMidiMenuOpen(false);
-    };
-    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setMidiMenuOpen(false); };
-    document.addEventListener('mousedown', onDown);
-    window.addEventListener('keydown', onKey);
-    return () => {
-      document.removeEventListener('mousedown', onDown);
-      window.removeEventListener('keydown', onKey);
-    };
-  }, [midiMenuOpen]);
+  useDismiss(midiMenuOpen, () => setMidiMenuOpen(false), sourceWrapRef);
   const pickSource = (source: SoundSource) => {
     if (source === 'midi') setMidiMenuOpen(open => (props.source === 'midi' ? !open : true));
     props.onSourceChange(source);
   };
 
-  useEffect(() => {
-    if (!menuOpen) return;
-    const onDown = (e: MouseEvent) => {
-      if (!menuWrapRef.current?.contains(e.target as Node)) setMenuOpen(false);
-    };
-    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setMenuOpen(false); };
-    document.addEventListener('mousedown', onDown);
-    window.addEventListener('keydown', onKey);
-    return () => {
-      document.removeEventListener('mousedown', onDown);
-      window.removeEventListener('keydown', onKey);
-    };
-  }, [menuOpen]);
+  useDismiss(menuOpen, () => setMenuOpen(false), menuWrapRef);
+
+  const [tabMenuOpen, setTabMenuOpen] = useState(false);
+  const tabWrapRef = useRef<HTMLDivElement>(null);
+  useDismiss(tabMenuOpen, () => setTabMenuOpen(false), tabWrapRef);
 
   const menuAction = (fn: () => void) => () => { setMenuOpen(false); fn(); };
 
@@ -211,6 +213,7 @@ function Transport(props: TransportProps) {
           <span className={styles.keyChipLabel}>Key</span>
           <span className={styles.keyChipValue}>{props.songKey}</span>
         </button>
+        <div className={styles.sourceGroup}>
         <div className={styles.menuWrap} ref={sourceWrapRef}>
           <div className={styles.segmented} role="group" aria-label="Sound source">
             {SOURCES.map(s => (
@@ -227,6 +230,36 @@ function Transport(props: TransportProps) {
             ))}
           </div>
           {midiMenuOpen && <MidiRoutingMenu />}
+        </div>
+        {props.songTabs && (
+          <div className={`${styles.menuWrap} ${styles.tabPicker}`} ref={tabWrapRef}>
+            <button
+              className={styles.tabPickerButton}
+              onClick={() => setTabMenuOpen(o => !o)}
+              aria-haspopup="menu"
+              aria-expanded={tabMenuOpen}
+              aria-label={`Song tab T${props.songTabs.current + 1}`}
+              title="Switch song tab"
+            >
+              T{props.songTabs.current + 1} ▾
+            </button>
+            {tabMenuOpen && (
+              <div className={`${styles.partMenu} ${styles.tabMenu}`} role="menu">
+                {Array.from({ length: props.songTabs.count }, (_, index) => (
+                  <button
+                    key={index}
+                    role="menuitemradio"
+                    aria-checked={props.songTabs!.current === index}
+                    className={props.songTabs!.current === index ? styles.openButton : ''}
+                    onClick={() => { setTabMenuOpen(false); props.songTabs!.onSwitch(index); }}
+                  >
+                    T{index + 1}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
         </div>
       </div>
 

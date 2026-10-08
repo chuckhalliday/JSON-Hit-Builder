@@ -905,6 +905,7 @@ function App() {
           onSounds={() => setSoundsScreen(true)}
           onExport={handleExport}
           onLogout={logout}
+          songTabs={canUseSongTabs ? { count: SONG_TAB_COUNT, current: currentTabIndex, onSwitch: handleTabSwitch } : undefined}
         />
         {canUseSongTabs && (
           <div className={styles.songTabs}>
