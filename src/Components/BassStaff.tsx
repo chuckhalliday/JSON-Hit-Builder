@@ -1,7 +1,7 @@
 import React, { forwardRef, useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import playBass from '../Playback/playBass';
-import { setBassState, setCurrentBeat, SongState } from '../reducers';
+import { editBassRhythm, setBassState, setCurrentBeat, SongState } from '../reducers';
 import { PlayHandle } from './Piano';
 import { useLampStep } from '../Playback/useLampStep';
 import appStyles from '../Styles/App.module.scss';
@@ -12,6 +12,8 @@ import { parseKeyString } from '../Core/exportMidi';
 import { useTheme } from '../theme';
 import { partLyrics, placeLyrics } from '../Core/lyrics';
 import { stepXs } from '../SongStructure/bass';
+import { canJoinBassNotes, canSplitBassNote } from '../Core/edits';
+import { beatsToTicks } from '../Core/time';
 
 // Standard 4-string bass tuning (E1 A1 D2 G2), lowest to highest, expressed as
 // the real MIDI note number of each open string - matches the `midi` values
@@ -47,6 +49,14 @@ const LYRIC_FONT = '13px "Helvetica Neue", Arial, sans-serif';
 // rest, this far right of the notehead's center - past its stem, flag and dot.
 const REST_OPTION_SCALE = 0.6;
 const REST_OPTION_REACH = 31;
+// The rhythm strip in the space under the staff (staff coordinates): its
+// band, where its notes' heads and its rests' middles sit, and how much
+// smaller than the staff's its notes are drawn.
+const STRIP_TOP = 177;
+const STRIP_BOTTOM = 209;
+const STRIP_HEAD_Y = 201;
+const STRIP_MIDDLE = 192;
+const STRIP_SCALE = 0.55;
 // Pitch-space y of the 5 main staff lines (A2 F2 D2 B1 G1, top to bottom),
 // of the 3 extra ledger lines above them (reachable via frets further up the
 // neck), and of the single ledger line below (the open low E string).
@@ -190,6 +200,7 @@ function readCanvasColors() {
     ink: token('--c-ink', 'black'),
     paper: token('--c-bg', 'white'),
     hover: token('--c-info', '#4281b2'),
+    muted: token('--c-text-muted', '#66707c'),
   };
 }
 
@@ -243,6 +254,23 @@ const BassStaff = forwardRef<PlayHandle, BassStaffProps>(function BassStaff({ re
     setPendingNote(null);
     setTabEdit(null);
   }, [part, viewMode]);
+
+  // The rhythm strip (sculpted songs): while a note is selected, the part's
+  // rhythm shows under the staff, where a note splits in half on a click
+  // and "+" joins two neighbours.
+  const doc = song.doc;
+  const rhythmEditable = !!doc && doc.form.length === song.songStructure.length && doc.form[part]?.sectionId === song.songStructure[part].sectionId;
+  const rhythmTicks = useMemo(() => bassGroove.map(beatsToTicks), [bassGroove]);
+  // The note to keep selected once a split or join lands (by index - its
+  // column moves).
+  const refocusRef = useRef<number | null>(null);
+  useEffect(() => {
+    const k = refocusRef.current;
+    if (k === null) return;
+    refocusRef.current = null;
+    const n = bassNoteGrid[k];
+    setPendingNote(n ? { x: n.x, y: n.y } : null);
+  }, [bassNoteGrid]);
 
   // One mouse record for the component's lifetime. It used to be a fresh
   // object every render, and since it sat in the effect dependency lists
@@ -338,6 +366,77 @@ const BassStaff = forwardRef<PlayHandle, BassStaffProps>(function BassStaff({ re
 
   // Vertical middle of each rest glyph drawRest draws, below its REST_Y.
   const restMiddle = (groove: number) => (groove === 2 ? 71.5 : groove >= 1 ? 74.5 : groove === 0.25 ? 84 : 76.5);
+
+  // The strip's notes, at their staff columns, and a "+" between each pair
+  // that can join.
+  function rhythmStrip() {
+    const notes = bassNoteGrid.map((n, k) => ({ k, x: n.x, splittable: canSplitBassNote(rhythmTicks, k) }));
+    const joins = notes.slice(0, -1)
+      .filter(({ k }) => canJoinBassNotes(rhythmTicks, k))
+      .map(({ k, x }) => ({ k, x: (x + notes[k + 1].x) / 2 }));
+    return { notes, joins };
+  }
+
+  // What in the strip is under the mouse: a "+" or a note that can split.
+  function stripHit(): { op: 'split' | 'join', k: number } | null {
+    if (MOUSE.y < STRIP_TOP || MOUSE.y > STRIP_BOTTOM) return null;
+    const { notes, joins } = rhythmStrip();
+    const join = joins.find((j) => Math.abs(MOUSE.x - j.x) <= 8);
+    if (join) return { op: 'join', k: join.k };
+    const note = notes.find((n) => n.splittable && MOUSE.x >= n.x - 8 && MOUSE.x <= n.x + 12);
+    return note ? { op: 'split', k: note.k } : null;
+  }
+
+  function drawRhythmStrip(ctx: CanvasRenderingContext2D, selected: number) {
+    const { notes, joins } = rhythmStrip();
+    const hover = stripHit();
+    ctx.save();
+    // A faint, labelled band, so the strip reads as an editor, not notation.
+    ctx.globalAlpha = 0.08;
+    ctx.fillStyle = colors.hover;
+    ctx.fillRect(0, STRIP_TOP, renderWidth, STRIP_BOTTOM - STRIP_TOP);
+    ctx.globalAlpha = 1;
+    ctx.fillStyle = colors.muted;
+    ctx.font = '10px "Helvetica Neue", Arial, sans-serif';
+    ctx.fillText('RHYTHM', 14, STRIP_MIDDLE + 4);
+    // Notes in their own shapes, smaller: the selected one (and a hovered one
+    // that can split) lit, ones too short to split dimmed.
+    notes.forEach(({ k, x, splittable }) => {
+      const lit = k === selected || (hover?.op === 'split' && hover.k === k);
+      ctx.save();
+      ctx.globalAlpha = splittable || lit ? 1 : 0.5;
+      ctx.fillStyle = lit ? colors.hover : colors.ink;
+      ctx.strokeStyle = ctx.fillStyle;
+      ctx.lineWidth = 1.5;
+      const groove = bassGroove[k];
+      if (isStaffPitch(bassNoteGrid[k].y)) {
+        ctx.translate(x, STRIP_HEAD_Y);
+        ctx.scale(STRIP_SCALE, STRIP_SCALE);
+        drawNoteGlyph(ctx, 0, 0, groove, false);
+      } else {
+        ctx.translate(x, STRIP_MIDDLE);
+        ctx.scale(STRIP_SCALE, STRIP_SCALE);
+        ctx.translate(0, -(STAFF_Y_OFFSET + restMiddle(groove)));
+        drawRest(ctx, 0, groove);
+      }
+      ctx.restore();
+    });
+    ctx.font = 'bold 13px "Helvetica Neue", Arial, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    joins.forEach(({ k, x }) => {
+      const lit = hover?.op === 'join' && hover.k === k;
+      if (lit) {
+        ctx.fillStyle = colors.hover;
+        ctx.fillRect(x - 7, STRIP_MIDDLE - 8, 14, 16);
+      } else {
+        drawOptionChip(ctx, x - 7, STRIP_MIDDLE - 8, 14, 16);
+      }
+      ctx.fillStyle = lit ? colors.paper : colors.hover;
+      ctx.fillText('+', x, STRIP_MIDDLE + 1);
+    });
+    ctx.restore();
+  }
 
   function drawRestOption(ctx: CanvasRenderingContext2D, location: { x: number, y: number }) {
     const groove = bassGroove[bassGrid.indexOf(location.x, 1) - 1];
@@ -487,6 +586,79 @@ const BassStaff = forwardRef<PlayHandle, BassStaffProps>(function BassStaff({ re
     }
   }
 
+  // A note's shape - stem, flags, dot and head - at column x with its head
+  // at py, in the current fill and stroke. The stem points up, or down
+  // (mirrored about the head) for notes high above the staff.
+  function drawNoteGlyph(ctx: CanvasRenderingContext2D, x: number, py: number, groove: number, stemDown: boolean) {
+    const spacing = SPACING;
+    ctx.save();
+    if (stemDown) {
+      ctx.translate(0, 2 * py);
+      ctx.scale(1, -1);
+    }
+    //add line for notes up to dotted half
+    if (groove <= 2.5) {
+      ctx.beginPath();
+      ctx.moveTo(x + spacing,
+        py);
+      ctx.lineTo(x + spacing,
+        py - spacing * 5);
+      ctx.stroke();
+      }
+      //add flag for notes smaller than quarter note
+      if(groove < 1){
+        ctx.beginPath();
+        ctx.moveTo(x + spacing,
+          py - spacing * 5);
+        ctx.bezierCurveTo(
+          x + spacing * 2, py - spacing * 3,
+          x + spacing * 2.5, py - spacing * 3,
+          x + spacing * 2.5, py - spacing * 1);
+        ctx.bezierCurveTo(
+          x + spacing * 2.5, py - spacing * 2.7,
+          x + spacing * 2, py - spacing * 2.7,
+          x + spacing, py - spacing * 4.5);
+        ctx.stroke();
+        ctx.fill();
+      }
+      //add double flag for sixteenth notes
+      if(groove === 0.25){
+        ctx.beginPath();
+        ctx.moveTo(x + spacing, py - spacing * 5 + 8);
+        ctx.bezierCurveTo(
+          x + spacing * 2, py - spacing * 3 + 7,
+          x + spacing * 2.5, py - spacing * 3 + 7,
+          x + spacing * 2.5, py - spacing * 1 + 4);
+        ctx.bezierCurveTo(
+          x + spacing * 2.5, py - spacing * 2.7 + 7,
+          x + spacing * 2, py - spacing * 2.7 + 7,
+          x + spacing, py - spacing * 4.5 + 4);
+        ctx.stroke();
+        ctx.fill();
+      }
+    ctx.restore();
+    //add dots for syncopated notes
+    if (groove === 2.5 || groove === 1.5 || groove === 0.75) {
+      ctx.beginPath();
+      ctx.arc(x + spacing + 8, py - 3.8, 2.8, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    //draw actual note
+    ctx.beginPath();
+    ctx.save();
+    ctx.translate(x, py);
+    ctx.rotate(-0.2);
+    ctx.scale(1.05, 0.8);
+    ctx.arc(0, 0, spacing, 0, Math.PI * 2);
+
+    //half to quarter note fill
+    if(groove <= 1.5){
+      ctx.fill();
+    }
+    ctx.stroke();
+    ctx.restore();
+  }
+
   function drawNote(ctx: CanvasRenderingContext2D, location: { x: number, y: number, acc: string }) {
     const CANVAS = canvasRef.current;
     let match = false
@@ -514,88 +686,21 @@ const BassStaff = forwardRef<PlayHandle, BassStaffProps>(function BassStaff({ re
         // is where that pitch actually lands on the canvas.
         const py = location.y + STAFF_Y_OFFSET;
         drawLedgerLines(ctx, location);
-        // Notes above the staff's top ledger lines take their stem (and
-        // flags) downward, mirrored about the notehead, so they stay on the
-        // canvas.
-        const stemDown = location.y < 0;
-        ctx.save();
-        if (stemDown) {
-          ctx.translate(0, 2 * py);
-          ctx.scale(1, -1);
-        }
-        //add line for notes up to dotted half
-        if (groove <= 2.5) {
-          ctx.beginPath();
-          ctx.moveTo(location.x + spacing,
-            py);
-          ctx.lineTo(location.x + spacing,
-            py - spacing * 5);
-          ctx.stroke();
-          }
-          //add flag for notes smaller than quarter note
-          if(groove < 1){
-            ctx.beginPath();
-            ctx.moveTo(location.x + spacing,
-              py - spacing * 5);
-            ctx.bezierCurveTo(
-              location.x + spacing * 2, py - spacing * 3,
-              location.x + spacing * 2.5, py - spacing * 3,
-              location.x + spacing * 2.5, py - spacing * 1);
-            ctx.bezierCurveTo(
-              location.x + spacing * 2.5, py - spacing * 2.7,
-              location.x + spacing * 2, py - spacing * 2.7,
-              location.x + spacing, py - spacing * 4.5);
-            ctx.stroke();
-            ctx.fill();
-          }
-          //add double flag for sixteenth notes
-          if(groove === 0.25){
-            ctx.beginPath();
-            ctx.moveTo(location.x + spacing, py - spacing * 5 + 8);
-            ctx.bezierCurveTo(
-              location.x + spacing * 2, py - spacing * 3 + 7,
-              location.x + spacing * 2.5, py - spacing * 3 + 7,
-              location.x + spacing * 2.5, py - spacing * 1 + 4);
-            ctx.bezierCurveTo(
-              location.x + spacing * 2.5, py - spacing * 2.7 + 7,
-              location.x + spacing * 2, py - spacing * 2.7 + 7,
-              location.x + spacing, py - spacing * 4.5 + 4);
-            ctx.stroke();
-            ctx.fill();
-          }
-        ctx.restore();
         if (location.acc === 'flat') {
           ctx.fillText('♭', location.x + spacing * -3.5, py - spacing * 2 + fontSize);
         }
         if (location.acc === 'sharp') {
           ctx.fillText('#', location.x + spacing * -2.5, py - spacing * 1.9 + fontSize );
         }
-        //add dots for syncopated notes
-        if (groove === 2.5 || groove === 1.5 || groove === 0.75) {
-          ctx.beginPath();
-          ctx.arc(location.x + spacing + 8, py - 3.8, 2.8, 0, Math.PI * 2);
-          ctx.fill();
-        }
-        //draw actual note
-        ctx.beginPath();
-        ctx.save();
-        ctx.translate(location.x, py);
-        ctx.rotate(-0.2);
-        ctx.scale(1.05, 0.8);
-        ctx.arc(0, 0, spacing, 0, Math.PI * 2);
-
-        //half to quarter note fill
-        if(groove <= 1.5){
-          ctx.fill();
-        }
+        // Notes above the staff's top ledger lines take their stem (and
+        // flags) downward, mirrored about the notehead, so they stay on the
+        // canvas.
+        drawNoteGlyph(ctx, location.x, py, groove, location.y < 0);
       //draw rests
       } else {
         drawRest(ctx, location.x, groove);
+        ctx.stroke();
       }
-      ctx.stroke();
-      // Undo the notehead's transform. Rests set none, and an unmatched
-      // restore would pop the lyric band's offset off the rest of the staff.
-      if (isStaffPitch(location.y)) ctx.restore();
     }
   }
 
@@ -768,8 +873,13 @@ const BassStaff = forwardRef<PlayHandle, BassStaffProps>(function BassStaff({ re
           if (pendingNote) {
             const note = bassNoteGrid.find((n) => n.x === pendingNote.x && n.y === pendingNote.y);
             if (note) {
-              drawAccidentalOptions(ctx, note, spacing);
-              drawRestOption(ctx, note);
+              if (rhythmEditable) drawRhythmStrip(ctx, bassNoteGrid.indexOf(note));
+              // Its choices draw over the strip. (A note the strip joined
+              // into a rest stays selected there, without them.)
+              if (isStaffPitch(note.y)) {
+                drawAccidentalOptions(ctx, note, spacing);
+                drawRestOption(ctx, note);
+              }
             }
           }
 
@@ -833,22 +943,32 @@ const BassStaff = forwardRef<PlayHandle, BassStaffProps>(function BassStaff({ re
         if (pendingNote) {
           const note = bassNoteGrid.find((n) => n.x === pendingNote.x && n.y === pendingNote.y);
           if (note) {
-            const hit = getAccidentalOptionLayout(note, spacing, fontSize).find((opt) =>
+            const pitched = isStaffPitch(note.y);
+            const hit = pitched ? getAccidentalOptionLayout(note, spacing, fontSize).find((opt) =>
               MOUSE.x >= opt.x - 10 && MOUSE.x <= opt.x + fontSize &&
               MOUSE.y >= opt.y - fontSize && MOUSE.y <= opt.y + 6
-            );
+            ) : undefined;
+            const strip = rhythmEditable ? stripHit() : null;
             if (hit) {
               const updatedBassNotes = bassNoteGrid.map((n) =>
                 n.x === note.x && n.y === note.y ? { ...n, acc: hit.acc } : n
               );
               dispatch(setBassState({ index: part, bassNoteLocations: updatedBassNotes }));
-            } else if (hitsRestOption(note)) {
+            } else if (pitched && hitsRestOption(note)) {
               // The rest keeps the note's length, so it's the matching rest.
               // Clicking its column on the staff puts a note back.
               const updatedBassNotes = bassNoteGrid.map((n) =>
                 n.x === note.x && n.y === note.y ? { ...n, y: -20, acc: 'none', string: undefined } : n
               );
               dispatch(setBassState({ index: part, bassNoteLocations: updatedBassNotes }));
+            } else if (strip) {
+              // The strip stays open on the same note: its index moves up past
+              // a split before it and back past a join before it, and a note
+              // joined into the one before it goes with that one.
+              const selected = bassNoteGrid.indexOf(note);
+              refocusRef.current = selected > strip.k ? selected + (strip.op === 'split' ? 1 : -1) : selected;
+              dispatch(editBassRhythm({ part, note: strip.k, op: strip.op }));
+              return;
             }
           }
           setPendingNote(null);
@@ -898,7 +1018,7 @@ const BassStaff = forwardRef<PlayHandle, BassStaffProps>(function BassStaff({ re
     };
     // Re-bound only when something the handlers read changes - not on every
     // playback step.
-  }, [MOUSE, viewMode, pendingNote, bassNoteGrid, bassGrid, part, dispatch, requestDraw, tabEdit]);
+  }, [MOUSE, viewMode, pendingNote, bassNoteGrid, bassGrid, part, dispatch, requestDraw, tabEdit, rhythmEditable, rhythmTicks]);
 
   // ---- Tab fret editor -----------------------------------------------------
 
