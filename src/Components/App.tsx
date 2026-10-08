@@ -2,9 +2,12 @@ import React, { useState, useEffect, useCallback } from 'react'
 import Info from './Info';
 import Generate from './Generate';
 import Save from './Save';
+import Sounds from './Sounds';
 import SectionPanel from './SectionPanel';
+import Transport, { SoundSource, Track } from './Transport';
 import { SHORT_LABELS } from '../Core/form';
 import { downloadMidi } from '../Core/exportMidi';
+import { PaletteInput, SoundPick } from '../Core/timbre';
 import { SectionLabel } from '../Core/doc';
 import DrumMachine from "./DrumMachine";
 import BassStaff from "./BassStaff";
@@ -13,7 +16,7 @@ import { useSelector, useDispatch } from "react-redux"
 import { playVerse } from '../Playback/playSong';
 import { getAudioContext } from '../Playback/audioContext';
 import { useLampStep } from '../Playback/useLampStep';
-import { incrementByAmount, setIsPlaying, setMidi, setAcoustic, SongState, setCurrentBeat, newSong, reorderParts, loadSong, setLoopPick, toggleLoop, setPartLinked, duplicatePart, deletePart, undo } from '../reducers';
+import { incrementByAmount, setIsPlaying, setMidi, setAcoustic, SongState, setCurrentBeat, newSong, reorderParts, loadSong, setLoopPick, toggleLoop, setPartLinked, duplicatePart, deletePart, setSounds, undo } from '../reducers';
 import { isDetached, linkedCount } from '../Core/generate';
 import { beatsInPart, clampRegion, containsPoint, describePoint, partWindow, stepBeat, sum, trackWindow } from '../Playback/loop';
 import type { AppDispatch } from '../store'
@@ -59,6 +62,7 @@ function App() {
   const [authenticated, setAuthenticated] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
   const [saveScreen, setSaveScreen] = useState(false);
+  const [soundsScreen, setSoundsScreen] = useState(false);
   const anyPartOpen = Object.values(openedParts).some(Boolean);
 
   // T1-T10 song-generation slots. Only the active tab's song lives in Redux;
@@ -578,14 +582,52 @@ function App() {
   const loopRegion = clampRegion(song.loop, song.songStructure);
   const loopOn = !!song.loopEnabled && loopRegion !== null;
 
-  const handleAcoustic = () => {
-    dispatch(setAcoustic({ acoustic: !acoustic }));
+  // Space plays/pauses, unless focus is somewhere Space already means
+  // something (a text field, or a button Space would click).
+  const handleStartClickRef = React.useRef(handleStartClick);
+  handleStartClickRef.current = handleStartClick;
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.code !== 'Space' || e.repeat || e.ctrlKey || e.metaKey || e.altKey) return;
+      const target = e.target as HTMLElement;
+      if (target.closest('input, textarea, select, button, [contenteditable="true"], [role="spinbutton"], [role="menuitem"]')) return;
+      e.preventDefault();
+      handleStartClickRef.current();
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, []);
+
+  const handleSourceChange = (source: SoundSource) => {
+    if (source === 'midi') {
+      if (!midi) handleMidi();
+      return;
+    }
+    if (midi) handleMidi();
+    if (acoustic !== (source === 'acoustic')) dispatch(setAcoustic({ acoustic: source === 'acoustic' }));
   };
+
+  const handleToggleTrack = (track: Track) => {
+    if (track === 'chords') setIncludeChords(prev => !prev);
+    else if (track === 'bass') setIncludeBass(prev => !prev);
+    else setIncludeDrums(prev => !prev);
+  };
+
+  const paletteInput: PaletteInput = React.useMemo(() => ({
+    songStructure: song.songStructure,
+    bpm: song.bpm,
+    key: song.key,
+    doc: song.doc,
+    tuning: song.doc?.tuning ?? song.params?.tuning,
+  }), [song.songStructure, song.bpm, song.key, song.doc, song.params]);
+  const exportName = `${song.key.replace(/\s+/g, '-')}-${song.bpm}bpm${song.seed != null ? `-${song.seed}` : ''}`;
+  const handleCloseSounds = useCallback(() => setSoundsScreen(false), []);
+  // The chosen combination lives on the song, so it's saved with it.
+  const handleChooseSounds = useCallback((pick: SoundPick | null) => dispatch(setSounds(pick)), [dispatch]);
 
   // Download the song (with every edit) as a Standard MIDI File for a DAW.
   const handleExport = () => {
-    const filename = `${song.key.replace(/\s+/g, '-')}-${song.bpm}bpm${song.seed != null ? `-${song.seed}` : ''}`;
-    downloadMidi({ songStructure: song.songStructure, bpm: song.bpm, key: song.key, title: `Song in ${song.key}` }, filename);
+    downloadMidi({ songStructure: song.songStructure, bpm: song.bpm, key: song.key, title: `Song in ${song.key}` }, exportName);
   };
 
   const handleMidi = async () => {
@@ -611,6 +653,18 @@ function App() {
         {saveScreen && (
           <div className={styles.generateOverlay}>
             <Save onClose={handleCloseSave}/>
+          </div>
+        )}
+        {soundsScreen && song.songStructure.length > 0 && (
+          <div className={styles.generateOverlay}>
+            <Sounds
+              input={paletteInput}
+              choice={song.sounds ?? null}
+              onChoose={handleChooseSounds}
+              filename={exportName}
+              title={`Song in ${song.key}`}
+              onClose={handleCloseSounds}
+            />
           </div>
         )}
         {song.songStructure.length > 0 && <Piano ref={pianoRef} lampsRef={lampsRef} />}
@@ -757,106 +811,33 @@ function App() {
         </div>
         {/* Renders controls */}
         <div className={styles.footer} ref={footerRef}>
-        <div className={styles.controls}>
-          <button className={styles.key} onClick={handleGenerateClick}>Key of :<br />{song.key}</button>
-          {!midi && (
-            <button className={`${styles.button} ${styles.oscToggle}`} onClick={handleAcoustic}>
-              {acoustic ? "Acoustic" : "Synth"}
-            </button>
-          )}
-          <div className={styles.songControls}>
-            <button
-              onClick={() => setIncludeChords(prev => !prev)}
-              className={includeChords ? styles.button : `${styles.button} ${styles.openButton}`}
-            >
-              Chords
-            </button>
-            <button
-              onClick={() => setIncludeBass(prev => !prev)}
-              className={includeBass ? styles.button : `${styles.button} ${styles.openButton}`}
-            >
-              Bass
-            </button>
-            <button
-              onClick={() => setIncludeDrums(prev => !prev)}
-              className={includeDrums ? styles.button : `${styles.button} ${styles.openButton}`}
-            >
-              Drums
-            </button>
-          </div>
-          <div className={styles.bpmControls}>
-            <label className={styles.fader}>
-              <span className={styles.bpmRow}>BPM:{bpm}</span>
-              <div className={styles.bpmRow}>
-                <input
-                  className={styles.bpm}
-                  type="range"
-                  min={90}
-                  max={150}
-                  step={1}
-                  onChange={(e) => dispatch(incrementByAmount(e.target.value))}
-                  defaultValue={bpm}
-                />
-              </div>
-            </label>
-            {/*<label className={styles.fader}>
-              <span>Volume</span>
-              <input
-                type="range"
-                min={0}
-                max={1}
-                step={0.01}
-                onChange={handleVolumeChange}
-                defaultValue={1}
-              />
-            </label> */}
-            <button
-              onClick={handleStartClick}
-              className={isPlaying ? `${styles.button} ${styles.openButton}` : styles.button}
-            >
-              {isPlaying ? "Pause" : "Play Song"}
-            </button>
-          </div>
-          <div className={styles.loopControls}>
-            <div className={styles.loopButtons}>
-              <button
-                onClick={() => dispatch(toggleLoop())}
-                disabled={!loopRegion}
-                className={loopOn ? `${styles.button} ${styles.openButton}` : styles.button}
-                title={loopRegion ? 'Cycle playback between the loop points' : 'Set loop points first: Set Start, then click where it starts and where it ends - or click a bar number above the drum grid'}
-              >
-                ⟳ Loop
-              </button>
-              <button
-                onClick={() => armLoopPick('start')}
-                className={loopPick === 'start' ? `${styles.button} ${styles.pickArmed}` : styles.button}
-                aria-pressed={loopPick === 'start'}
-                title="Then click a step lamp or bar number to start the loop there"
-              >Set Start</button>
-              <button
-                onClick={() => armLoopPick('end')}
-                className={loopPick === 'end' ? `${styles.button} ${styles.pickArmed}` : styles.button}
-                aria-pressed={loopPick === 'end'}
-                title="Then click a step lamp or bar number to end the loop there (that step or bar is included)"
-              >Set End</button>
-            </div>
-            <span className={styles.loopReadout}>
-              {loopPick
-                ? `Click a step or bar number for the loop ${loopPick} (Esc to cancel)`
-                : loopRegion
-                  ? `${describePoint(loopRegion.start, song.songStructure)} → ${describePoint(loopRegion.end, song.songStructure)}`
-                  : 'No loop set'}
-            </span>
-          </div>
-          <div className={styles.midiControls}>
-            <button onClick={handleMidi} className={styles.button}>
-              {midi ? "Use Osc" : "Use Midi"}
-            </button>
-            <button onClick={handleExport} className={styles.button} title="Download a multitrack .mid (drums, bass, chords, guide tones, section markers) for your DAW">Export MIDI</button>
-            <button onClick={handleSaveClick} className={styles.button}>Save/Load</button>
-            <button onClick={logout} className={styles.button}>Log Out</button>
-          </div>
-        </div>
+        <Transport
+          songKey={song.key}
+          onKeyClick={handleGenerateClick}
+          source={midi ? 'midi' : acoustic ? 'acoustic' : 'synth'}
+          onSourceChange={handleSourceChange}
+          isPlaying={isPlaying}
+          onPlay={handleStartClick}
+          bpm={bpm}
+          onBpmChange={(value) => dispatch(incrementByAmount(`${value}`))}
+          tracks={{ chords: includeChords, bass: includeBass, drums: includeDrums }}
+          onToggleTrack={handleToggleTrack}
+          loopOn={loopOn}
+          hasLoop={!!loopRegion}
+          onToggleLoop={() => dispatch(toggleLoop())}
+          loopPick={loopPick}
+          onArmLoopPick={armLoopPick}
+          loopReadout={loopPick
+            ? `Click a step or bar number for the loop ${loopPick} (Esc to cancel)`
+            : loopRegion
+              ? `${describePoint(loopRegion.start, song.songStructure)} → ${describePoint(loopRegion.end, song.songStructure)}`
+              : 'No loop set'}
+          hasSong={song.songStructure.length > 0}
+          onSave={handleSaveClick}
+          onSounds={() => setSoundsScreen(true)}
+          onExport={handleExport}
+          onLogout={logout}
+        />
         {canUseSongTabs && (
           <div className={styles.songTabs}>
             {Array.from({ length: SONG_TAB_COUNT }, (_, index) => (
