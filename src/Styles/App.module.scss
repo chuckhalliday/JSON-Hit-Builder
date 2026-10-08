@@ -15,13 +15,43 @@
     overflow: visible;
 }
 
+// Phones: where the space under the keyboard starts (its 186px bottom
+// edge, plus its shadow) - the open part and the landing text begin here.
+$phone-stage-top: 192px;
+
+// The landing text: the space between the keyboard and the transport,
+// which it's fitted to (see Info).
 .info {
   position: fixed;
   top: 200px;
+  bottom: var(--footer-height, 150px);
   left: var(--sheet-w, 0px);
   right: 0;
+  padding: 0 12px;
   text-align: center;
   z-index: 0;
+
+  @media (max-width: 600px) {
+    top: $phone-stage-top;
+  }
+}
+
+// FitBox: the box, and its content scaled from the top-left corner. Taken
+// out of flow, so its unscaled layout size never counts as overflow.
+.fitBox {
+  position: relative;
+}
+
+.fitInner {
+  position: absolute;
+  top: 0;
+  left: 0;
+  transform-origin: 0 0;
+}
+
+// Fills its parent's height (fitted boxes, and the phone's open section).
+.fillSection {
+  height: 100%;
 }
 
 .infoContainer {
@@ -305,6 +335,20 @@
     // No top padding: the pinned bar/lamp strip carries it, so it sticks
     // flush to the top with nothing scrolling past above it.
     padding: 0 10px 10px;
+
+    // Phones: exactly the space between the keyboard and the transport -
+    // the bar/lamp strip, the section tabs, and the open section filling
+    // the rest (fitted to it rather than scrolled; only a menu opening past
+    // the bottom makes it scroll).
+    @media (max-width: 600px) {
+      top: $phone-stage-top;
+      display: flex;
+      flex-direction: column;
+      height: calc(100vh - #{$phone-stage-top} - var(--footer-height, 150px));
+      height: calc(100dvh - #{$phone-stage-top} - var(--footer-height, 150px));
+      max-height: none;
+      padding-bottom: 0;
+    }
     box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.1);
     overflow: auto;
     width: calc(100% - var(--sheet-w, 0px));
@@ -1087,6 +1131,17 @@
     color: var(--c-text-subtle);
 }
 
+// Phones fit the section panel into a short space: drop what's read-only
+// or repeated elsewhere (guide tones, the summary line, the re-roll
+// side-effect notes and the explanations), keeping every control.
+@media (max-width: 600px) {
+    .guideTone,
+    .layerNote,
+    .sectionHeader > span {
+      display: none;
+    }
+}
+
 .layerRow {
     display: flex;
     flex-wrap: wrap;
@@ -1141,6 +1196,12 @@
     margin: 6px 0 0;
     font-size: 11px;
     color: var(--c-text-subtle);
+
+    // Phones fit the panel into a short space: leave the explanations to
+    // the buttons' titles.
+    @media (max-width: 600px) {
+      display: none;
+    }
 }
 
 // Loop: blocks inside the loop region.
@@ -1186,6 +1247,48 @@
     overflow: clip;
     background-color: var(--c-bg);
     border-bottom: 1px solid var(--c-border);
+
+    @media (max-width: 600px) {
+      flex: none;
+      padding-block: 6px 4px;
+      margin-bottom: 0;
+    }
+}
+
+// Phones: the open part's sections as one row of tabs, one open at a time,
+// with the bass's Staff/Tab switch at the end while it's the one open.
+.sectionTabs {
+    position: sticky;
+    left: 0;
+    z-index: 2;
+    flex: none;
+    display: flex;
+    align-items: center;
+    column-gap: 2px;
+    width: calc(100vw - 20px - var(--sheet-w, 0px));
+    box-sizing: border-box;
+    padding-block: 4px;
+    background-color: var(--c-bg);
+
+    .viewToggle {
+      margin-left: auto;
+    }
+}
+
+.sectionTabOn,
+.sectionTabOn:hover {
+    color: var(--c-text);
+    background-color: var(--c-surface-2);
+}
+
+// Phones: the open section's space, everything under the tabs.
+.sectionBody {
+    flex: 1 1 0;
+    min-height: 0;
+
+    > .stickyHeader {
+      height: 100%;
+    }
 }
 
 // A collapsible section's header in an open part: its name with a caret,
@@ -1261,6 +1364,11 @@
 // stick, and taking the gap's clicks so they never reach the staff).
 .canvasWrap {
     position: relative;
+
+    // A block, so no line-box gap is left under it.
+    canvas {
+      display: block;
+    }
 }
 
 .canvasHeaderGap {

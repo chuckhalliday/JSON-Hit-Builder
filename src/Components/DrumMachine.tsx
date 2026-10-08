@@ -204,6 +204,9 @@ interface DrumMachineProps {
   part: number;
   lampsRef: React.MutableRefObject<HTMLInputElement[]>;
   onPlayingChange?: (isPlaying: boolean) => void;
+  // Stretch the rows to share its parent's height (phones), rather than
+  // keeping their fixed size.
+  fill?: boolean;
 }
 
 // The drum step grid. Its bar ruler and lamps are the StepTracker above.
@@ -211,6 +214,7 @@ const DrumMachine = forwardRef<PlayHandle, DrumMachineProps>(function DrumMachin
   part,
   lampsRef,
   onPlayingChange,
+  fill,
 }, ref) {
   const [isPlaying, setIsPlaying] = React.useState(false);
   const stopRef = useRef(false);
@@ -290,7 +294,7 @@ const DrumMachine = forwardRef<PlayHandle, DrumMachineProps>(function DrumMachin
   }));
 
   return (
-    <div className={styles.machine}>
+    <div className={fill ? `${styles.machine} ${styles.fill}` : styles.machine}>
       {/* Renders titles */}
       <div className={styles.labelList}>
         <div>Crash</div>
