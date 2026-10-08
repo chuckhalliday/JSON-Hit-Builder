@@ -2,11 +2,15 @@ import { triggerMidi } from "./playFunctions";
 import { getAudioContext } from "./audioContext";
 import { runPreScheduledSequence, scheduleTimer, Register, SequenceTiming } from "./scheduler";
 import { midiToFreq } from "../Core/theory";
+import { SungSyllable, sungSyllables } from "../Core/phonemes";
+import { scheduleSungSyllable } from "./singingVoice";
 
 // The melody notes of the stretch of a part being played (beats from the
 // part's start).
 export interface MelodyPlayback {
-  notes: Array<{ beat: number, dur: number, midi: number }>;
+  // With their syllables (text, and whether the word goes on), the
+  // acoustic voice sings the words.
+  notes: Array<{ beat: number, dur: number, midi: number, text?: string, hyphen?: boolean }>;
   from: number;
   to: number;
 }
@@ -15,6 +19,7 @@ interface Segment {
   length: number; // beats to the next segment
   midi: number | null; // null: a rest before the next note
   sound: number; // beats the note sounds
+  syllable?: SungSyllable; // what's sung on it
 }
 
 const EPS = 1e-6;
@@ -22,13 +27,16 @@ const EPS = 1e-6;
 // The stretch as back-to-back segments - each note, and any rest before
 // one - so the melody runs on the same clock as the other tracks.
 export function melodySegments({ notes, from, to }: MelodyPlayback): Segment[] {
-  const sung = notes.filter(n => n.beat >= from - EPS && n.beat < to - EPS);
+  // Pronounced across the whole part first, so words cut by the stretch's
+  // start still read as words.
+  const sounds = notes.every(n => n.text !== undefined) ? sungSyllables(notes.map(n => ({ text: n.text!, hyphen: !!n.hyphen }))) : null;
+  const sung = notes.map((n, i) => ({ ...n, syllable: sounds?.[i] })).filter(n => n.beat >= from - EPS && n.beat < to - EPS);
   if (sung.length === 0) return to > from ? [{ length: to - from, midi: null, sound: 0 }] : [];
   const segments: Segment[] = [];
   if (sung[0].beat > from + EPS) segments.push({ length: sung[0].beat - from, midi: null, sound: 0 });
   sung.forEach((n, k) => {
     const length = (sung[k + 1]?.beat ?? to) - n.beat;
-    segments.push({ length, midi: n.midi, sound: Math.min(n.dur, length) });
+    segments.push({ length, midi: n.midi, sound: Math.min(n.dur, length), ...(n.syllable ? { syllable: n.syllable } : {}) });
   });
   return segments;
 }
@@ -111,10 +119,12 @@ export default async function playMelody(midi: boolean, melody: MelodyPlayback, 
   const bus = audioContext.createGain();
   bus.gain.value = 0.5;
   bus.connect(audioContext.destination);
+  // The acoustic voice sings the words; the synth plays a lead tone.
   const onSchedule = (i: number, time: number, _duration: number, register: Register) => {
-    const { midi: note, sound } = segments[i];
+    const { midi: note, sound, syllable } = segments[i];
     if (note === null || mute) return;
-    scheduleMelodyNote(audioContext, bus, note, time, sound * beatDuration * 0.95, acoustic, register);
+    if (acoustic && syllable) scheduleSungSyllable(audioContext, bus, syllable, note, time, sound * beatDuration * 0.95, register);
+    else scheduleMelodyNote(audioContext, bus, note, time, sound * beatDuration * 0.95, acoustic, register);
   };
   const finalIndex = await runPreScheduledSequence(0, segments.length, getDuration, onSchedule, shouldStop, timing);
   const ringOut = Math.max(0, (timing?.endTime ?? 0) - audioContext.currentTime) + 1;

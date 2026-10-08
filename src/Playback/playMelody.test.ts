@@ -23,3 +23,18 @@ describe('melodySegments', () => {
     expect(melodySegments({ notes: [], from: 0, to: 4 })).toEqual([{ length: 4, midi: null, sound: 0 }]);
   });
 });
+
+describe('sung segments', () => {
+  it('carries each note\'s syllable sounds, pronounced by whole words', () => {
+    const notes = [
+      { beat: 0, dur: 1, midi: 64, text: 'to', hyphen: true },
+      { beat: 1, dur: 1, midi: 67, text: 'night', hyphen: false },
+      { beat: 2, dur: 1, midi: 65, text: 'love', hyphen: false },
+    ];
+    // A stretch starting mid-word still sings "night" as in "tonight".
+    const segments = melodySegments({ notes, from: 1, to: 3 });
+    expect(segments.map(s => s.syllable && [...s.syllable.onset, s.syllable.vowel, ...s.syllable.coda].join(' '))).toEqual(['N AY T', 'L AH V']);
+    // Without words, plain notes.
+    expect(melodySegments({ notes: notes.map(({ beat, dur, midi }) => ({ beat, dur, midi })), from: 0, to: 3 }).every(s => !s.syllable)).toBe(true);
+  });
+});
