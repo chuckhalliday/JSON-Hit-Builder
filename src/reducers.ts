@@ -1,8 +1,8 @@
 import { createSlice, createAction, PayloadAction, Dispatch, AnyAction, current } from "@reduxjs/toolkit";
 import { SongStructure, NoteLocation, DrumHit, SongParams } from "./types";
 import { bassPitch } from "./SongStructure/bassPitch";
-import { SongDoc, Layer, GenerateOptions } from "./Core/doc";
-import { generateDoc, regenerateLayer, setLock, setInstanceEnergy, moveInstance, detachInstance, relinkInstance, duplicateInstance, deleteInstance } from "./Core/generate";
+import { SongDoc, Layer, GenerateOptions, SectionLabel } from "./Core/doc";
+import { generateDoc, regenerateLayer, setLock, setInstanceEnergy, moveInstance, detachInstance, relinkInstance, duplicateInstance, deleteInstance, changeInstanceSection } from "./Core/generate";
 import { realizeSong, realizeSection, realizeInstance, assignStepIds } from "./Core/realize";
 import { editBass, editDrum, editChordTone, editChord } from "./Core/edits";
 import { ChordEvent } from "./Core/theory";
@@ -334,6 +334,18 @@ const song = createSlice({
         }
         afterStructureChange(state, index, -1);
       },
+      // Make a part a different kind of section in its place in the form.
+      // Its steps no longer line up, so a playhead inside it goes back to
+      // its start.
+      setPartSection: (state, action: PayloadAction<{ part: number, label: SectionLabel }>) => {
+        const { part, label } = action.payload;
+        if (!state.doc || state.doc.form.length !== state.songStructure.length) return;
+        const doc = current(state).doc!;
+        const next = changeInstanceSection(doc, part, label);
+        if (next === doc) return;
+        applyDoc(state, next);
+        if (state.selectedBeat[0] === part) state.selectedBeat = [part, 0, 0, 0];
+      },
       setPartLinked: (state, action: PayloadAction<{ part: number, linked: boolean }>) => {
         if (!state.doc) return;
         const { part, linked } = action.payload;
@@ -360,7 +372,7 @@ const song = createSlice({
     },
   });
 
-export const { setIsPlaying, setMidi, setAcoustic, setSong, setBassState, setDrumState, setChordState, setCurrentBeat, reorderParts, incrementByAmount, loadSong, rerollLayer, toggleLock, setPartEnergy, setLoop, setLoopPick, pickLoopSpan, extendLoop, toggleLoop, setSounds, editHarmony, setPartLinked, duplicatePart, deletePart } = song.actions;
+export const { setIsPlaying, setMidi, setAcoustic, setSong, setBassState, setDrumState, setChordState, setCurrentBeat, reorderParts, incrementByAmount, loadSong, rerollLayer, toggleLock, setPartEnergy, setLoop, setLoopPick, pickLoopSpan, extendLoop, toggleLoop, setSounds, editHarmony, setPartLinked, setPartSection, duplicatePart, deletePart } = song.actions;
 
 // Thunk: generate a fresh form-first song and load it into the store.
 // Dispatched on mount and by the song tabs. Pass a seed (or full options)
@@ -386,6 +398,7 @@ const UNDOABLE: Record<string, string> = {
   [song.actions.toggleLock.type]: 'lock',
   [song.actions.setPartEnergy.type]: 'energy change',
   [song.actions.setPartLinked.type]: 'link change',
+  [song.actions.setPartSection.type]: 'part change',
   [song.actions.duplicatePart.type]: 'duplicate',
   [song.actions.deletePart.type]: 'delete',
   [song.actions.reorderParts.type]: 'reorder',
