@@ -341,6 +341,35 @@
         grid-row: 1;
       }
     }
+
+    // Phones: the two columns can't hold the source switch and tab picker
+    // side by side, so drop the side groups and flow their pieces as rows -
+    // play/tempo, then key · tracks, then source · tab · save/more - each
+    // row wrapping on its own if a narrower screen needs it.
+    @media (max-width: 600px) {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      column-gap: 10px;
+
+      .transportCenter { flex-basis: 100%; order: 0; }
+      .transportSide { display: contents; }
+      .keyChip { order: 1; }
+      .trackPills { order: 2; }
+      .sourceGroup { order: 3; }
+      .transportActions { order: 4; }
+
+      // A little tighter so source · tab · save/more share one row at
+      // phone widths (402px iPhones; narrower ones wrap save/more).
+      .sourceGroup .segmented button { padding: 5px 8px; }
+      .tabPickerButton { padding: 8px; }
+    }
+}
+
+.sourceGroup {
+    display: flex;
+    align-items: center;
+    gap: 6px;
 }
 
 .transportSide {
@@ -746,6 +775,63 @@
     column-gap: 6px;
     row-gap: 4px;
     padding: 0 90px 10px;
+
+    // On phones the row wraps to three lines; the transport's tab picker
+    // takes its place so the part above gets that height back.
+    @media (max-width: 600px) {
+      display: none;
+    }
+}
+
+// Phone-only song tab picker beside the source switch: the current tab,
+// opening a grid of all of them upward.
+.tabPicker {
+    display: none;
+
+    @media (max-width: 600px) {
+      display: block;
+    }
+}
+
+.tabPickerButton {
+    padding: 8px 10px;
+    border: none;
+    border-radius: var(--radius);
+    background: var(--c-selected);
+    color: var(--c-on-selected);
+    font-size: 12px;
+    font-weight: 700;
+    white-space: nowrap;
+    cursor: pointer;
+}
+
+// Doubled up to beat .partMenu's fixed positioning. Centered on the picker,
+// which sits mid-screen, so the grid clears both screen edges.
+.partMenu.tabMenu {
+    position: absolute;
+    top: auto;
+    left: 50%;
+    transform: translateX(-50%);
+    bottom: calc(100% + 6px);
+    display: grid;
+    grid-template-columns: repeat(5, 40px);
+    gap: 4px;
+    min-width: 0;
+
+    button {
+      padding: 0;
+      line-height: 2;
+      text-align: center;
+      font-weight: 700;
+      font-size: 12px;
+      background-color: var(--c-chip);
+    }
+
+    .openButton,
+    .openButton:hover:not(:disabled) {
+      background-color: var(--c-selected);
+      color: var(--c-on-selected);
+    }
 }
 
 .tabButton {
