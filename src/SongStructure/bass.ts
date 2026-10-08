@@ -34,6 +34,22 @@ export function bassMeasures(bassGroove: number[], drumGroove: number[]) {
   return [bassArray, measureLines]
 }
 
+// Canvas x of each drum step's onset: the spacing bassMeasures lays the
+// staff out with (and the drum grid's columns) - 38px a step, 48 after a
+// beat, 78 after a bar.
+export function stepXs(drumGroove: number[]): number[] {
+  const xs: number[] = [];
+  let x = 115;
+  let beat = 0;
+  for (const d of drumGroove) {
+    xs.push(x);
+    beat += d;
+    const barEnd = Math.abs(beat / 4 - Math.round(beat / 4)) * 4 <= 0.07;
+    x += barEnd ? 78 : Math.abs(Math.round(beat) - beat) <= 0.005 ? 48 : 38;
+  }
+  return xs;
+}
+
 const dVals = ["o", "a", "c", "f"];
 const eVals = ["p", "d", "g", "b"];
 const fVals = ["o", "a", "c", "e"];

@@ -45,6 +45,9 @@ export interface SongState {
 // What an undo restores.
 export interface UndoSnapshot {
   label: string;
+  // Consecutive changes with the same key fold into one undo step (typing
+  // a part's lyrics is one step, not one per keystroke).
+  mergeKey?: string;
   songStructure: SongStructure;
   doc: SongDoc | null;
   key: string;
@@ -346,6 +349,20 @@ const song = createSlice({
         applyDoc(state, next);
         if (state.selectedBeat[0] === part) state.selectedBeat = [part, 0, 0, 0];
       },
+      // A part's words. Kept on the doc's form instance too, so they move with
+      // the part through re-rolls, reorders and the like.
+      setPartLyrics: (state, action: PayloadAction<{ part: number, text: string }>) => {
+        const { part, text } = action.payload;
+        const p = state.songStructure[part];
+        if (!p || (p.lyrics ?? '') === text) return;
+        if (text) p.lyrics = text;
+        else delete p.lyrics;
+        const inst = state.doc && state.doc.form.length === state.songStructure.length ? state.doc.form[part] : undefined;
+        if (inst) {
+          if (text) inst.lyrics = text;
+          else delete inst.lyrics;
+        }
+      },
       setPartLinked: (state, action: PayloadAction<{ part: number, linked: boolean }>) => {
         if (!state.doc) return;
         const { part, linked } = action.payload;
@@ -372,7 +389,7 @@ const song = createSlice({
     },
   });
 
-export const { setIsPlaying, setMidi, setAcoustic, setSong, setBassState, setDrumState, setChordState, setCurrentBeat, reorderParts, incrementByAmount, loadSong, rerollLayer, toggleLock, setPartEnergy, setLoop, setLoopPick, pickLoopSpan, extendLoop, toggleLoop, setSounds, editHarmony, setPartLinked, setPartSection, duplicatePart, deletePart } = song.actions;
+export const { setIsPlaying, setMidi, setAcoustic, setSong, setBassState, setDrumState, setChordState, setCurrentBeat, reorderParts, incrementByAmount, loadSong, rerollLayer, toggleLock, setPartEnergy, setLoop, setLoopPick, pickLoopSpan, extendLoop, toggleLoop, setSounds, editHarmony, setPartLinked, setPartSection, setPartLyrics, duplicatePart, deletePart } = song.actions;
 
 // Thunk: generate a fresh form-first song and load it into the store.
 // Dispatched on mount and by the song tabs. Pass a seed (or full options)
@@ -399,6 +416,7 @@ const UNDOABLE: Record<string, string> = {
   [song.actions.setPartEnergy.type]: 'energy change',
   [song.actions.setPartLinked.type]: 'link change',
   [song.actions.setPartSection.type]: 'part change',
+  [song.actions.setPartLyrics.type]: 'lyrics edit',
   [song.actions.duplicatePart.type]: 'duplicate',
   [song.actions.deletePart.type]: 'delete',
   [song.actions.reorderParts.type]: 'reorder',
@@ -426,7 +444,7 @@ export function songReducer(state: SongState | undefined, action: AnyAction): So
   if (undo.match(action)) {
     const past = state?.past ?? [];
     if (!state || past.length === 0) return state ?? song.reducer(undefined, action);
-    const { label, sounds, ...restore } = past[past.length - 1];
+    const { label, sounds, mergeKey: _mergeKey, ...restore } = past[past.length - 1];
     // The sound choice belongs to its song: undoing a new song brings back
     // the old song's choice, while undoing an edit keeps the current one.
     const keepSounds = label !== UNDOABLE[song.actions.setSong.type];
@@ -439,7 +457,10 @@ export function songReducer(state: SongState | undefined, action: AnyAction): So
   if (state.songStructure.length === 0) return next;
   const changed = next.songStructure !== state.songStructure || next.doc !== state.doc || next.key !== state.key;
   if (!changed) return next;
-  return { ...next, past: [...(state.past ?? []).slice(-(HISTORY_LIMIT - 1)), snapshotOf(state, label)] };
+  const mergeKey = song.actions.setPartLyrics.match(action) ? `lyrics:${action.payload.part}` : undefined;
+  const past = state.past ?? [];
+  if (mergeKey && past[past.length - 1]?.mergeKey === mergeKey) return next;
+  return { ...next, past: [...past.slice(-(HISTORY_LIMIT - 1)), { ...snapshotOf(state, label), ...(mergeKey ? { mergeKey } : {}) }] };
 }
 
 export default song;

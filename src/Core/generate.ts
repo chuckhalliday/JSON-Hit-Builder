@@ -236,8 +236,8 @@ function specFor(doc: SongDoc, label: SectionLabel): SectionSpec {
 // where it stands in the form. It joins the song's section of that kind -
 // linked to its other parts, like any repeat - or, if the song has none, a
 // new one is generated (or copied from a "this part only" copy of one). It
-// takes that section's baseline energy, keeps its own key lift, and drops
-// drum overrides made on the old grid. The section it leaves is dropped if
+// takes that section's baseline energy, keeps its own key lift and words,
+// and drops drum overrides made on the old grid. The section it leaves is dropped if
 // no other part plays it.
 export function changeInstanceSection(doc: SongDoc, index: number, label: SectionLabel): SongDoc {
   const inst = doc.form[index];
@@ -255,7 +255,7 @@ export function changeInstanceSection(doc: SongDoc, index: number, label: Sectio
     }
   }
   const form = doc.form.map((f, i): SectionInstance =>
-    (i === index ? { sectionId: id, energy: sections[id].energy, transpose: f.transpose, drumOverrides: [] } : f));
+    (i === index ? { sectionId: id, energy: sections[id].energy, transpose: f.transpose, drumOverrides: [], ...(f.lyrics ? { lyrics: f.lyrics } : {}) } : f));
   if (!form.some(f => f.sectionId === from.id)) delete sections[from.id];
   const next = { ...doc, sections, form };
   // A part set to "this part only" while it was the section's sole player
