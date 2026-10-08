@@ -302,7 +302,9 @@
     left: var(--sheet-w, 0px);
     z-index: 1;
     background-color: var(--c-bg);
-    padding: 10px;
+    // No top padding: the pinned bar/lamp strip carries it, so it sticks
+    // flush to the top with nothing scrolling past above it.
+    padding: 0 10px 10px;
     box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.1);
     overflow: auto;
     width: calc(100% - var(--sheet-w, 0px));
@@ -892,15 +894,6 @@
     color: var(--c-on-selected);
   }
 
-  // Keeps the bass staff's Tab/Staff toggle pinned to the visible left edge
-  // as .openedPart is scrolled horizontally, instead of scrolling away with
-  // the (often much wider than the viewport) staff/tab canvas underneath it.
-  .stickyToggle {
-    position: sticky;
-    left: 0;
-    z-index: 1;
-  }
-
   .grooveButton {
     border: none;
     background-color: var(--c-surface);
@@ -1175,6 +1168,107 @@
     max-width: 100%;
     box-sizing: border-box;
     background-color: var(--c-bg);
+}
+
+// Bar numbers and step lamps, pinned to the top of the open part (just
+// under the keyboard) so playback can be followed with any of the sections
+// below collapsed or scrolled away. Opaque, so what scrolls under it stays
+// hidden, and clipped so the bar lines of its last row don't poke out below
+// it - with `clip`, not `hidden`, which would make it a scroller of its own
+// that a lamp's scrollIntoView could shift out of line with the grid.
+.trackerBar {
+    position: sticky;
+    top: 0;
+    z-index: 3;
+    box-sizing: border-box;
+    padding-block: 12px 6px;
+    margin-bottom: 2px;
+    overflow: clip;
+    background-color: var(--c-bg);
+    border-bottom: 1px solid var(--c-border);
+}
+
+// A collapsible section's header in an open part: its name with a caret,
+// and any controls of its own (the bass's Staff/Tab switch). It stays at
+// the visible left edge while the part scrolls sideways - as far as its
+// parent spans, which is why the section wrappers take the full width.
+.sectionToggleRow {
+    position: sticky;
+    left: 0;
+    z-index: 1;
+    display: flex;
+    align-items: center;
+    column-gap: 8px;
+    width: max-content;
+    padding-block: 3px;
+}
+
+.sectionToggle {
+    display: inline-flex;
+    align-items: center;
+    column-gap: 6px;
+    height: 24px;
+    padding: 0 8px 0 4px;
+    border: none;
+    border-radius: 4px;
+    background: transparent;
+    color: var(--c-text-muted);
+    font: inherit;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: background-color 0.15s, color 0.15s;
+
+    &:hover {
+      color: var(--c-text);
+      background-color: var(--c-surface-2);
+    }
+}
+
+.sectionToggleCaret {
+    width: 10px;
+    font-size: 12px;
+}
+
+// The bass's Staff/Tab switch, in its section header.
+.viewToggle {
+    height: 24px;
+    padding: 0 10px;
+    border: none;
+    border-radius: 4px;
+    background-color: var(--c-accent);
+    color: var(--c-on-accent);
+    font: inherit;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background-color 0.2s, color 0.2s;
+
+    &:hover {
+      background-color: var(--c-info);
+    }
+}
+
+.viewToggleOn {
+    background-color: var(--c-selected);
+    color: var(--c-on-selected);
+}
+
+// The staff canvas, and the gap left in it under the melody and words for
+// the Bass header (laid over the canvas, spanning it so the header can
+// stick, and taking the gap's clicks so they never reach the staff).
+.canvasWrap {
+    position: relative;
+}
+
+.canvasHeaderGap {
+    position: absolute;
+    left: 0;
+    right: 0;
+    display: flex;
+    align-items: center;
 }
 
 // Set Start / Set End armed: waiting for a step or bar click.
