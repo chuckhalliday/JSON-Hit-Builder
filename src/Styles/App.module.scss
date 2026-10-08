@@ -415,6 +415,13 @@ $phone-stage-top: 192px;
       // phone widths (402px iPhones; narrower ones wrap save/more).
       .sourceGroup .segmented button { padding: 5px 8px; }
       .tabPickerButton { padding: 8px; }
+
+      // Likewise the key and the track toggles, so a fourth (Melody) still
+      // fits beside the key on one row.
+      .keyChip { padding: 4px 9px; }
+      .keyChipValue { font-size: 14px; }
+      .trackPills { gap: 4px; }
+      .trackPill { column-gap: 4px; padding: 4px 8px 4px 7px; font-size: 11px; }
     }
 }
 
