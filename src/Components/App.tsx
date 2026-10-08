@@ -844,15 +844,14 @@ function App() {
           );
         })}
         </div>
-        {past.length > 0 && (
-          <button
-            className={styles.undoButton}
-            onClick={handleUndo}
-            title={`Undo ${past[past.length - 1].label} (Ctrl/⌘+Z)`}
-          >
-            ↶ Undo
-          </button>
-        )}
+        <button
+          className={styles.undoButton}
+          onClick={handleUndo}
+          disabled={past.length === 0}
+          title={past.length > 0 ? `Undo ${past[past.length - 1].label} (Ctrl/⌘+Z)` : 'Nothing to undo yet'}
+        >
+          ↶ Undo
+        </button>
         {partMenu && song.songStructure[partMenu.index] && (
           <div ref={partMenuRef} className={styles.partMenu} style={{ left: partMenu.left, top: partMenu.top }} role="menu">
             <div className={styles.partMenuTitle}>{song.songStructure[partMenu.index].type} ({song.songStructure[partMenu.index].repeat})</div>

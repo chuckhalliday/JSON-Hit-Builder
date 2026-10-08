@@ -1639,9 +1639,10 @@
     color: var(--c-danger);
 }
 
-// Undo: far right of the top bar, shown when there's a change to undo. A
-// flex item rather than pinned over the bar, so the parts row ends at it
-// and scrolls instead of passing underneath.
+// Undo: far right of the top bar, always there (dimmed until there's a
+// change to undo) so it never appears or vanishes under the user. A flex
+// item rather than pinned over the bar, so the parts row ends at it and
+// scrolls instead of passing underneath.
 .undoButton {
     flex: 0 0 auto;
     height: 30px;
@@ -1655,9 +1656,14 @@
     cursor: pointer;
     transition: background-color 0.2s, color 0.2s;
 
-    &:hover {
+    &:hover:not(:disabled) {
       background-color: var(--c-accent);
       color: var(--c-on-accent);
+    }
+
+    &:disabled {
+      color: var(--c-text-subtle);
+      cursor: default;
     }
 }
 
