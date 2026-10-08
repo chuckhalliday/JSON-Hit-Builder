@@ -72,6 +72,9 @@ export interface SectionInstance {
   // "This part only": the instance plays its own copy of its section, so
   // edits to it don't reach the section's other instances.
   detached?: boolean;
+  // Words written for this part (Lyrics worksheet). Per part, not per
+  // section: a second verse has its own words.
+  lyrics?: string;
 }
 
 export interface FormEntry {

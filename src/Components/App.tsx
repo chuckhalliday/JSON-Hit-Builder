@@ -5,6 +5,7 @@ import Save from './Save';
 import Sounds from './Sounds';
 import SectionPanel from './SectionPanel';
 import SectionTypeMenu from './SectionTypeMenu';
+import LyricsSheet from './LyricsSheet';
 import Transport, { SoundSource, Track } from './Transport';
 import { SHORT_LABELS } from '../Core/form';
 import { downloadMidi } from '../Core/exportMidi';
@@ -64,6 +65,7 @@ function App() {
   const [userId, setUserId] = useState<string | null>(null);
   const [saveScreen, setSaveScreen] = useState(false);
   const [soundsScreen, setSoundsScreen] = useState(false);
+  const [showLyrics, setShowLyrics] = useState(false);
   const anyPartOpen = Object.values(openedParts).some(Boolean);
 
   // T1-T10 song-generation slots. Only the active tab's song lives in Redux;
@@ -652,11 +654,32 @@ function App() {
     }
   };
 
+  // The lyrics worksheet takes this much of the window's left side; the
+  // part view, piano and intro shift over by it (see --sheet-w in the styles).
+  const sheetWidth = showLyrics && authenticated ? 'min(360px, 85vw)' : '0px';
+
   return (
-    <div >
+    <div style={{ '--sheet-w': sheetWidth } as React.CSSProperties}>
       {authenticated ? (
         // Render your app components when authenticated
         <div className={styles.rowContainer}>
+        <button
+          className={showLyrics ? `${styles.lyricsButton} ${styles.lyricsButtonOn}` : styles.lyricsButton}
+          onClick={() => setShowLyrics(open => !open)}
+          aria-expanded={showLyrics}
+          title={showLyrics ? 'Close the lyrics worksheet' : 'Write lyrics for each part'}
+        >
+          <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2 3.5h12M2 6.5h12M2 9.5h8M2 12.5h6" /></svg>
+          Lyrics
+        </button>
+        {showLyrics && song.songStructure.length > 0 && (
+          <LyricsSheet
+            parts={song.songStructure}
+            openPart={currentPart}
+            onOpenPart={(index) => { if (!(openedParts[index] && currentPart === index)) showPart(index); }}
+            onClose={() => setShowLyrics(false)}
+          />
+        )}
         {showGenerate && (
           <div className={styles.generateOverlay}>
             <Generate onClose={handleCloseGenerate} showAdvanced={isPrivilegedUser}/>

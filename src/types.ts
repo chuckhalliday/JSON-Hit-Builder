@@ -101,6 +101,9 @@ export interface Part {
   guideTones?: number[];
   energy?: number;
   transpose?: number;
+  // Words written for this part in the Lyrics worksheet (lines are phrases;
+  // see Core/lyrics.ts). Absent until some are written.
+  lyrics?: string;
 }
 
 export type SongStructure = Part[];

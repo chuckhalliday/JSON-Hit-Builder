@@ -1,9 +1,11 @@
 .piano {
     position: fixed;
-    width: 90%;
+    // 90% of the window, centered - in the space right of the lyrics
+    // worksheet when it's open.
+    width: calc((100% - var(--sheet-w, 0px)) * 0.9);
     height: 100px;
     top: 86px;
-    left: 50%;
+    left: calc(var(--sheet-w, 0px) + (100% - var(--sheet-w, 0px)) / 2);
     transform: translateX(-50%);
     background-color: var(--c-piano-bg);
   }

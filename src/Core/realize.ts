@@ -125,6 +125,7 @@ export function realizeInstance(doc: SongDoc, i: number, repeat: number): Part {
     guideTones: s.guideTones.map(m => m + inst.transpose),
     energy: inst.energy,
     transpose: inst.transpose,
+    ...(inst.lyrics ? { lyrics: inst.lyrics } : {}),
   };
 }
 

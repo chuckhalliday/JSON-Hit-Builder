@@ -10,6 +10,8 @@ import { isStaffPitch, PITCH_MIN_Y } from '../SongStructure/bassPitch';
 import { spellPc, staffY } from '../Core/theory';
 import { parseKeyString } from '../Core/exportMidi';
 import { useTheme } from '../theme';
+import { partLyrics, placeLyrics } from '../Core/lyrics';
+import { stepXs } from '../SongStructure/bass';
 
 // Standard 4-string bass tuning (E1 A1 D2 G2), lowest to highest, expressed as
 // the real MIDI note number of each open string - matches the `midi` values
@@ -35,6 +37,16 @@ const NOTE_MAX_Y = 120;
 // accidental symbols at the extremes have room to render without clipping.
 const STAFF_Y_OFFSET = 45;
 const CANVAS_HEIGHT = NOTE_MAX_Y + STAFF_Y_OFFSET * 2;
+// A part with lyrics opens a band this tall under the chord names, pushing
+// the staff/tab down, and sets its syllables in it.
+const LYRIC_BAND = 34;
+const LYRIC_BASELINE = 51;
+const LYRIC_FONT = '13px "Helvetica Neue", Arial, sans-serif';
+// The rest a clicked note can turn into, offered to its right (its
+// accidentals are offered to its left): drawn this much smaller than a real
+// rest, this far right of the notehead's center - past its stem, flag and dot.
+const REST_OPTION_SCALE = 0.6;
+const REST_OPTION_REACH = 31;
 // Pitch-space y of the 5 main staff lines (A2 F2 D2 B1 G1, top to bottom),
 // of the 3 extra ledger lines above them (reachable via frets further up the
 // neck), and of the single ledger line below (the open low E string).
@@ -206,6 +218,22 @@ const BassStaff = forwardRef<PlayHandle, BassStaffProps>(function BassStaff({ re
   const theme = useTheme();
   const colors = useMemo(readCanvasColors, [theme]);
 
+  // The part's words on its step grid (its own, or a repeat's earlier ones).
+  const drumGrooveForLyrics = song.songStructure[part].drumGroove;
+  const lyricText = partLyrics(song.songStructure, part).text;
+  const lyrics = useMemo(() => placeLyrics(lyricText, drumGrooveForLyrics), [lyricText, drumGrooveForLyrics]);
+  const lyricXs = useMemo(() => stepXs(drumGrooveForLyrics), [drumGrooveForLyrics]);
+  // On the staff, the band grows to clear the part's highest stem (or, for
+  // notes high enough to take their stems down, notehead) under the words.
+  const highestReach = viewMode === 'staff'
+    ? Math.min(...bassNoteGrid.filter((n) => isStaffPitch(n.y)).map((n) => n.y - (n.y < 0 ? SPACING : SPACING * 5)))
+    : Infinity;
+  const band = lyrics.syllables.length === 0 ? 0
+    : Math.max(LYRIC_BAND, Math.ceil(LYRIC_BASELINE + 7 - (highestReach + STAFF_Y_OFFSET)));
+  // Read by the mouse handlers, which work in the staff's own coordinates.
+  const bandRef = useRef(band);
+  bandRef.current = band;
+
   const [pendingNote, setPendingNote] = React.useState<{ x: number, y: number } | null>(null);
   // The tab cell being typed into: a note (by x) on one string.
   const [tabEdit, setTabEdit] = useState<{ x: number, stringIndex: number, value: string } | null>(null);
@@ -273,13 +301,58 @@ const BassStaff = forwardRef<PlayHandle, BassStaffProps>(function BassStaff({ re
     }));
   }
 
+  // A clicked note's choices are drawn as small outlined chips in the
+  // highlight color, so they read as buttons rather than notation.
+  function drawOptionChip(ctx: CanvasRenderingContext2D, left: number, top: number, width: number, height: number) {
+    ctx.fillStyle = colors.paper;
+    ctx.fillRect(left, top, width, height);
+    ctx.strokeStyle = colors.hover;
+    ctx.lineWidth = 1;
+    ctx.strokeRect(left + 0.5, top + 0.5, width - 1, height - 1);
+  }
+
   function drawAccidentalOptions(ctx: CanvasRenderingContext2D, location: { x: number, y: number, acc: string }, spacing: number) {
     const fontSize = 20;
+    ctx.save();
     ctx.font = `${fontSize}px serif`;
-    ctx.fillStyle = colors.ink;
     getAccidentalOptionLayout(location, spacing, fontSize).forEach((opt) => {
+      const width = ctx.measureText(opt.symbol).width;
+      drawOptionChip(ctx, opt.x - 4, opt.y - fontSize + 2, width + 8, fontSize + 3);
+      ctx.fillStyle = colors.hover;
       ctx.fillText(opt.symbol, opt.x, opt.y);
     });
+    ctx.restore();
+  }
+
+  // Where the rest choice sits: level with the note, to its right (kept
+  // inside the canvas for notes at the very top or bottom).
+  function getRestOptionLayout(location: { x: number, y: number }) {
+    const py = location.y + STAFF_Y_OFFSET;
+    return { x: location.x + REST_OPTION_REACH, y: Math.min(CANVAS_HEIGHT - 18, Math.max(18, py)) };
+  }
+
+  const hitsRestOption = (location: { x: number, y: number }) => {
+    const opt = getRestOptionLayout(location);
+    return Math.abs(MOUSE.x - opt.x) <= 12 && Math.abs(MOUSE.y - opt.y) <= 18;
+  };
+
+  // Vertical middle of each rest glyph drawRest draws, below its REST_Y.
+  const restMiddle = (groove: number) => (groove === 2 ? 71.5 : groove >= 1 ? 74.5 : groove === 0.25 ? 84 : 76.5);
+
+  function drawRestOption(ctx: CanvasRenderingContext2D, location: { x: number, y: number }) {
+    const groove = bassGroove[bassGrid.indexOf(location.x, 1) - 1];
+    if (groove === undefined) return;
+    const opt = getRestOptionLayout(location);
+    ctx.save();
+    drawOptionChip(ctx, opt.x - 12, opt.y - 18, 24, 36);
+    ctx.fillStyle = colors.hover;
+    ctx.strokeStyle = colors.hover;
+    ctx.translate(opt.x, opt.y);
+    ctx.scale(REST_OPTION_SCALE, REST_OPTION_SCALE);
+    ctx.lineWidth = 1.5;
+    ctx.translate(0, -(STAFF_Y_OFFSET + restMiddle(groove)));
+    drawRest(ctx, 0, groove);
+    ctx.restore();
   }
 
   function drawClef(ctx: CanvasRenderingContext2D, location: { x: number, y: number, acc: string }) {
@@ -323,6 +396,95 @@ const BassStaff = forwardRef<PlayHandle, BassStaffProps>(function BassStaff({ re
       ctx.stroke();
     });
     ctx.restore();
+  }
+
+  // A rest of `groove` beats at column x. Rests aren't pitched, so they sit
+  // on the middle of the staff whatever their note's y - these pixel values
+  // are tuned to the staff's center. Drawn in the current fill and stroke.
+  function drawRest(ctx: CanvasRenderingContext2D, x: number, groove: number) {
+    const REST_Y = STAFF_Y_OFFSET;
+    const spacing = SPACING;
+    //half rest
+    if (groove <= 2) {
+      if (groove === 2) {
+        ctx.beginPath();
+        ctx.moveTo(x + spacing,
+          REST_Y + 75);
+        ctx.lineTo(x + spacing,
+          REST_Y + 68);
+        ctx.lineTo(x - spacing,
+          REST_Y + 68);
+        ctx.lineTo(x - spacing,
+          REST_Y + 75);
+        ctx.stroke()
+        ctx.fill();
+        //draw quarter rest
+      } else if (groove >= 1) {
+        ctx.beginPath();
+        ctx.moveTo(x - 5, REST_Y + 51);
+        ctx.lineTo(x + 5, REST_Y + 66);
+        ctx.lineTo(x + 1, REST_Y + 75);
+        ctx.lineTo(x + 7, REST_Y + 87);
+        ctx.quadraticCurveTo(x - 6, REST_Y + 83, x + 4, REST_Y + 98)
+        ctx.quadraticCurveTo(x - 15, REST_Y + 79, x + 4, REST_Y + 83)
+        ctx.lineTo(x - 5, REST_Y + 69)
+        ctx.quadraticCurveTo(x + 5, REST_Y + 68, x - 5, REST_Y + 52)
+        ctx.fill();
+        ctx.stroke();
+        //dotted quarter
+        if (groove === 1.5) {
+          ctx.beginPath();
+          ctx.arc(x + 12, REST_Y + 70, 2.8, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      } else if (groove < 1) {
+        //eighth
+        ctx.beginPath();
+        ctx.moveTo(x - 1, REST_Y + 88);
+        ctx.lineTo(x + 8, REST_Y + 65);
+        ctx.stroke();
+
+        ctx.beginPath();
+        ctx.arc(x - 6, REST_Y + 67, 3.5, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.beginPath();
+        ctx.moveTo(x - 8, REST_Y + 69);
+        ctx.quadraticCurveTo(x - 5, REST_Y + 72, x + 8, REST_Y + 65);
+        ctx.stroke();
+        //dotted eigth
+        if (groove === 0.75) {
+          ctx.beginPath();
+          ctx.arc(x + 14, REST_Y + 67, 2.8, 0, Math.PI * 2);
+          ctx.fill();
+        }
+        //sixteenth rest
+        if(groove === 0.25) {
+          ctx.beginPath();
+          ctx.moveTo(x - 6, REST_Y + 103);
+          ctx.lineTo(x + 8, REST_Y + 65);
+          ctx.stroke();
+
+          ctx.beginPath();
+          ctx.arc(x - 6, REST_Y + 67, 3.5, 0, Math.PI * 2);
+          ctx.fill();
+
+          ctx.beginPath();
+          ctx.moveTo(x - 8, REST_Y + 69);
+          ctx.quadraticCurveTo(x - 5, REST_Y + 72, x + 8, REST_Y + 65);
+          ctx.stroke();
+
+          ctx.beginPath();
+          ctx.arc(x - 9, REST_Y + 82, 3.5, 0, Math.PI * 2);
+          ctx.fill();
+
+          ctx.beginPath();
+          ctx.moveTo(x - 10, REST_Y + 83);
+          ctx.quadraticCurveTo(x - 8, REST_Y + 87, x + 2, REST_Y + 81);
+          ctx.stroke();
+        }
+      }
+    }
   }
 
   function drawNote(ctx: CanvasRenderingContext2D, location: { x: number, y: number, acc: string }) {
@@ -428,95 +590,12 @@ const BassStaff = forwardRef<PlayHandle, BassStaffProps>(function BassStaff({ re
         }
       //draw rests
       } else {
-        // Rests aren't pitched, so they're always drawn centered on the
-        // staff regardless of location - these pixel values are tuned
-        // relative to the (now offset) staff center, not location.y.
-        const REST_Y = STAFF_Y_OFFSET;
-        //half rest
-        if (groove <= 2) {
-          if (groove === 2) {
-            ctx.beginPath();
-            ctx.moveTo(location.x + spacing,
-              REST_Y + 75);
-            ctx.lineTo(location.x + spacing,
-              REST_Y + 68);
-            ctx.lineTo(location.x - spacing,
-              REST_Y + 68);
-            ctx.lineTo(location.x - spacing,
-              REST_Y + 75);
-            ctx.stroke()
-            ctx.fill();
-            //draw quarter rest
-          } else if (groove >= 1) {
-            ctx.beginPath();
-            ctx.moveTo(location.x - 5, REST_Y + 51);
-            ctx.lineTo(location.x + 5, REST_Y + 66);
-            ctx.lineTo(location.x + 1, REST_Y + 75);
-            ctx.lineTo(location.x + 7, REST_Y + 87);
-            ctx.quadraticCurveTo(location.x - 6, REST_Y + 83, location.x + 4, REST_Y + 98)
-            ctx.quadraticCurveTo(location.x - 15, REST_Y + 79, location.x + 4, REST_Y + 83)
-            ctx.lineTo(location.x - 5, REST_Y + 69)
-            ctx.quadraticCurveTo(location.x + 5, REST_Y + 68, location.x - 5, REST_Y + 52)
-            ctx.fillStyle = colors.ink;
-            ctx.fill();
-            ctx.stroke();
-            //dotted quarter
-            if (groove === 1.5) {
-              ctx.beginPath();
-              ctx.arc(location.x + 12, REST_Y + 70, 2.8, 0, Math.PI * 2);
-              ctx.fill();
-            }
-          } else if (groove < 1) {
-            //eighth
-            ctx.beginPath();
-            ctx.moveTo(location.x - 1, REST_Y + 88);
-            ctx.lineTo(location.x + 8, REST_Y + 65);
-            ctx.stroke();
-
-            ctx.beginPath();
-            ctx.arc(location.x - 6, REST_Y + 67, 3.5, 0, Math.PI * 2);
-            ctx.fill();
-
-            ctx.beginPath();
-            ctx.moveTo(location.x - 8, REST_Y + 69);
-            ctx.quadraticCurveTo(location.x - 5, REST_Y + 72, location.x + 8, REST_Y + 65);
-            ctx.stroke();
-            //dotted eigth
-            if (groove === 0.75) {
-              ctx.beginPath();
-              ctx.arc(location.x + 14, REST_Y + 67, 2.8, 0, Math.PI * 2);
-              ctx.fill();
-            }
-            //sixteenth rest
-            if(groove === 0.25) {
-              ctx.beginPath();
-              ctx.moveTo(location.x - 6, REST_Y + 103);
-              ctx.lineTo(location.x + 8, REST_Y + 65);
-              ctx.stroke();
-
-              ctx.beginPath();
-              ctx.arc(location.x - 6, REST_Y + 67, 3.5, 0, Math.PI * 2);
-              ctx.fill();
-
-              ctx.beginPath();
-              ctx.moveTo(location.x - 8, REST_Y + 69);
-              ctx.quadraticCurveTo(location.x - 5, REST_Y + 72, location.x + 8, REST_Y + 65);
-              ctx.stroke();
-
-              ctx.beginPath();
-              ctx.arc(location.x - 9, REST_Y + 82, 3.5, 0, Math.PI * 2);
-              ctx.fill();
-
-              ctx.beginPath();
-              ctx.moveTo(location.x - 10, REST_Y + 83);
-              ctx.quadraticCurveTo(location.x - 8, REST_Y + 87, location.x + 2, REST_Y + 81);
-              ctx.stroke();
-            }
-          }
-        }
+        drawRest(ctx, location.x, groove);
       }
       ctx.stroke();
-      ctx.restore();
+      // Undo the notehead's transform. Rests set none, and an unmatched
+      // restore would pop the lyric band's offset off the rest of the staff.
+      if (isStaffPitch(location.y)) ctx.restore();
     }
   }
 
@@ -602,18 +681,47 @@ const BassStaff = forwardRef<PlayHandle, BassStaffProps>(function BassStaff({ re
     }
   }
 
+  // Syllables centered over the steps they land on, squeezed to fit between
+  // their neighbours, with a hyphen where a word carries on.
+  function drawLyrics(ctx: CanvasRenderingContext2D) {
+    const syllables = lyrics.syllables;
+    if (syllables.length === 0) return;
+    ctx.save();
+    ctx.fillStyle = colors.ink;
+    ctx.font = LYRIC_FONT;
+    ctx.textAlign = 'center';
+    const xs = syllables.map((syl) => lyricXs[syl.step]);
+    const widths = syllables.map((syl, k) => {
+      const room = Math.min(k > 0 ? xs[k] - xs[k - 1] : Infinity, k < xs.length - 1 ? xs[k + 1] - xs[k] : Infinity) - 6;
+      return Math.min(ctx.measureText(syl.text).width, Number.isFinite(room) ? room : Infinity);
+    });
+    syllables.forEach((syl, k) => {
+      ctx.fillText(syl.text, xs[k], LYRIC_BASELINE, widths[k]);
+      if (syl.hyphen && k < syllables.length - 1) {
+        const from = xs[k] + widths[k] / 2;
+        const to = xs[k + 1] - widths[k + 1] / 2;
+        if (to - from > 8) ctx.fillText('-', (from + to) / 2, LYRIC_BASELINE);
+      }
+    });
+    ctx.restore();
+  }
+
   function drawScene() {
     const CANVAS = canvasRef.current;
     if (CANVAS) {
       // Resizing reallocates the canvas, so only do it when the size changes.
       if (CANVAS.width !== renderWidth) CANVAS.width = renderWidth;
-      if (CANVAS.height !== CANVAS_HEIGHT) CANVAS.height = CANVAS_HEIGHT;
+      if (CANVAS.height !== CANVAS_HEIGHT + band) CANVAS.height = CANVAS_HEIGHT + band;
       const ctx = CANVAS.getContext('2d');
       const spacing = SPACING;
       if (ctx) {
         ctx.clearRect(0, 0, CANVAS.width, CANVAS.height);
         ctx.strokeStyle = colors.ink;
         ctx.lineWidth = 1;
+        // The staff/tab sits under the lyric band (when there is one); the
+        // chord names stay at the top.
+        ctx.save();
+        ctx.translate(0, band);
 
         if (viewMode === 'tab') {
           drawTabLines(ctx);
@@ -661,20 +769,27 @@ const BassStaff = forwardRef<PlayHandle, BassStaffProps>(function BassStaff({ re
             const note = bassNoteGrid.find((n) => n.x === pendingNote.x && n.y === pendingNote.y);
             if (note) {
               drawAccidentalOptions(ctx, note, spacing);
+              drawRestOption(ctx, note);
             }
           }
 
-          const location = {
-            x: mouseX(bassGrid),
-            y: index * spacing,
-            acc: 'none'
-          };
-          drawNote(ctx, location);
+          // Where a click would put a note - unless a note's choices are up,
+          // when a click picks one or dismisses them instead.
+          if (!pendingNote) {
+            const location = {
+              x: mouseX(bassGrid),
+              y: index * spacing,
+              acc: 'none'
+            };
+            drawNote(ctx, location);
+          }
         }
+        ctx.restore();
 
         chordGrid.forEach((chord, i) => {
           displayChord(ctx, chord, bassGrid, chords[i])
         })
+        drawLyrics(ctx);
       }
     }
   }
@@ -690,7 +805,7 @@ const BassStaff = forwardRef<PlayHandle, BassStaffProps>(function BassStaff({ re
         const scrollLeft = document.documentElement.scrollLeft;
         const scrollTop = document.documentElement.scrollTop;
         MOUSE.x = event.clientX - rect.left - scrollLeft;
-        MOUSE.y = event.clientY - rect.top - scrollTop;
+        MOUSE.y = event.clientY - rect.top - scrollTop - bandRef.current;
         requestDraw();
       }
     }
@@ -713,8 +828,8 @@ const BassStaff = forwardRef<PlayHandle, BassStaffProps>(function BassStaff({ re
         const spacing = SPACING;
         const fontSize = 20;
 
-        // Accidental options are currently on display for a note - this click
-        // either picks one of the two offered symbols or dismisses them.
+        // A note's choices are on display - this click picks one of its two
+        // other accidentals or its matching rest, or dismisses them.
         if (pendingNote) {
           const note = bassNoteGrid.find((n) => n.x === pendingNote.x && n.y === pendingNote.y);
           if (note) {
@@ -725,6 +840,13 @@ const BassStaff = forwardRef<PlayHandle, BassStaffProps>(function BassStaff({ re
             if (hit) {
               const updatedBassNotes = bassNoteGrid.map((n) =>
                 n.x === note.x && n.y === note.y ? { ...n, acc: hit.acc } : n
+              );
+              dispatch(setBassState({ index: part, bassNoteLocations: updatedBassNotes }));
+            } else if (hitsRestOption(note)) {
+              // The rest keeps the note's length, so it's the matching rest.
+              // Clicking its column on the staff puts a note back.
+              const updatedBassNotes = bassNoteGrid.map((n) =>
+                n.x === note.x && n.y === note.y ? { ...n, y: -20, acc: 'none', string: undefined } : n
               );
               dispatch(setBassState({ index: part, bassNoteLocations: updatedBassNotes }));
             }
@@ -885,7 +1007,7 @@ const BassStaff = forwardRef<PlayHandle, BassStaffProps>(function BassStaff({ re
   // Draw when what the staff shows changes, and once the clef image loads.
   useEffect(() => {
     requestDraw();
-  }, [requestDraw, renderWidth, bassNoteGrid, bassGroove, chords, chordGrid, bassGrid, measureLines, pendingNote, viewMode, tabEdit, colors]);
+  }, [requestDraw, renderWidth, bassNoteGrid, bassGroove, chords, chordGrid, bassGrid, measureLines, pendingNote, viewMode, tabEdit, colors, lyrics, lyricXs]);
 
   useEffect(() => {
     if (!CLEF_IMAGE.complete) CLEF_IMAGE.addEventListener('load', requestDraw);
@@ -919,7 +1041,7 @@ const BassStaff = forwardRef<PlayHandle, BassStaffProps>(function BassStaff({ re
           className={appStyles.tabInput}
           style={{
             left: tabEdit.x - 15,
-            top: (canvasRef.current?.offsetTop ?? 0) + TAB_LINE_Y[rowOfString(tabEdit.stringIndex)] - 12,
+            top: (canvasRef.current?.offsetTop ?? 0) + band + TAB_LINE_Y[rowOfString(tabEdit.stringIndex)] - 12,
           }}
           value={tabEdit.value}
           autoFocus
