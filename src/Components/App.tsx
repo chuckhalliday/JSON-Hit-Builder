@@ -12,7 +12,8 @@ import { downloadMidi } from '../Core/exportMidi';
 import { PaletteInput, SoundPick } from '../Core/timbre';
 import { SectionLabel } from '../Core/doc';
 import { melodyFor } from '../Core/melody';
-import DrumMachine from "./DrumMachine";
+import DrumMachine, { StepTracker } from "./DrumMachine";
+import SectionToggle from './SectionToggle';
 import BassStaff from "./BassStaff";
 import Piano, { PlayHandle } from './Piano';
 import { useSelector, useDispatch } from "react-redux"
@@ -32,6 +33,20 @@ import { supabase } from '../supabaseClient'
 const DEV_USER_ID = '073e2300-29ac-429d-af14-f1b34b44802a';
 const TEST_GOOGLE_USER_ID = '92fcd2d4-cc80-4d8e-8246-7f645800492c';
 const SONG_TAB_COUNT = 10;
+
+// The collapsible sections of an open part, between the bar/lamp strip and
+// the transport.
+type PartSection = 'section' | 'words' | 'bass' | 'drums';
+const COLLAPSED_KEY = 'hitBuilder.collapsedSections';
+const NONE_COLLAPSED: Record<PartSection, boolean> = { section: false, words: false, bass: false, drums: false };
+function loadCollapsed(): Record<PartSection, boolean> {
+  try {
+    const saved = JSON.parse(localStorage.getItem(COLLAPSED_KEY) ?? '{}');
+    return { ...NONE_COLLAPSED, ...(saved && typeof saved === 'object' ? saved : {}) };
+  } catch {
+    return NONE_COLLAPSED;
+  }
+}
 
 function listInputsAndOutputs(midiAccess: WebMidi.MIDIAccess) {
   console.log("MIDI ready!");
@@ -67,6 +82,15 @@ function App() {
   const [saveScreen, setSaveScreen] = useState(false);
   const [soundsScreen, setSoundsScreen] = useState(false);
   const [showLyrics, setShowLyrics] = useState(false);
+  // Which sections of the open part are collapsed - kept per device, so a
+  // phone can stay folded down to what fits.
+  const [collapsed, setCollapsed] = useState<Record<PartSection, boolean>>(loadCollapsed);
+  useEffect(() => {
+    try {
+      localStorage.setItem(COLLAPSED_KEY, JSON.stringify(collapsed));
+    } catch { /* storage unavailable: the choice lasts this visit */ }
+  }, [collapsed]);
+  const toggleSection = (section: PartSection) => setCollapsed(prev => ({ ...prev, [section]: !prev[section] }));
   const anyPartOpen = Object.values(openedParts).some(Boolean);
 
   // T1-T10 song-generation slots. Only the active tab's song lives in Redux;
@@ -414,7 +438,7 @@ function App() {
     return () => observer.disconnect();
   }, [authenticated]);
 
-  // Stable identity so DrumMachine's width-measuring effect (which lists this in
+  // Stable identity so StepTracker's width-measuring effect (which lists this in
   // its deps) doesn't re-run on every App render. The prev-guard also stops a
   // feedback loop where measuring width triggers a re-render that re-measures.
   const handleRenderWidthChange = useCallback((width: number) => {
@@ -759,6 +783,16 @@ function App() {
               </button>
               {isOpen && currentPart === index && (
                 <div className={styles.openedPart}>
+                  {/* Bar numbers and lamps stay pinned under the keyboard,
+                      whichever sections below are collapsed or scrolled to. */}
+                  <div className={styles.trackerBar} style={{ width: renderWidth ? `max(${renderWidth}px, 100%)` : '100%' }}>
+                    <StepTracker
+                      onRenderWidthChange={handleRenderWidthChange}
+                      part={index}
+                      lampsRef={lampsRef}
+                      manualSeekEpochRef={manualSeekEpochRef}
+                    />
+                  </div>
                   {/* The title and section controls stay in view while the
                       staff and grid scroll sideways (by hand or following
                       playback). Sticky only travels within its parent, so
@@ -820,7 +854,12 @@ function App() {
                           );
                         })()}
                       </div>
-                      <SectionPanel part={index} />
+                      {song.doc && songProps.sectionId && song.doc.sections[songProps.sectionId] && (
+                        <>
+                          <SectionToggle label="Section controls" open={!collapsed.section} onToggle={() => toggleSection('section')} />
+                          {!collapsed.section && <SectionPanel part={index} />}
+                        </>
+                      )}
                     </div>
                   </div>
                   <BassStaff
@@ -830,14 +869,23 @@ function App() {
                     lampsRef={lampsRef}
                     viewMode={bassViewMode}
                     onViewModeChange={setBassViewMode}
+                    showWords={!collapsed.words}
+                    showBass={!collapsed.bass}
+                    onToggleWords={() => toggleSection('words')}
+                    onToggleBass={() => toggleSection('bass')}
                   />
-                  <DrumMachine
-                    ref={drumMachineRef}
-                    onRenderWidthChange={handleRenderWidthChange}
-                    part={index}
-                    lampsRef={lampsRef}
-                    manualSeekEpochRef={manualSeekEpochRef}
-                  />
+                  <div style={{ width: renderWidth ? `max(${renderWidth}px, 100%)` : '100%' }}>
+                    <SectionToggle label="Drums" open={!collapsed.drums} onToggle={() => toggleSection('drums')} />
+                    {/* Hidden rather than unmounted: its checkboxes mirror the
+                        store and its ref plays the part's drums. */}
+                    <div hidden={collapsed.drums}>
+                      <DrumMachine
+                        ref={drumMachineRef}
+                        part={index}
+                        lampsRef={lampsRef}
+                      />
+                    </div>
+                  </div>
                 </div>
               )}
             </div>

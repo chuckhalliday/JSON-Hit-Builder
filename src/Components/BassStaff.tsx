@@ -3,6 +3,7 @@ import { useSelector, useDispatch } from 'react-redux';
 import playBass from '../Playback/playBass';
 import { editBassRhythm, setBassState, setCurrentBeat, setLyricTiming, setMelodyNote, setMelodySplits, SongState } from '../reducers';
 import { PlayHandle } from './Piano';
+import SectionToggle from './SectionToggle';
 import { useLampStep } from '../Playback/useLampStep';
 import appStyles from '../Styles/App.module.scss';
 import { NoteLocation } from '../types';
@@ -75,6 +76,11 @@ const MELODY_HIGH_STEP = 41;
 const melodyY = (step: number) => MELODY_TOP + (MELODY_TOP_STEP - step) * SPACING;
 const MELODY_ZONE_TOP = melodyY(MELODY_HIGH_STEP) - SPACING;
 const MELODY_ZONE_BOTTOM = melodyY(MELODY_LOW_STEP) + SPACING;
+// With the melody and words shown over the bass, the Bass section's header
+// sits in a gap this tall between them, which moves the staff/tab down.
+const BASS_HEADER = 32;
+// A part's words while the Melody & lyrics section is collapsed.
+const NO_LYRICS = placeLyrics('', []);
 
 // A treble clef drawn in strokes (no font has one everywhere): x is the
 // curl's center, g the y of the G line it curls around, u the staff space.
@@ -227,6 +233,12 @@ interface BassStaffProps {
   onPlayingChange?: (isPlaying: boolean) => void;
   viewMode: 'staff' | 'tab';
   onViewModeChange: (viewMode: 'staff' | 'tab') => void;
+  // The canvas's two collapsible sections: the melody and words on top,
+  // and the bass staff/tab under them (the chord names show with either).
+  showWords: boolean;
+  showBass: boolean;
+  onToggleWords: () => void;
+  onToggleBass: () => void;
 }
 
 
@@ -267,7 +279,7 @@ function readCanvasColors() {
   };
 }
 
-const BassStaff = forwardRef<PlayHandle, BassStaffProps>(function BassStaff({ renderWidth, part, lampsRef, onPlayingChange, viewMode, onViewModeChange }, ref) {
+const BassStaff = forwardRef<PlayHandle, BassStaffProps>(function BassStaff({ renderWidth, part, lampsRef, onPlayingChange, viewMode, onViewModeChange, showWords, showBass, onToggleWords, onToggleBass }, ref) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const dispatch = useDispatch()
 
@@ -300,7 +312,7 @@ const BassStaff = forwardRef<PlayHandle, BassStaffProps>(function BassStaff({ re
   // Dragging a syllable moves it in the timing of whoever owns the words:
   // this part, or the earlier part a repeat sings.
   const lyricOwner = words.from ?? part;
-  const lyrics = useMemo(() => placeLyrics(lyricText, drumGrooveForLyrics, lyricTiming), [lyricText, drumGrooveForLyrics, lyricTiming]);
+  const placedLyrics = useMemo(() => placeLyrics(lyricText, drumGrooveForLyrics, lyricTiming), [lyricText, drumGrooveForLyrics, lyricTiming]);
   const lyricXs = useMemo(() => stepXs(drumGrooveForLyrics), [drumGrooveForLyrics]);
   const lyricOnsets = useMemo(() => {
     const onsets: number[] = [];
@@ -313,10 +325,23 @@ const BassStaff = forwardRef<PlayHandle, BassStaffProps>(function BassStaff({ re
   const lyricBoxes = useRef<Array<{ left: number, right: number }>>([]);
   // The part's melody (its own, or the tune a repeat sings), if the song has
   // one; it opens the treble staff over everything else.
-  const melody = useMemo(() => melodyFor(song.doc, song.songStructure, part), [song.doc, song.songStructure, part]);
+  const partMelody = useMemo(() => melodyFor(song.doc, song.songStructure, part), [song.doc, song.songStructure, part]);
+  // Collapsing the Melody & lyrics section lays the canvas out as if the
+  // part had neither: the staff moves up under the chord names.
+  const hasMelody = (partMelody?.notes.length ?? 0) > 0;
+  const hasLyrics = placedLyrics.syllables.length > 0;
+  const wordsShown = showWords && (hasMelody || hasLyrics);
+  const lyrics = wordsShown ? placedLyrics : NO_LYRICS;
+  const melody = wordsShown ? partMelody : null;
   const melodyNotes = melody?.notes ?? [];
   const lift = melodyNotes.length > 0 ? MELODY_BLOCK : 0;
   const lyricY = LYRIC_BASELINE + lift;
+  // Where the melody and words end (canvas y): the Bass header's gap when
+  // both sections are open, or the canvas's foot when the bass is collapsed.
+  const wordsBottom = lyrics.syllables.length > 0 ? lift + LYRIC_ZONE_BOTTOM + 3
+    : melodyNotes.length > 0 ? MELODY_STRIP_BOTTOM + 2
+    : 0;
+  const bassHeaderInGap = wordsShown && showBass;
   const melodyKey = song.doc?.form[part] ? transposedKey(song.doc.key, song.doc.form[part].transpose) : null;
   // The melody note whose accidentals are on offer.
   const [melodyChoice, setMelodyChoice] = useState<number | null>(null);
@@ -329,15 +354,18 @@ const BassStaff = forwardRef<PlayHandle, BassStaffProps>(function BassStaff({ re
   // On the staff it's deep enough to start every pitch row - the highest
   // included - and every stem a clear gap under the words.
   const band = lyrics.syllables.length === 0 ? 0
-    : viewMode !== 'staff' ? LYRIC_BAND
+    : viewMode !== 'staff' || !showBass ? LYRIC_BAND
     : Math.max(
       Math.ceil(NOTE_ZONE_TOP + SPACING / 2 - (NOTE_MIN_Y + STAFF_Y_OFFSET)),
       Math.ceil(NOTE_ZONE_TOP - (highestReach + STAFF_Y_OFFSET)),
     );
   // Read by the mouse handlers, which work in the staff's own coordinates.
-  // How far the staff/tab sits below the canvas top: the melody's block and
-  // the lyric band.
-  const offset = band + lift;
+  // How far the staff/tab sits below the canvas top: the melody's block, the
+  // lyric band, and the Bass header's gap (which clears the melody's rhythm
+  // strip too when there are no words under it).
+  const headerGap = bassHeaderInGap ? BASS_HEADER + (lyrics.syllables.length > 0 ? 0 : wordsBottom - lift) : 0;
+  const offset = band + lift + headerGap;
+  const canvasHeight = showBass ? CANVAS_HEIGHT + offset : wordsBottom + 4;
   const bandRef = useRef(offset);
   bandRef.current = offset;
 
@@ -350,7 +378,7 @@ const BassStaff = forwardRef<PlayHandle, BassStaffProps>(function BassStaff({ re
     setPendingNote(null);
     setTabEdit(null);
     setMelodyChoice(null);
-  }, [part, viewMode]);
+  }, [part, viewMode, showWords, showBass]);
 
   // The rhythm strip (sculpted songs): while a note is selected, the part's
   // rhythm shows under the staff, where a note splits in half on a click
@@ -1167,7 +1195,7 @@ const BassStaff = forwardRef<PlayHandle, BassStaffProps>(function BassStaff({ re
     if (CANVAS) {
       // Resizing reallocates the canvas, so only do it when the size changes.
       if (CANVAS.width !== renderWidth) CANVAS.width = renderWidth;
-      if (CANVAS.height !== CANVAS_HEIGHT + offset) CANVAS.height = CANVAS_HEIGHT + offset;
+      if (CANVAS.height !== canvasHeight) CANVAS.height = canvasHeight;
       const ctx = CANVAS.getContext('2d');
       const spacing = SPACING;
       if (ctx) {
@@ -1179,7 +1207,9 @@ const BassStaff = forwardRef<PlayHandle, BassStaffProps>(function BassStaff({ re
         ctx.save();
         ctx.translate(0, offset);
 
-        if (viewMode === 'tab') {
+        if (!showBass) {
+          // Collapsed: just the chord names and the melody and words.
+        } else if (viewMode === 'tab') {
           drawTabLines(ctx);
           for (let i = 0; i < measureLines.length; i++){
             ctx.beginPath();
@@ -1375,6 +1405,11 @@ const BassStaff = forwardRef<PlayHandle, BassStaffProps>(function BassStaff({ re
         startLyricDrag(syllable);
         return;
       }
+      // The bass is collapsed: nothing below the words takes clicks.
+      if (!showBass) {
+        setPendingNote(null);
+        return;
+      }
       // Tab view: click a string at a note to type its fret there. The
       // default mousedown action would move focus off the editor that just
       // opened (the canvas can't take focus), closing it again.
@@ -1480,7 +1515,7 @@ const BassStaff = forwardRef<PlayHandle, BassStaffProps>(function BassStaff({ re
     };
     // Re-bound only when something the handlers read changes - not on every
     // playback step.
-  }, [MOUSE, viewMode, pendingNote, bassNoteGrid, bassGrid, part, dispatch, requestDraw, tabEdit, rhythmEditable, rhythmTicks, lyrics, lyricXs, lyricOnsets, lyricOwner, melody, melodyNotes, melodyChoice, melodyKey, lift]);
+  }, [MOUSE, viewMode, pendingNote, bassNoteGrid, bassGrid, part, dispatch, requestDraw, tabEdit, rhythmEditable, rhythmTicks, lyrics, lyricXs, lyricOnsets, lyricOwner, melody, melodyNotes, melodyChoice, melodyKey, lift, showBass]);
 
   // ---- Tab fret editor -----------------------------------------------------
 
@@ -1589,7 +1624,7 @@ const BassStaff = forwardRef<PlayHandle, BassStaffProps>(function BassStaff({ re
   // Draw when what the staff shows changes, and once the clef image loads.
   useEffect(() => {
     requestDraw();
-  }, [requestDraw, renderWidth, bassNoteGrid, bassGroove, chords, chordGrid, bassGrid, measureLines, pendingNote, viewMode, tabEdit, colors, lyrics, lyricXs, melody, melodyChoice]);
+  }, [requestDraw, renderWidth, bassNoteGrid, bassGroove, chords, chordGrid, bassGrid, measureLines, pendingNote, viewMode, tabEdit, colors, lyrics, lyricXs, melody, melodyChoice, showBass, canvasHeight]);
 
   useEffect(() => {
     if (!CLEF_IMAGE.complete) CLEF_IMAGE.addEventListener('load', requestDraw);
@@ -1602,47 +1637,74 @@ const BassStaff = forwardRef<PlayHandle, BassStaffProps>(function BassStaff({ re
     };
   }, [requestDraw]);
 
+  // The Bass section's header, with the Staff/Tab switch while it's open:
+  // above the canvas, in a gap under the words, or (collapsed) below them.
+  const bassHeader = (
+    <SectionToggle label="Bass" open={showBass} onToggle={onToggleBass}>
+      {showBass && (
+        <button
+          type="button"
+          onClick={() => onViewModeChange(viewMode === 'staff' ? 'tab' : 'staff')}
+          className={viewMode === 'tab' ? `${appStyles.viewToggle} ${appStyles.viewToggleOn}` : appStyles.viewToggle}
+          title={viewMode === 'staff' ? 'Showing the staff: switch to tab' : 'Showing tab: switch to the staff'}
+        >
+          {viewMode === 'staff' ? 'Staff' : 'Tab'}
+        </button>
+      )}
+    </SectionToggle>
+  );
+
   return (
-    // Sticky positioning can only carry the button as far as this container's
-    // own box extends. Left unset, the div shrinks to the visible viewport
-    // width (the canvas merely overflows it visually), so the button would
+    // Sticky positioning can only carry the section headers as far as this
+    // container's own box extends. Left unset, the div shrinks to the visible
+    // viewport width (the canvas merely overflows it visually), so they would
     // stop sticking a screen-width into the scroll. Matching the canvas's
     // actual rendered width here gives it room to stick the whole way.
     <div style={{ width: renderWidth || '100%', position: 'relative' }}>
-      <button
-        type="button"
-        onClick={() => onViewModeChange(viewMode === 'staff' ? 'tab' : 'staff')}
-        className={viewMode === 'tab' ? `${appStyles.button} ${appStyles.openButton} ${appStyles.stickyToggle}` : `${appStyles.button} ${appStyles.stickyToggle}`}
-      >
-        {viewMode === 'staff' ? 'Staff' : 'Tab'}
-      </button>
-      <canvas ref={canvasRef} id="myCanvas" />
-      {viewMode === 'tab' && tabEdit && (
-        <input
-          key={`${tabEdit.x}:${tabEdit.stringIndex}`}
-          className={appStyles.tabInput}
-          style={{
-            left: tabEdit.x - 15,
-            top: (canvasRef.current?.offsetTop ?? 0) + offset + TAB_LINE_Y[rowOfString(tabEdit.stringIndex)] - 12,
-          }}
-          value={tabEdit.value}
-          autoFocus
-          inputMode="numeric"
-          maxLength={2}
-          aria-label="Fret number"
-          title="Fret 0-20 · Enter to set · Tab for the next note · ↑↓ to step · x or empty to make a rest · Esc to cancel"
-          onFocus={(e) => e.currentTarget.select()}
-          onChange={(e) => setTabEdit({ ...tabEdit, value: e.target.value.replace(/[^0-9xX-]/g, '') })}
-          onKeyDown={handleTabKey}
-          onBlur={() => {
-            if (!skipBlurCommit.current) commitTabEdit(tabEdit);
-            skipBlurCommit.current = false;
-            // Clicking another cell opens its editor before this one blurs;
-            // close only if this edit is still the open one.
-            setTabEdit((open) => (open === tabEdit ? null : open));
-          }}
+      {(hasMelody || hasLyrics) && (
+        <SectionToggle
+          label={hasMelody && hasLyrics ? 'Melody & lyrics' : hasMelody ? 'Melody' : 'Lyrics'}
+          open={showWords}
+          onToggle={onToggleWords}
         />
       )}
+      {!wordsShown && bassHeader}
+      {/* Kept mounted while hidden: the canvas holds the drawing state. */}
+      <div className={appStyles.canvasWrap} hidden={!showBass && !wordsShown}>
+        <canvas ref={canvasRef} id="myCanvas" />
+        {bassHeaderInGap && (
+          <div className={appStyles.canvasHeaderGap} style={{ top: wordsBottom, height: BASS_HEADER }}>
+            {bassHeader}
+          </div>
+        )}
+        {viewMode === 'tab' && tabEdit && (
+          <input
+            key={`${tabEdit.x}:${tabEdit.stringIndex}`}
+            className={appStyles.tabInput}
+            style={{
+              left: tabEdit.x - 15,
+              top: (canvasRef.current?.offsetTop ?? 0) + offset + TAB_LINE_Y[rowOfString(tabEdit.stringIndex)] - 12,
+            }}
+            value={tabEdit.value}
+            autoFocus
+            inputMode="numeric"
+            maxLength={2}
+            aria-label="Fret number"
+            title="Fret 0-20 · Enter to set · Tab for the next note · ↑↓ to step · x or empty to make a rest · Esc to cancel"
+            onFocus={(e) => e.currentTarget.select()}
+            onChange={(e) => setTabEdit({ ...tabEdit, value: e.target.value.replace(/[^0-9xX-]/g, '') })}
+            onKeyDown={handleTabKey}
+            onBlur={() => {
+              if (!skipBlurCommit.current) commitTabEdit(tabEdit);
+              skipBlurCommit.current = false;
+              // Clicking another cell opens its editor before this one blurs;
+              // close only if this edit is still the open one.
+              setTabEdit((open) => (open === tabEdit ? null : open));
+            }}
+          />
+        )}
+      </div>
+      {wordsShown && !showBass && bassHeader}
     </div>
   )
 });
