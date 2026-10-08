@@ -4,6 +4,7 @@ import Generate from './Generate';
 import Save from './Save';
 import Sounds from './Sounds';
 import SectionPanel from './SectionPanel';
+import SectionTypeMenu from './SectionTypeMenu';
 import Transport, { SoundSource, Track } from './Transport';
 import { SHORT_LABELS } from '../Core/form';
 import { downloadMidi } from '../Core/exportMidi';
@@ -16,7 +17,7 @@ import { useSelector, useDispatch } from "react-redux"
 import { playVerse } from '../Playback/playSong';
 import { getAudioContext } from '../Playback/audioContext';
 import { useLampStep } from '../Playback/useLampStep';
-import { incrementByAmount, setIsPlaying, setMidi, setAcoustic, SongState, setCurrentBeat, newSong, reorderParts, loadSong, setLoopPick, toggleLoop, setPartLinked, duplicatePart, deletePart, setSounds, undo } from '../reducers';
+import { incrementByAmount, setIsPlaying, setMidi, setAcoustic, SongState, setCurrentBeat, newSong, reorderParts, loadSong, setLoopPick, toggleLoop, setPartLinked, setPartSection, duplicatePart, deletePart, setSounds, undo } from '../reducers';
 import { isDetached, linkedCount } from '../Core/generate';
 import { beatsInPart, clampRegion, containsPoint, describePoint, partWindow, stepBeat, sum, trackWindow } from '../Playback/loop';
 import type { AppDispatch } from '../store'
@@ -533,6 +534,17 @@ function App() {
    showPart(index + 1);
  };
 
+ // The open part's title opens a menu to make it another kind of section.
+ const [sectionTypeMenuOpen, setSectionTypeMenuOpen] = useState(false);
+ const partTitleRef = React.useRef<HTMLButtonElement>(null);
+ const closeSectionTypeMenu = useCallback(() => setSectionTypeMenuOpen(false), []);
+ useEffect(() => setSectionTypeMenuOpen(false), [currentPart]);
+ const handleChangePartSection = (index: number, label: SectionLabel) => {
+   stopForEdit();
+   setPartMenu(null);
+   dispatch(setPartSection({ part: index, label }));
+ };
+
  const handleDeletePart = (index: number) => {
    stopForEdit();
    setPartMenu(null);
@@ -725,7 +737,32 @@ function App() {
                   <div style={{ width: renderWidth ? `max(${renderWidth}px, 100%)` : '100%' }}>
                     <div className={styles.stickyHeader}>
                       <div className={styles.partTitleRow}>
-                        <h3>{songProps.type} ({songProps.repeat})</h3>
+                        {song.doc && song.doc.form.length === song.songStructure.length ? (
+                          <h3>
+                            <button
+                              ref={partTitleRef}
+                              className={styles.partTitleButton}
+                              onClick={() => setSectionTypeMenuOpen(open => !open)}
+                              aria-haspopup="menu"
+                              aria-expanded={sectionTypeMenuOpen}
+                              title="Change this part to another kind of section"
+                            >
+                              {songProps.type} ({songProps.repeat})
+                              <span className={styles.partTitleCaret} aria-hidden="true">▾</span>
+                            </button>
+                          </h3>
+                        ) : (
+                          <h3>{songProps.type} ({songProps.repeat})</h3>
+                        )}
+                        {sectionTypeMenuOpen && song.doc && (
+                          <SectionTypeMenu
+                            doc={song.doc}
+                            part={index}
+                            anchor={partTitleRef}
+                            onPick={(label) => handleChangePartSection(index, label)}
+                            onClose={closeSectionTypeMenu}
+                          />
+                        )}
                         {song.doc && songProps.sectionId && (() => {
                           const sharing = linkedCount(song.doc, index);
                           const partOnly = isDetached(song.doc, index);

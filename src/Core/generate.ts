@@ -10,7 +10,7 @@
 //   - hand edits (edits.ts) write into the same document and lock the layer.
 
 import { GenerateOptions, Layer, LAYERS, LAYER_DEPENDENTS, SectionDef, SectionInstance, SectionLabel, SongDoc } from './doc';
-import { DEFAULT_FORM_ID, formTemplate, resolveOrder } from './form';
+import { DEFAULT_FORM_ID, FORM_TEMPLATES, formTemplate, resolveOrder, SectionSpec } from './form';
 import { generateHarmony } from './harmony';
 import { generateBassRhythm, generateDrumSteps } from './rhythm';
 import { generateBass, remapBass } from './bassline';
@@ -56,6 +56,16 @@ function buildLayer(doc: SongDoc, s: SectionDef, layer: Layer): void {
   }
 }
 
+function buildSection(doc: SongDoc, label: SectionLabel, spec: SectionSpec): SectionDef {
+  const section: SectionDef = {
+    id: sectionId(label), label, bars: spec.bars, energy: spec.energy, cadence: spec.cadence,
+    harmony: [], bassRhythm: [], drumSteps: [], bass: [], drums: [], voicing: [], guideTones: [],
+    locks: noLocks(), rolls: zeroRolls(),
+  };
+  LAYERS.forEach(layer => buildLayer(doc, section, layer));
+  return section;
+}
+
 export function generateDoc(options: GenerateOptions = {}): SongDoc {
   const seed = options.seed ?? freshSeed();
   const tuning = normalizeTuning(options.tuning);
@@ -89,13 +99,7 @@ export function generateDoc(options: GenerateOptions = {}): SongDoc {
     const id = sectionId(entry.label);
     const spec = template.sections[entry.label];
     if (!spec || doc.sections[id]) continue;
-    const section: SectionDef = {
-      id, label: entry.label, bars: spec.bars, energy: spec.energy, cadence: spec.cadence,
-      harmony: [], bassRhythm: [], drumSteps: [], bass: [], drums: [], voicing: [], guideTones: [],
-      locks: noLocks(), rolls: zeroRolls(),
-    };
-    LAYERS.forEach(layer => buildLayer(doc, section, layer));
-    doc.sections[id] = section;
+    doc.sections[id] = buildSection(doc, entry.label, spec);
   }
 
   // Optional key lift for the final chorus run (and anything after it).
@@ -218,6 +222,47 @@ export function duplicateInstance(doc: SongDoc, index: number): SongDoc {
   if (!inst) return doc;
   const copy = { ...inst, drumOverrides: inst.drumOverrides.map(o => ({ ...o })) };
   return { ...doc, form: [...doc.form.slice(0, index + 1), copy, ...doc.form.slice(index + 1)] };
+}
+
+// What a section of this label is built from when a song first gets one:
+// the song's own form template, else any template that has the label.
+function specFor(doc: SongDoc, label: SectionLabel): SectionSpec {
+  return formTemplate(doc.formId).sections[label]
+    ?? FORM_TEMPLATES.map(t => t.sections[label]).find((spec): spec is SectionSpec => !!spec)
+    ?? { bars: 8, energy: 0.5, cadence: 'half' };
+}
+
+// Turn one part into a different kind of section (a Verse into a Chorus...)
+// where it stands in the form. It joins the song's section of that kind -
+// linked to its other parts, like any repeat - or, if the song has none, a
+// new one is generated (or copied from a "this part only" copy of one). It
+// takes that section's baseline energy, keeps its own key lift, and drops
+// drum overrides made on the old grid. The section it leaves is dropped if
+// no other part plays it.
+export function changeInstanceSection(doc: SongDoc, index: number, label: SectionLabel): SongDoc {
+  const inst = doc.form[index];
+  const from = inst && doc.sections[inst.sectionId];
+  if (!from || from.label === label) return doc;
+  const id = sectionId(label);
+  const sections = { ...doc.sections };
+  if (!sections[id]) {
+    const copy = Object.values(sections).find(s => s.label === label);
+    if (copy) {
+      sections[id] = { ...cloneSection(copy), id };
+    } else {
+      setTuning(doc.tuning);
+      sections[id] = buildSection(doc, label, specFor(doc, label));
+    }
+  }
+  const form = doc.form.map((f, i): SectionInstance =>
+    (i === index ? { sectionId: id, energy: sections[id].energy, transpose: f.transpose, drumOverrides: [] } : f));
+  if (!form.some(f => f.sectionId === from.id)) delete sections[from.id];
+  const next = { ...doc, sections, form };
+  // A part set to "this part only" while it was the section's sole player
+  // still sits on the section itself; give it its own copy so it doesn't
+  // start sharing with this one.
+  const loner = form.findIndex((f, i) => i !== index && f.sectionId === id && f.detached);
+  return loner === -1 ? next : detachInstance(next, loner);
 }
 
 // Remove a part from the form (never the last one). A section no part plays

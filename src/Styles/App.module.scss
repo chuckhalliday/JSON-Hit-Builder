@@ -1110,6 +1110,7 @@
 
 // Part title with the edit-scope toggle beside it.
 .partTitleRow {
+    position: relative;
     display: flex;
     align-items: center;
     column-gap: 14px;
@@ -1117,6 +1118,59 @@
     h3 {
       margin: 12px 0;
     }
+}
+
+// The part title doubles as the button that changes the part's kind.
+.partTitleButton {
+    display: inline-flex;
+    align-items: center;
+    column-gap: 6px;
+    margin: 0 -8px;
+    padding: 2px 8px;
+    border: 1px solid transparent;
+    border-radius: var(--radius);
+    background: none;
+    color: inherit;
+    font: inherit;
+    cursor: pointer;
+    transition: background-color 0.15s, border-color 0.15s;
+
+    &:hover,
+    &[aria-expanded="true"] {
+      background: var(--c-surface-2);
+      border-color: var(--c-border);
+    }
+}
+
+.partTitleCaret {
+    font-size: 12px;
+    color: var(--c-text-muted);
+}
+
+// Section-kind menu: the part menu's look, dropped under the title.
+// Doubled up to beat .partMenu's fixed positioning, which comes later.
+.partMenu.sectionTypeMenu {
+    position: absolute;
+    top: calc(100% - 6px);
+    left: 0;
+    min-width: 210px;
+
+    button {
+      display: flex;
+      justify-content: space-between;
+      column-gap: 16px;
+    }
+}
+
+.partMenu .sectionTypeCurrent:disabled {
+    color: var(--c-text);
+    font-weight: 700;
+    cursor: default;
+}
+
+.sectionTypeNote {
+    font-size: 11px;
+    color: var(--c-text-subtle);
 }
 
 .scopeToggle {
