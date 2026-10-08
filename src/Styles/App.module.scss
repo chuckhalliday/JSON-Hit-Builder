@@ -248,12 +248,18 @@
     flex-direction: row;
     flex-wrap: nowrap;
     align-items: center;
-    justify-content: center;
     column-gap: 6px;
     flex: 1 1 auto;
     min-width: 0;
     overflow-x: auto;
     overflow-y: hidden;
+
+    // Centered while the parts fit; once they overflow, auto margins
+    // collapse and the row starts at its left edge, so it scrolls from the
+    // first part (justify-content: center would push the first parts out
+    // past the left edge where scrolling can't reach them).
+    > :first-child { margin-left: auto; }
+    > :last-child { margin-right: auto; }
 }
 
 .parts {
@@ -1633,12 +1639,11 @@
     color: var(--c-danger);
 }
 
-// Undo: far right of the parts row, shown when there's a change to undo.
+// Undo: far right of the top bar, shown when there's a change to undo. A
+// flex item rather than pinned over the bar, so the parts row ends at it
+// and scrolls instead of passing underneath.
 .undoButton {
-    position: fixed;
-    top: 10px;
-    right: 14px;
-    z-index: 5;
+    flex: 0 0 auto;
     height: 30px;
     padding: 0 12px;
     border: none;
