@@ -20,10 +20,78 @@ function startKeepAlive(ctx: AudioContext) {
   osc.start();
 }
 
+// iOS plays Web Audio on the "ambient" session, which the ringer switch
+// mutes. Safari 16.4+ exposes navigator.audioSession to opt into "playback"
+// (not in this TypeScript version's DOM lib, hence the cast).
+function requestPlaybackSession(): boolean {
+  const session = (navigator as Navigator & { audioSession?: { type: string } }).audioSession;
+  if (!session) return false;
+  session.type = "playback";
+  return true;
+}
+
+// Older iOS has no audioSession, but an HTML media element playing switches
+// the page's session to playback, taking Web Audio with it. A looping clip of
+// silence, started from a gesture, does that without being heard.
+function silentWavUrl(): string {
+  const samples = 800; // 0.1 s of 8-bit mono at 8 kHz
+  const bytes = new Uint8Array(44 + samples);
+  const view = new DataView(bytes.buffer);
+  const ascii = (offset: number, text: string) =>
+    [...text].forEach((ch, i) => view.setUint8(offset + i, ch.charCodeAt(0)));
+  ascii(0, "RIFF");
+  view.setUint32(4, 36 + samples, true);
+  ascii(8, "WAVEfmt ");
+  view.setUint32(16, 16, true);
+  view.setUint16(20, 1, true); // PCM
+  view.setUint16(22, 1, true); // mono
+  view.setUint32(24, 8000, true);
+  view.setUint32(28, 8000, true);
+  view.setUint16(32, 1, true);
+  view.setUint16(34, 8, true);
+  ascii(36, "data");
+  view.setUint32(40, samples, true);
+  bytes.fill(0x80, 44); // 8-bit PCM silence is the midpoint
+  return "data:audio/wav;base64," + btoa(String.fromCharCode(...bytes));
+}
+
+const isIOS = () =>
+  /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+  (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+
+let silentAudio: HTMLAudioElement | null = null;
+
+// Mobile browsers (iOS above all) only let resume() start the context when it
+// is called synchronously inside a user gesture; a resume reached later - from
+// a React effect, or after an await - is refused and Play stays silent. So
+// every tap or keypress resumes a non-running context on the spot. Staying
+// installed also recovers from interruptions (screen lock, app switch, a
+// call), which leave the context "suspended"/"interrupted" until a gesture.
+function installGestureUnlock(ctx: AudioContext) {
+  const needsSilentAudio = !requestPlaybackSession() && isIOS();
+  const unlock = () => {
+    if (ctx.state !== "running") ctx.resume().catch(() => {});
+    if (needsSilentAudio) {
+      if (!silentAudio) {
+        silentAudio = new Audio(silentWavUrl());
+        silentAudio.loop = true;
+      }
+      if (silentAudio.paused) silentAudio.play().catch(() => {});
+    }
+  };
+  // touchend/click/keydown are what iOS counts as activation (touchstart and
+  // pointerdown are not). Capture phase, so a handler that stops propagation
+  // can't swallow the unlock.
+  for (const type of ["touchend", "click", "keydown"]) {
+    window.addEventListener(type, unlock, { capture: true, passive: true });
+  }
+}
+
 export function getAudioContext(): AudioContext {
   if (!audioContext) {
     audioContext = new AudioContext();
     startKeepAlive(audioContext);
+    installGestureUnlock(audioContext);
   }
   if (audioContext.state === "suspended") {
     audioContext.resume();
