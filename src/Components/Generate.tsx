@@ -351,7 +351,7 @@ export default function Generate({ onClose, showAdvanced = false }: GenerateProp
 
   return (
     <div className={styles.generateContainer} ref={generateRef}>
-      <button onClick={onClose}>x</button>
+      <button className={styles.closeButton} onClick={onClose} aria-label="Close" title="Close">×</button>
       <div>
         <h2>Generate New Song <button onClick={resetDefaults} title="Reset to blank defaults">↺</button></h2>
         <p>

@@ -56,7 +56,8 @@ $rowGap: 8px;
     @include invisibleInput;
 
     &:checked + #{$lamp}__content {
-      background-color: #ff5b06;
+      background-color: var(--c-lamp-on);
+      box-shadow: var(--glow-lamp);
     }
   }
 
@@ -64,7 +65,7 @@ $rowGap: 8px;
     width: 14px;
     height: 14px;
     border-radius: 8px;
-    background-color: #ccc;
+    background-color: var(--c-lamp-off);
     margin: 0 8px;
   }
 }
@@ -96,7 +97,7 @@ $rowGap: 8px;
   left: 50px;
   height: 140%;
   width: 3px;
-  background-color: black;
+  background-color: var(--c-rule);
 }
 
  & > [beat-end=true] {
@@ -114,11 +115,12 @@ $rowGap: 8px;
     @include invisibleInput;
 
     &:checked + #{$cell}__content {
-      background-color: #eb1717;
+      background-color: var(--c-step-on);
+      box-shadow: var(--glow-step);
     }
 
     &:focus-visible + #{$cell}__content {
-      outline: solid 4px #90cdf4;
+      outline: solid 4px var(--c-focus);
       outline-offset: 2px;
     }
   }
@@ -130,7 +132,7 @@ $rowGap: 8px;
     width: 30px;
     height: $cellHeight;
     border-radius: 3px;
-    background-color: #ccc;
+    background-color: var(--c-step-off);
   }
 }
 
@@ -174,13 +176,13 @@ $rowGap: 8px;
   border-radius: 2px;
 
   &[in-loop=on] {
-    background-color: rgba(255, 140, 0, 0.35);
-    box-shadow: 8px 0 0 rgba(255, 140, 0, 0.35);
+    background-color: var(--c-loop-tint);
+    box-shadow: 8px 0 0 var(--c-loop-tint);
   }
 
   &[in-loop=off] {
-    background-color: rgba(0, 0, 0, 0.08);
-    box-shadow: 8px 0 0 rgba(0, 0, 0, 0.08);
+    background-color: var(--c-tint);
+    box-shadow: 8px 0 0 var(--c-tint);
   }
 }
 
@@ -191,23 +193,24 @@ $rowGap: 8px;
   height: 18px;
   min-width: 22px;
   padding: 0 4px;
-  border: 1px solid #999;
+  border: 1px solid var(--c-border-strong);
   border-radius: 3px;
-  background: #fff;
+  background: var(--c-surface);
+  color: var(--c-text);
   font-size: 11px;
   font-weight: 700;
   cursor: pointer;
   white-space: nowrap;
 
   &:hover {
-    background: #ffe0b3;
+    background: var(--c-loop-soft);
   }
 }
 
 // While Set Start / Set End is armed, lamps and bar numbers are targets.
 .machine[loop-pick] {
   .lamp__content {
-    box-shadow: 0 0 0 2px #ff8c00;
+    box-shadow: 0 0 0 2px var(--c-loop);
     cursor: crosshair;
   }
 
@@ -216,8 +219,8 @@ $rowGap: 8px;
   }
 
   .barTag {
-    border-color: #ff8c00;
-    background: #fff3e0;
+    border-color: var(--c-loop);
+    background: var(--c-loop-soft);
     cursor: crosshair;
   }
 }

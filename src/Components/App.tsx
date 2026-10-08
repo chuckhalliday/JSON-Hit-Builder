@@ -854,11 +854,11 @@ function App() {
         </div>
         </div>
       ) : (
-        <div>
+        <div className={styles.loginButtons}>
           {import.meta.env.DEV && (
-            <button className="login" onClick={devLogin}>Dev Login</button>
+            <button className={styles.ghostButton} onClick={devLogin}>Dev Login</button>
           )}
-          <button className="login" onClick={login}>Log In with Google</button>
+          <button className={styles.primaryButton} onClick={login}>Log In with Google</button>
         </div>
       )}
     </div>

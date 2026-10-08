@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react'
 import styles from "../Styles/App.module.scss"
+import { setThemePref, ThemePref, useThemePref } from '../theme'
 
 export type SoundSource = 'synth' | 'acoustic' | 'midi';
 export type Track = 'chords' | 'bass' | 'drums';
@@ -145,11 +146,18 @@ const SOURCES: Array<{ id: SoundSource, label: string, title: string }> = [
   { id: 'midi', label: 'MIDI', title: 'Send notes to a connected MIDI device' },
 ];
 
+const THEMES: Array<{ id: ThemePref, label: string, title: string }> = [
+  { id: 'system', label: 'Auto', title: "Follow the system's light/dark setting" },
+  { id: 'light', label: 'Light', title: 'Always light' },
+  { id: 'dark', label: 'Dark', title: 'Always dark' },
+];
+
 // The footer: key, sound source, play/loop/tempo in the middle, track
 // toggles, and the less-frequent actions tucked into a menu.
 function Transport(props: TransportProps) {
   const [menuOpen, setMenuOpen] = useState(false);
   const menuWrapRef = useRef<HTMLDivElement>(null);
+  const themePref = useThemePref();
 
   useEffect(() => {
     if (!menuOpen) return;
@@ -268,6 +276,25 @@ function Transport(props: TransportProps) {
               <button role="menuitem" onClick={menuAction(props.onExport)} title="Download a multitrack .mid (drums, bass, chords, guide tones, section markers) for your DAW">
                 Export MIDI
               </button>
+              <div className={styles.menuDivider} role="separator" />
+              {/* Stays open on a pick, so the change can be seen and undone. */}
+              <div className={styles.menuThemeRow}>
+                <span id="theme-label">Theme</span>
+                <div className={styles.segmented} role="group" aria-labelledby="theme-label">
+                  {THEMES.map(t => (
+                    <button
+                      key={t.id}
+                      role="menuitemradio"
+                      aria-checked={themePref === t.id}
+                      className={themePref === t.id ? styles.segmentOn : ''}
+                      onClick={() => setThemePref(t.id)}
+                      title={t.title}
+                    >
+                      {t.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
               <div className={styles.menuDivider} role="separator" />
               <button role="menuitem" onClick={menuAction(props.onLogout)}>
                 Log out

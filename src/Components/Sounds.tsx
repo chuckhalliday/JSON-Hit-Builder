@@ -73,7 +73,7 @@ export default function Sounds({ input, choice, onChoose, filename, title, onClo
 
   return (
     <div className={styles.generateContainer} ref={ref}>
-      <button onClick={onClose}>x</button>
+      <button className={styles.closeButton} onClick={onClose} aria-label="Close" title="Close">×</button>
       <h2>Sounds for Ableton Live 10 Suite</h2>
       <p>
         <b>{palette.style.name}</b> · {palette.summary}

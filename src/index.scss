@@ -1,0 +1,185 @@
+:root {
+  font-family: "Helvetica Neue", Arial, sans-serif;
+  font-size: 16px;
+  color-scheme: light;
+
+  /* Design tokens: the app's colors, radii and shadows in one place. The
+     light values are below; the dark theme redefines the colors further
+     down. Every color in the stylesheets (and the staff canvas, which reads
+     --c-ink / --c-bg / --c-info at draw time) comes from here. */
+  --c-bg: #ffffff;
+  --c-surface: #ffffff;
+  --c-surface-2: #f3f5f8;
+  --c-surface-3: #e6eaef;
+  --c-panel: #fafbfc;
+  --c-raised: #ffffff;
+  --c-segment-on: #ffffff;
+  --c-chip: #eef1f4;
+  --c-border: #dde3ea;
+  --c-border-strong: #c3ccd6;
+  --c-text: #1f2328;
+  --c-text-strong: #000000;
+  --c-text-muted: #66707c;
+  --c-text-subtle: #888888;
+  --c-accent: rgb(71, 182, 71);
+  --c-accent-strong: #2e8b2e;
+  --c-accent-soft: #e5f5e5;
+  --c-on-accent: #000000;
+  --c-play-fg: #ffffff;
+  --c-info: #4281b2;
+  --c-info-soft: #e3eefa;
+  --c-on-info: #ffffff;
+  --c-loop: #ff8c00;
+  --c-loop-soft: #fff1e0;
+  --c-loop-tint: rgba(255, 140, 0, 0.35);
+  --c-on-loop: #ffffff;
+  --c-warn: #d9a300;
+  --c-warn-soft: #fff3cd;
+  --c-selected: purple;
+  --c-on-selected: #ffffff;
+  --c-danger: #c0392b;
+  --c-focus: #90cdf4;
+  --c-scrim: rgba(0, 0, 0, 0.5);
+  --c-tint: rgba(0, 0, 0, 0.08);
+  /* Native checkboxes and sliders: the browser's own color in light. */
+  --c-control-accent: auto;
+
+  /* Staff/tab canvas ink and the drum grid. */
+  --c-ink: #000000;
+  --c-rule: #000000;
+  --c-step-off: #cccccc;
+  --c-step-on: #eb1717;
+  --c-lamp-off: #cccccc;
+  --c-lamp-on: #ff5b06;
+  --glow-step: none;
+  --glow-lamp: none;
+
+  /* Chord-display piano. */
+  --key-white: #ffffff;
+  --key-black: linear-gradient(45deg, #444, #000);
+  --c-key-border: #000000;
+  --c-key-selected: #2563eb;
+  --c-key-shadow: #000000;
+  --glow-key: none;
+  --c-piano-bg: #f5f5f5;
+
+  /* Rotary dials. */
+  --c-dial-face: #ffffff;
+  --c-dial-track: #dfe3e8;
+  --c-dial-dead: #f5f5f5;
+
+  /* Ink-on-white images (the note pictures in Generate). */
+  --img-ink-filter: none;
+  --img-ink-blend: normal;
+
+  --radius-sm: 4px;
+  --radius: 8px;
+  --radius-lg: 12px;
+  --radius-pill: 999px;
+  --shadow-bar: 0 -1px 0 var(--c-border), 0 -6px 18px rgba(16, 24, 40, 0.06);
+  --shadow-top: 0 2px 6px rgba(0, 0, 0, 0.1);
+  --shadow-pop: 0 6px 18px rgba(16, 24, 40, 0.18);
+  --shadow-modal: 0 24px 64px rgba(16, 24, 40, 0.28);
+}
+
+/* Dark: near-black neutrals with a cool cast, hairline borders instead of
+   shadows for edges, and brighter accents so the active state of every
+   control (steps, lamps, tracks, keys) reads as lit. Applied when the OS
+   asks for dark and the user hasn't picked light, or when they picked dark
+   (the ⋯ menu's Theme switch sets data-theme on <html>). */
+@mixin dark-tokens {
+  color-scheme: dark;
+
+  --c-bg: #0d0f12;
+  --c-surface: #15181d;
+  --c-surface-2: #1c2026;
+  --c-surface-3: #262b33;
+  --c-panel: #12151a;
+  --c-raised: #1a1e24;
+  --c-segment-on: #303641;
+  --c-chip: #1f242b;
+  --c-border: #262b33;
+  --c-border-strong: #363c47;
+  --c-text: #e6e8eb;
+  --c-text-strong: #ffffff;
+  --c-text-muted: #9aa3ae;
+  --c-text-subtle: #6c7480;
+  --c-accent: #4ade80;
+  --c-accent-strong: #86efac;
+  --c-accent-soft: rgba(74, 222, 128, 0.12);
+  --c-on-accent: #04170b;
+  --c-play-fg: #04170b;
+  --c-info: #60a5fa;
+  --c-info-soft: rgba(96, 165, 250, 0.14);
+  --c-on-info: #06121f;
+  --c-loop: #ff9a2e;
+  --c-loop-soft: rgba(255, 154, 46, 0.14);
+  --c-loop-tint: rgba(255, 154, 46, 0.28);
+  --c-on-loop: #1a0e00;
+  --c-warn: #fbbf24;
+  --c-warn-soft: rgba(251, 191, 36, 0.14);
+  --c-selected: #8b5cf6;
+  --c-on-selected: #ffffff;
+  --c-danger: #f87171;
+  --c-focus: #60a5fa;
+  --c-scrim: rgba(3, 4, 6, 0.7);
+  --c-tint: rgba(255, 255, 255, 0.05);
+  --c-control-accent: #4ade80;
+
+  --c-ink: #d5d9df;
+  --c-rule: #3a414c;
+  --c-step-off: #22272f;
+  --c-step-on: #ff3d57;
+  --c-lamp-off: #2a2f38;
+  --c-lamp-on: #ff7a1a;
+  --glow-step: 0 0 10px rgba(255, 61, 87, 0.55);
+  --glow-lamp: 0 0 10px rgba(255, 122, 26, 0.7);
+
+  --key-white: linear-gradient(180deg, #c9ced5 0%, #e3e6ea 100%);
+  --key-black: linear-gradient(45deg, #1d2127, #050607);
+  --c-key-border: #0d0f12;
+  --c-key-selected: #3b82f6;
+  --c-key-shadow: #050607;
+  --glow-key: 0 0 14px rgba(59, 130, 246, 0.6);
+  --c-piano-bg: #15181d;
+
+  --c-dial-face: #1f242b;
+  --c-dial-track: #2e343e;
+  --c-dial-dead: #15181d;
+
+  --img-ink-filter: invert(1) hue-rotate(180deg);
+  --img-ink-blend: screen;
+
+  --shadow-bar: 0 -1px 0 var(--c-border), 0 -8px 24px rgba(0, 0, 0, 0.35);
+  --shadow-top: 0 1px 0 var(--c-border), 0 8px 24px rgba(0, 0, 0, 0.35);
+  --shadow-pop: 0 0 0 1px var(--c-border-strong), 0 12px 32px rgba(0, 0, 0, 0.55);
+  --shadow-modal: 0 0 0 1px var(--c-border-strong), 0 24px 64px rgba(0, 0, 0, 0.6);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    @include dark-tokens;
+  }
+}
+
+:root[data-theme="dark"] {
+  @include dark-tokens;
+}
+
+*:focus,
+*:focus-visible,
+*:focus-within {
+  outline-color: var(--c-focus);
+}
+
+input {
+  accent-color: var(--c-control-accent);
+}
+
+body {
+  display: grid;
+  place-content: center;
+  min-height: 100vh;
+  background: var(--c-bg);
+  color: var(--c-text);
+}

@@ -9,9 +9,9 @@
     top: 0;
     left: 0;
     right: 0;
-    background-color: #fff;
+    background-color: var(--c-surface);
     padding: 10px 14px;
-    box-shadow: 0px 2px 6px rgba(0, 0, 0, 0.1);
+    box-shadow: var(--shadow-top);
     overflow: visible;
 }
 
@@ -34,19 +34,100 @@
   left: 0;
   width: 100%;
   height: 100%;
-  background: rgba(0, 0, 0, 0.5);
+  background: var(--c-scrim);
+  backdrop-filter: blur(3px);
   z-index: 1000;
   display: flex;
   justify-content: center;
   align-items: center;
 }
 
+// The Generate, Save and Sounds dialogs. Their form controls are plain
+// elements, styled here so they follow the theme instead of the browser's
+// stock widgets.
 .generateContainer {
-  padding: 15px;
-  background-color: white;
+  box-sizing: border-box;
+  padding: 18px 24px;
+  background-color: var(--c-surface);
+  color: var(--c-text);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-modal);
   width: 80%;
   height: 80%;
-  overflow: scroll;
+  overflow: auto;
+
+  h2 {
+    margin: 4px 0 16px;
+    font-size: 22px;
+    letter-spacing: -0.01em;
+  }
+
+  button:not([class]) {
+    padding: 6px 12px;
+    border: 1px solid var(--c-border-strong);
+    border-radius: var(--radius);
+    background: var(--c-surface-2);
+    color: var(--c-text);
+    font: inherit;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.15s, border-color 0.15s;
+
+    &:hover {
+      background: var(--c-surface-3);
+    }
+  }
+
+  // The reset button sits inside the h2; keep it button-sized.
+  h2 button:not([class]) {
+    margin-left: 6px;
+    padding: 2px 8px;
+    vertical-align: middle;
+  }
+
+  select,
+  input:not([type]),
+  input[type="text"],
+  input[type="number"] {
+    padding: 5px 8px;
+    border: 1px solid var(--c-border-strong);
+    border-radius: 6px;
+    background: var(--c-surface-2);
+    color: var(--c-text);
+    font: inherit;
+    font-size: 14px;
+
+    &::placeholder {
+      color: var(--c-text-subtle);
+    }
+
+    &:focus {
+      outline: 2px solid var(--c-info);
+      outline-offset: -1px;
+    }
+  }
+}
+
+.closeButton {
+  float: right;
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border: 1px solid transparent;
+  border-radius: var(--radius);
+  background: none;
+  color: var(--c-text-muted);
+  font-size: 22px;
+  line-height: 1;
+  cursor: pointer;
+
+  &:hover {
+    background: var(--c-surface-2);
+    border-color: var(--c-border);
+    color: var(--c-text);
+  }
 }
 
 .numberInput {
@@ -56,8 +137,9 @@
 .shuffleWarning {
   margin-top: 10px;
   padding: 10px 15px;
-  border: 1px solid #d9a300;
-  background-color: #fff8e1;
+  border: 1px solid var(--c-warn);
+  border-radius: var(--radius);
+  background-color: var(--c-warn-soft);
   max-width: 420px;
 
   ul {
@@ -73,8 +155,9 @@
 .advancedSettings {
   margin-top: 10px;
   padding: 10px 15px;
-  border: 1px solid #ccc;
-  background-color: #f5f5f5;
+  border: 1px solid var(--c-border);
+  border-radius: var(--radius);
+  background-color: var(--c-surface-2);
   max-width: 420px;
 }
 
@@ -84,7 +167,7 @@
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  color: #666;
+  color: var(--c-text-muted);
 }
 
 .dialRow {
@@ -119,7 +202,8 @@
 
 .dialValue {
   font-size: 12px;
-  color: #333;
+  color: var(--c-text);
+  font-variant-numeric: tabular-nums;
 }
 
 /* The knob face is painted in two layers: a conic-gradient ring that fills
@@ -135,12 +219,12 @@
   user-select: none;
   touch-action: none;
   background:
-    radial-gradient(closest-side, #fff 0 79%, transparent 80%),
-    conic-gradient(from -135deg, rgb(71, 182, 71) 0 var(--sweep, 135deg), #dfe3e8 var(--sweep, 135deg) 270deg, #f5f5f5 270deg);
+    radial-gradient(closest-side, var(--c-dial-face) 0 79%, transparent 80%),
+    conic-gradient(from -135deg, var(--c-accent) 0 var(--sweep, 135deg), var(--c-dial-track) var(--sweep, 135deg) 270deg, var(--c-dial-dead) 270deg);
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
 
   &:focus {
-    outline: 2px solid #4281b2;
+    outline: 2px solid var(--c-info);
     outline-offset: 2px;
   }
 }
@@ -154,7 +238,7 @@
   width: 3px;
   height: 22px;
   border-radius: 2px;
-  background: black;
+  background: var(--c-text);
   transform-origin: 1.5px 22px;
   pointer-events: none;
 }
@@ -182,8 +266,8 @@
     border: none;
     cursor: pointer;
     appearance: none;
-    background-color: #eef1f4;
-    color: #333;
+    background-color: var(--c-chip);
+    color: var(--c-text);
     width: 30px;
     height: 30px;
     border-radius: 6px;
@@ -192,8 +276,8 @@
     transition: background-color 0.2s, color 0.2s;
 
     &:hover {
-      background-color: rgb(71, 182, 71);
-      color: black;
+      background-color: var(--c-accent);
+      color: var(--c-on-accent);
     }
 }
 
@@ -202,7 +286,7 @@
 }
 
 .dragOverPart {
-    box-shadow: 0 0 0 2px rgb(71, 182, 71) inset;
+    box-shadow: 0 0 0 2px var(--c-accent) inset;
 }
 
 .openedPart {
@@ -210,7 +294,7 @@
     top: 200px;
     left: 0;
     z-index: 1;
-    background-color: #fff;
+    background-color: var(--c-bg);
     padding: 10px;
     box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.1);
     overflow: auto;
@@ -345,9 +429,9 @@
     }
 
     .segmentOn {
-      background: var(--c-surface);
+      background: var(--c-segment-on);
       color: var(--c-text);
-      box-shadow: 0 1px 2px rgba(16, 24, 40, 0.15);
+      box-shadow: 0 1px 2px rgba(16, 24, 40, 0.15), inset 0 0 0 1px var(--c-border);
     }
 }
 
@@ -359,9 +443,9 @@
     border: none;
     border-radius: 50%;
     background: var(--c-accent);
-    color: #fff;
+    color: var(--c-play-fg);
     cursor: pointer;
-    box-shadow: 0 2px 8px rgba(46, 139, 46, 0.35);
+    box-shadow: 0 2px 10px color-mix(in srgb, var(--c-accent) 40%, transparent);
     transition: background-color 0.15s, transform 0.1s;
 
     svg {
@@ -381,10 +465,11 @@
 
 .playing {
     background: var(--c-text);
+    color: var(--c-bg);
     box-shadow: 0 2px 8px rgba(16, 24, 40, 0.3);
 
     &:hover {
-      background: #000;
+      background: var(--c-text-strong);
     }
 }
 
@@ -415,11 +500,11 @@
 .loopActive {
     background: var(--c-loop);
     border-color: var(--c-loop);
-    color: #fff;
+    color: var(--c-on-loop);
 
     &:hover:not(:disabled) {
       background: var(--c-loop);
-      color: #fff;
+      color: var(--c-on-loop);
       filter: brightness(0.95);
     }
 }
@@ -466,6 +551,8 @@
     width: 72px;
     border: none;
     padding: 6px 10px;
+    background: var(--c-surface);
+    color: var(--c-text);
     font: inherit;
     font-size: 20px;
     font-weight: 700;
@@ -605,6 +692,29 @@
     }
 }
 
+.primaryButton {
+    padding: 6px 14px;
+    border: 1px solid var(--c-accent);
+    border-radius: var(--radius);
+    background: var(--c-accent);
+    color: var(--c-on-accent);
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background-color 0.15s, border-color 0.15s;
+
+    &:hover {
+      background: var(--c-accent-strong);
+      border-color: var(--c-accent-strong);
+    }
+}
+
+.loginButtons {
+    display: flex;
+    column-gap: 10px;
+}
+
 .iconButton {
     width: 34px;
     height: 32px;
@@ -641,8 +751,8 @@
     border: none;
     cursor: pointer;
     appearance: none;
-    background-color: #eef1f4;
-    color: #333;
+    background-color: var(--c-chip);
+    color: var(--c-text);
     width: 40px;
     line-height: 2;
     border-radius: 4px;
@@ -651,13 +761,13 @@
     transition: background-color 0.2s, color 0.2s;
 
     &:hover {
-      background-color: rgb(71, 182, 71);
-      color: black;
+      background-color: var(--c-accent);
+      color: var(--c-on-accent);
     }
 }
 
 .error {
-  color: #c0392b;
+  color: var(--c-danger);
 }
 
 .login {
@@ -672,8 +782,8 @@
     border: none;
     cursor: pointer;
     appearance: none;
-    background-color: rgb(71, 182, 71);
-    color: black;
+    background-color: var(--c-accent);
+    color: var(--c-on-accent);
     width: 90px;
     line-height: 2;
     border-radius: 4px;
@@ -681,12 +791,12 @@
     transition: background-color 0.3s;
 
     &:hover {
-      background-color: #4281b2;
+      background-color: var(--c-info);
     }
   }
   .openButton {
-    background-color: purple;
-    color: white;
+    background-color: var(--c-selected);
+    color: var(--c-on-selected);
   }
 
   // Keeps the bass staff's Tab/Staff toggle pinned to the visible left edge
@@ -700,11 +810,15 @@
 
   .grooveButton {
     border: none;
-    background-color: white;
+    background-color: var(--c-surface);
   }
 
+  // Note pictures are drawn ink-on-white; dark inverts them and screens the
+  // (now black) paper away so only the ink shows on the dialog.
   .resize {
     height: 30px;
+    filter: var(--img-ink-filter);
+    mix-blend-mode: var(--img-ink-blend);
   }
 // Arrangement blocks: the part buttons double as the song's timeline.
 .partButton {
@@ -723,7 +837,7 @@
     left: 0;
     bottom: 0;
     height: 3px;
-    background-color: #4281b2;
+    background-color: var(--c-info);
     pointer-events: none;
 }
 
@@ -731,9 +845,9 @@
 .sectionPanel {
     margin: 0 0 10px;
     padding: 8px 10px;
-    border: 1px solid #e2e6ea;
+    border: 1px solid var(--c-border);
     border-radius: 6px;
-    background-color: #fafbfc;
+    background-color: var(--c-panel);
     font-size: 13px;
 }
 
@@ -743,10 +857,10 @@
     align-items: center;
     column-gap: 12px;
     row-gap: 4px;
-    color: #555;
+    color: var(--c-text-muted);
 
     strong {
-      color: #222;
+      color: var(--c-text);
     }
 }
 
@@ -771,8 +885,8 @@
     align-items: flex-start;
     flex-basis: 48px;
     padding: 3px 6px;
-    border-left: 2px solid #4281b2;
-    background-color: #fff;
+    border-left: 2px solid var(--c-info);
+    background-color: var(--c-raised);
 }
 
 // Chord symbol, numeral and bass note are buttons that open their menus,
@@ -788,24 +902,24 @@
     font-family: inherit;
 
     &:hover {
-      background-color: #e8f0f8;
+      background-color: var(--c-info-soft);
     }
 }
 
 .chordSymbol {
     font-weight: 700;
     font-size: 13px;
-    color: #222;
+    color: var(--c-text);
 }
 
 .chordRoman {
     font-size: 11px;
-    color: #4281b2;
+    color: var(--c-info);
 }
 
 .chordBass {
     font-size: 10px;
-    color: #555;
+    color: var(--c-text-muted);
 }
 
 // Chord menus.
@@ -818,10 +932,10 @@
     max-height: 340px;
     overflow-y: auto;
     padding: 8px;
-    background: #fff;
-    border: 1px solid #ccd5df;
-    border-radius: 6px;
-    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.18);
+    background: var(--c-surface);
+    border: 1px solid var(--c-border-strong);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-pop);
 }
 
 .chordMenuRight {
@@ -838,7 +952,7 @@
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.05em;
-    color: #777;
+    color: var(--c-text-muted);
     margin-bottom: 4px;
 }
 
@@ -854,37 +968,37 @@
     align-items: flex-start;
     min-width: 46px;
     padding: 3px 6px;
-    border: 1px solid #dde3ea;
+    border: 1px solid var(--c-border);
     border-radius: 4px;
-    background: #f8fafc;
+    background: var(--c-surface-2);
     cursor: pointer;
     font-family: inherit;
 
     &:hover {
-      background: #e3eefa;
-      border-color: #4281b2;
+      background: var(--c-info-soft);
+      border-color: var(--c-info);
     }
 }
 
 .menuCurrent {
-    background: #fff3cd;
-    border-color: #d9a300;
+    background: var(--c-warn-soft);
+    border-color: var(--c-warn);
 }
 
 .menuRoman {
     font-size: 12px;
     font-weight: 700;
-    color: #222;
+    color: var(--c-text);
 }
 
 .menuSymbol {
     font-size: 10px;
-    color: #4281b2;
+    color: var(--c-info);
 }
 
 .guideTone {
     font-size: 10px;
-    color: #888;
+    color: var(--c-text-subtle);
 }
 
 .layerRow {
@@ -900,8 +1014,8 @@
 }
 
 .lockButton {
-    border: 1px solid #ccc;
-    background: #fff;
+    border: 1px solid var(--c-border-strong);
+    background: var(--c-surface);
     border-radius: 4px;
     cursor: pointer;
     padding: 2px 4px;
@@ -909,8 +1023,8 @@
 }
 
 .locked {
-    background-color: #fff3cd;
-    border-color: #d9a300;
+    background-color: var(--c-warn-soft);
+    border-color: var(--c-warn);
 }
 
 .rerollButton {
@@ -918,42 +1032,43 @@
     border-radius: 4px;
     padding: 4px 8px;
     cursor: pointer;
-    background-color: rgb(71, 182, 71);
-    color: black;
+    background-color: var(--c-accent);
+    color: var(--c-on-accent);
 
     &:hover:not(:disabled) {
-      background-color: #4281b2;
+      background-color: var(--c-info);
     }
 
     &:disabled {
-      background-color: #e5e5e5;
-      color: #999;
+      background-color: var(--c-surface-3);
+      color: var(--c-text-subtle);
       cursor: not-allowed;
     }
 }
 
 .layerNote {
     font-size: 11px;
-    color: #888;
+    color: var(--c-text-subtle);
 }
 
 .sectionNote {
     margin: 6px 0 0;
     font-size: 11px;
-    color: #888;
+    color: var(--c-text-subtle);
 }
 
 // Loop: blocks inside the loop region.
 .inLoop {
-    box-shadow: inset 0 -3px 0 #ff8c00, 0 0 0 2px #ff8c00;
+    box-shadow: inset 0 -3px 0 var(--c-loop), 0 0 0 2px var(--c-loop);
 }
 
 .inLoopOff {
-    box-shadow: 0 0 0 2px #bbb;
+    box-shadow: 0 0 0 2px var(--c-border-strong);
 }
 
 .loopingSection {
-    background-color: #ff8c00;
+    background-color: var(--c-loop);
+    color: var(--c-on-loop);
 }
 
 // Opened part: title + section panel pinned to the visible area while the
@@ -966,13 +1081,13 @@
     width: calc(100vw - 20px);
     max-width: 100%;
     box-sizing: border-box;
-    background-color: #fff;
+    background-color: var(--c-bg);
 }
 
 // Set Start / Set End armed: waiting for a step or bar click.
 .pickArmed {
-    background-color: #ff8c00 !important;
-    color: #fff;
+    background-color: var(--c-loop) !important;
+    color: var(--c-on-loop) !important;
 }
 
 // Fret editor over a tab string.
@@ -983,9 +1098,10 @@
     height: 24px;
     box-sizing: border-box;
     padding: 0;
-    border: 2px solid #4281b2;
+    border: 2px solid var(--c-info);
     border-radius: 4px;
-    background: #fff;
+    background: var(--c-surface);
+    color: var(--c-text);
     font: 700 13px sans-serif;
     text-align: center;
     outline: none;
@@ -1005,27 +1121,27 @@
 
 .scopeToggle {
     display: inline-flex;
-    border: 1px solid #4281b2;
+    border: 1px solid var(--c-info);
     border-radius: 5px;
     overflow: hidden;
 
     button {
       border: none;
       padding: 4px 10px;
-      background: #fff;
-      color: #4281b2;
+      background: var(--c-surface);
+      color: var(--c-info);
       font-size: 12px;
       font-weight: 600;
       cursor: pointer;
 
       & + button {
-        border-left: 1px solid #4281b2;
+        border-left: 1px solid var(--c-info);
       }
     }
 
     .scopeOn {
-      background: #4281b2;
-      color: #fff;
+      background: var(--c-info);
+      color: var(--c-on-info);
     }
 }
 
@@ -1037,14 +1153,15 @@
     flex-direction: column;
     min-width: 140px;
     padding: 6px;
-    background: #fff;
-    border: 1px solid #ccd5df;
-    border-radius: 6px;
-    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.18);
+    background: var(--c-surface);
+    border: 1px solid var(--c-border-strong);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-pop);
 
     button {
       border: none;
       background: none;
+      color: var(--c-text);
       padding: 6px 8px;
       border-radius: 4px;
       text-align: left;
@@ -1053,11 +1170,11 @@
       cursor: pointer;
 
       &:hover:not(:disabled) {
-        background: #e3eefa;
+        background: var(--c-info-soft);
       }
 
       &:disabled {
-        color: #aaa;
+        color: var(--c-text-subtle);
         cursor: not-allowed;
       }
     }
@@ -1067,13 +1184,13 @@
     padding: 2px 8px 6px;
     font-size: 11px;
     font-weight: 700;
-    color: #777;
+    color: var(--c-text-muted);
     text-transform: uppercase;
     letter-spacing: 0.04em;
 }
 
 .partMenuDanger:not(:disabled) {
-    color: #c0392b;
+    color: var(--c-danger);
 }
 
 // The transport's "more" menu: the part menu's look, opening upward from
@@ -1093,6 +1210,36 @@
     background: var(--c-border);
 }
 
+// Theme switch inside the "more" menu: a compact segmented row that
+// overrides the menu's full-width, left-aligned item buttons.
+.menuThemeRow {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    column-gap: 10px;
+    padding: 4px 4px 4px 8px;
+    font-size: 13px;
+    color: var(--c-text-muted);
+
+    .segmented button {
+      padding: 4px 8px;
+      text-align: center;
+      font-size: 12px;
+      color: var(--c-text-muted);
+
+      &:hover:not(:disabled) {
+        background: transparent;
+        color: var(--c-text);
+      }
+    }
+
+    .segmented .segmentOn,
+    .segmented .segmentOn:hover:not(:disabled) {
+      background: var(--c-segment-on);
+      color: var(--c-text);
+    }
+}
+
 // Undo: far right of the parts row, shown when there's a change to undo.
 .undoButton {
     position: fixed;
@@ -1103,15 +1250,16 @@
     padding: 0 12px;
     border: none;
     border-radius: 6px;
-    background-color: #eef1f4;
-    color: #333;
+    background-color: var(--c-chip);
+    color: var(--c-text);
     font-weight: 700;
     font-size: 13px;
     cursor: pointer;
-    transition: background-color 0.2s;
+    transition: background-color 0.2s, color 0.2s;
 
     &:hover {
-      background-color: rgb(71, 182, 71);
+      background-color: var(--c-accent);
+      color: var(--c-on-accent);
     }
 }
 
@@ -1125,9 +1273,9 @@
 
 .soundCard {
     padding: 10px 14px;
-    border: 1px solid #ccc;
-    border-radius: 6px;
-    background-color: #f5f5f5;
+    border: 1px solid var(--c-border);
+    border-radius: var(--radius);
+    background-color: var(--c-surface-2);
 }
 
 .soundRole {
@@ -1135,7 +1283,7 @@
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.05em;
-    color: #666;
+    color: var(--c-text-muted);
 }
 
 .soundName {
@@ -1164,12 +1312,12 @@
 .soundTip {
     margin: 4px 0 0;
     font-size: 12px;
-    color: #555;
+    color: var(--c-text-muted);
 }
 
 .soundNote {
     font-size: 12px;
-    color: #666;
+    color: var(--c-text-muted);
 }
 
 .soundSections {
@@ -1181,7 +1329,7 @@
     th,
     td {
         padding: 6px 8px;
-        border-bottom: 1px solid #ddd;
+        border-bottom: 1px solid var(--c-border);
         text-align: left;
         vertical-align: top;
     }
@@ -1190,7 +1338,7 @@
         font-size: 11px;
         text-transform: uppercase;
         letter-spacing: 0.05em;
-        color: #666;
+        color: var(--c-text-muted);
     }
 
     td div + div {

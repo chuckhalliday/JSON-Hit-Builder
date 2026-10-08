@@ -1,4 +1,4 @@
-import React, { forwardRef, useCallback, useEffect, useImperativeHandle, useRef, useState } from 'react';
+import React, { forwardRef, useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import playBass from '../Playback/playBass';
 import { setBassState, setCurrentBeat, SongState } from '../reducers';
@@ -9,6 +9,7 @@ import { NoteLocation } from '../types';
 import { isStaffPitch, PITCH_MIN_Y } from '../SongStructure/bassPitch';
 import { spellPc, staffY } from '../Core/theory';
 import { parseKeyString } from '../Core/exportMidi';
+import { useTheme } from '../theme';
 
 // Standard 4-string bass tuning (E1 A1 D2 G2), lowest to highest, expressed as
 // the real MIDI note number of each open string - matches the `midi` values
@@ -148,6 +149,38 @@ interface BassStaffProps {
 const CLEF_IMAGE = new Image();
 CLEF_IMAGE.src = "/BassClef.png";
 
+// The clef image is black on transparent; recolor it to the theme's ink
+// (light on the dark theme). One copy per ink color, made once it's loaded.
+const tintedClefs = new Map<string, HTMLCanvasElement>();
+function tintedClef(color: string): CanvasImageSource | null {
+  if (!CLEF_IMAGE.complete || !CLEF_IMAGE.naturalWidth) return null;
+  let tinted = tintedClefs.get(color);
+  if (!tinted) {
+    tinted = document.createElement('canvas');
+    tinted.width = CLEF_IMAGE.naturalWidth;
+    tinted.height = CLEF_IMAGE.naturalHeight;
+    const g = tinted.getContext('2d');
+    if (!g) return CLEF_IMAGE;
+    g.drawImage(CLEF_IMAGE, 0, 0);
+    g.globalCompositeOperation = 'source-in';
+    g.fillStyle = color;
+    g.fillRect(0, 0, tinted.width, tinted.height);
+    tintedClefs.set(color, tinted);
+  }
+  return tinted;
+}
+
+// The canvas's colors, from the theme tokens in index.scss.
+function readCanvasColors() {
+  const css = getComputedStyle(document.documentElement);
+  const token = (name: string, fallback: string) => css.getPropertyValue(name).trim() || fallback;
+  return {
+    ink: token('--c-ink', 'black'),
+    paper: token('--c-bg', 'white'),
+    hover: token('--c-info', '#4281b2'),
+  };
+}
+
 const BassStaff = forwardRef<PlayHandle, BassStaffProps>(function BassStaff({ renderWidth, part, lampsRef, onPlayingChange, viewMode, onViewModeChange }, ref) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const dispatch = useDispatch()
@@ -168,6 +201,10 @@ const BassStaff = forwardRef<PlayHandle, BassStaffProps>(function BassStaff({ re
   const measureLines = song.songStructure[part].measureLines
 
   const handleStep = useLampStep(lampsRef, part, drumGroove, bassGroove, chordsGroove);
+
+  // Re-read the canvas colors (and redraw, below) when the theme changes.
+  const theme = useTheme();
+  const colors = useMemo(readCanvasColors, [theme]);
 
   const [pendingNote, setPendingNote] = React.useState<{ x: number, y: number } | null>(null);
   // The tab cell being typed into: a note (by x) on one string.
@@ -239,7 +276,7 @@ const BassStaff = forwardRef<PlayHandle, BassStaffProps>(function BassStaff({ re
   function drawAccidentalOptions(ctx: CanvasRenderingContext2D, location: { x: number, y: number, acc: string }, spacing: number) {
     const fontSize = 20;
     ctx.font = `${fontSize}px serif`;
-    ctx.fillStyle = "black";
+    ctx.fillStyle = colors.ink;
     getAccidentalOptionLayout(location, spacing, fontSize).forEach((opt) => {
       ctx.fillText(opt.symbol, opt.x, opt.y);
     });
@@ -247,14 +284,15 @@ const BassStaff = forwardRef<PlayHandle, BassStaffProps>(function BassStaff({ re
 
   function drawClef(ctx: CanvasRenderingContext2D, location: { x: number, y: number, acc: string }) {
     const CANVAS = canvasRef.current;
-    if (CANVAS) {
+    const clef = tintedClef(colors.ink);
+    if (CANVAS && clef) {
       const aspectRatio = CLEF_IMAGE.width / CLEF_IMAGE.height;
       // Fixed to the 5-line staff's own size, not the canvas's - the canvas
       // is now taller than the staff to fit the ledger lines above/below it.
       const newHeight = 78;
       const newWidth = aspectRatio * newHeight;
 
-      ctx.drawImage(CLEF_IMAGE,
+      ctx.drawImage(clef,
         location.x - newWidth / 2, location.y - newHeight / 2,
         newWidth, newHeight);
     }
@@ -275,7 +313,7 @@ const BassStaff = forwardRef<PlayHandle, BassStaffProps>(function BassStaff({ re
 
     const halfWidth = SPACING + 4;
     ctx.save();
-    ctx.strokeStyle = 'black';
+    ctx.strokeStyle = colors.ink;
     ctx.lineWidth = 1;
     needed.forEach((pitchY) => {
       const y = pitchY + STAFF_Y_OFFSET;
@@ -301,8 +339,8 @@ const BassStaff = forwardRef<PlayHandle, BassStaffProps>(function BassStaff({ re
     if (CANVAS && match) {
       const spacing = SPACING;
       const groove = bassGroove[index];
-      ctx.fillStyle = "black";
-      ctx.strokeStyle = "black";
+      ctx.fillStyle = colors.ink;
+      ctx.strokeStyle = colors.ink;
       ctx.lineWidth = 1;
 
       const fontSize = 20;
@@ -419,7 +457,7 @@ const BassStaff = forwardRef<PlayHandle, BassStaffProps>(function BassStaff({ re
             ctx.quadraticCurveTo(location.x - 15, REST_Y + 79, location.x + 4, REST_Y + 83)
             ctx.lineTo(location.x - 5, REST_Y + 69)
             ctx.quadraticCurveTo(location.x + 5, REST_Y + 68, location.x - 5, REST_Y + 52)
-            ctx.fillStyle = "black";
+            ctx.fillStyle = colors.ink;
             ctx.fill();
             ctx.stroke();
             //dotted quarter
@@ -487,7 +525,7 @@ const BassStaff = forwardRef<PlayHandle, BassStaffProps>(function BassStaff({ re
     if (CANVAS) {
       const spacing = SPACING;
       const fontSize = 20;
-      ctx.fillStyle = "black";
+      ctx.fillStyle = colors.ink;
       ctx.font = `${fontSize}px serif`;
 
       for (let i = 1; i < bassGrid.length; i++) {
@@ -511,7 +549,7 @@ const BassStaff = forwardRef<PlayHandle, BassStaffProps>(function BassStaff({ re
   }
 
   function drawTabLabel(ctx: CanvasRenderingContext2D) {
-    ctx.fillStyle = 'black';
+    ctx.fillStyle = colors.ink;
     ctx.font = '11px sans-serif';
     ctx.textAlign = 'center';
     ctx.fillText('T', 20, 62 + STAFF_Y_OFFSET);
@@ -540,10 +578,10 @@ const BassStaff = forwardRef<PlayHandle, BassStaffProps>(function BassStaff({ re
 
       // Blank out the line under the number so it reads clearly, matching how
       // printed tab renders fret numbers directly on the string.
-      ctx.fillStyle = 'white';
+      ctx.fillStyle = colors.paper;
       ctx.fillRect(note.x - 8, y - 7, 16, 14);
 
-      ctx.fillStyle = 'black';
+      ctx.fillStyle = colors.ink;
       ctx.font = '13px sans-serif';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
@@ -557,7 +595,7 @@ const BassStaff = forwardRef<PlayHandle, BassStaffProps>(function BassStaff({ re
     if (hover && !tabEdit) {
       const y = TAB_LINE_Y[rowOfString(hover.stringIndex)];
       ctx.save();
-      ctx.strokeStyle = '#4281b2';
+      ctx.strokeStyle = colors.hover;
       ctx.lineWidth = 1.5;
       ctx.strokeRect(hover.note.x - 11, y - 9, 22, 18);
       ctx.restore();
@@ -574,7 +612,7 @@ const BassStaff = forwardRef<PlayHandle, BassStaffProps>(function BassStaff({ re
       const spacing = SPACING;
       if (ctx) {
         ctx.clearRect(0, 0, CANVAS.width, CANVAS.height);
-        ctx.strokeStyle = 'black';
+        ctx.strokeStyle = colors.ink;
         ctx.lineWidth = 1;
 
         if (viewMode === 'tab') {
@@ -847,7 +885,7 @@ const BassStaff = forwardRef<PlayHandle, BassStaffProps>(function BassStaff({ re
   // Draw when what the staff shows changes, and once the clef image loads.
   useEffect(() => {
     requestDraw();
-  }, [requestDraw, renderWidth, bassNoteGrid, bassGroove, chords, chordGrid, bassGrid, measureLines, pendingNote, viewMode, tabEdit]);
+  }, [requestDraw, renderWidth, bassNoteGrid, bassGroove, chords, chordGrid, bassGrid, measureLines, pendingNote, viewMode, tabEdit, colors]);
 
   useEffect(() => {
     if (!CLEF_IMAGE.complete) CLEF_IMAGE.addEventListener('load', requestDraw);

@@ -125,7 +125,7 @@ export default function Save({ onClose }: SaveProps) {
 
     return (
         <div className={styles.generateContainer} ref={saveRef}>
-          <button onClick={onClose}>x</button>
+          <button className={styles.closeButton} onClick={onClose} aria-label="Close" title="Close">×</button>
             <div>
                 <h2>Save Your Song</h2>
                 <form>
