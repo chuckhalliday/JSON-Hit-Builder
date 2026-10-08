@@ -4,7 +4,7 @@ import { bassPitch } from "./SongStructure/bassPitch";
 import { SongDoc, Layer, GenerateOptions, SectionLabel } from "./Core/doc";
 import { generateDoc, regenerateLayer, setLock, setInstanceEnergy, moveInstance, detachInstance, relinkInstance, duplicateInstance, deleteInstance, changeInstanceSection } from "./Core/generate";
 import { realizeSong, realizeSection, realizeInstance, assignStepIds } from "./Core/realize";
-import { editBass, editDrum, editChordTone, editChord } from "./Core/edits";
+import { editBass, editDrum, editChordTone, editChord, splitBassNote, joinBassNotes } from "./Core/edits";
 import { ChordEvent } from "./Core/theory";
 import { keyName } from "./Core/theory";
 import { LoopRegion, LoopSpan, comparePoints } from "./Playback/loop";
@@ -176,6 +176,15 @@ const song = createSlice({
         // the stored osc/midi that playback reads in sync with the staff.
         state.songStructure[action.payload.index].bassNoteLocations =
           action.payload.bassNoteLocations.map(note => ({ ...note, ...bassPitch(note.y, note.acc) }));
+      },
+      // The rhythm strip: split bass note `note` in half, or join it with the
+      // next one. Lands on the part's section, like other bass edits.
+      editBassRhythm: (state, action: PayloadAction<{ part: number, note: number, op: 'split' | 'join' }>) => {
+        const { part, note, op } = action.payload;
+        const target = docFor(state, part);
+        if (!target) return;
+        const next = op === 'split' ? splitBassNote(target.doc, part, note) : joinBassNotes(target.doc, part, note);
+        if (next !== target.doc) applyDoc(state, next, target.sectionId);
       },
       setDrumState: (state, action: PayloadAction<{ index: number, drumPart: number, drumStep: number, drums: DrumHit }>) => {
         const sculpted = docFor(state, action.payload.index);
@@ -389,7 +398,7 @@ const song = createSlice({
     },
   });
 
-export const { setIsPlaying, setMidi, setAcoustic, setSong, setBassState, setDrumState, setChordState, setCurrentBeat, reorderParts, incrementByAmount, loadSong, rerollLayer, toggleLock, setPartEnergy, setLoop, setLoopPick, pickLoopSpan, extendLoop, toggleLoop, setSounds, editHarmony, setPartLinked, setPartSection, setPartLyrics, duplicatePart, deletePart } = song.actions;
+export const { setIsPlaying, setMidi, setAcoustic, setSong, setBassState, setDrumState, setChordState, setCurrentBeat, reorderParts, incrementByAmount, loadSong, rerollLayer, toggleLock, setPartEnergy, setLoop, setLoopPick, pickLoopSpan, extendLoop, toggleLoop, setSounds, editHarmony, setPartLinked, setPartSection, setPartLyrics, editBassRhythm, duplicatePart, deletePart } = song.actions;
 
 // Thunk: generate a fresh form-first song and load it into the store.
 // Dispatched on mount and by the song tabs. Pass a seed (or full options)
@@ -409,6 +418,7 @@ const HISTORY_LIMIT = 50;
 const UNDOABLE: Record<string, string> = {
   [song.actions.setBassState.type]: 'bass edit',
   [song.actions.setDrumState.type]: 'drum edit',
+  [song.actions.editBassRhythm.type]: 'rhythm edit',
   [song.actions.setChordState.type]: 'voicing edit',
   [song.actions.editHarmony.type]: 'chord change',
   [song.actions.rerollLayer.type]: 're-roll',
