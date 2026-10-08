@@ -6,6 +6,9 @@ import { generateDoc, regenerateLayer, setLock, setInstanceEnergy, moveInstance,
 import { realizeSong, realizeSection, realizeInstance, assignStepIds } from "./Core/realize";
 import { editBass, editDrum, editChordTone, editChord, splitBassNote, joinBassNotes } from "./Core/edits";
 import { ChordEvent } from "./Core/theory";
+import { LyricTiming, withLyricMove } from "./Core/lyrics";
+import { frozenMelody, melodyWithSplits } from "./Core/melody";
+import { partLyrics } from "./Core/lyrics";
 import { keyName } from "./Core/theory";
 import { LoopRegion, LoopSpan, comparePoints } from "./Playback/loop";
 import { SoundPick } from "./Core/timbre";
@@ -107,6 +110,19 @@ const docFor = (state: SongState, part: number) => {
   const sectionId = state.songStructure[part]?.sectionId;
   return doc && sectionId && doc.form[part]?.sectionId === sectionId ? { doc, sectionId } : null;
 };
+
+// A part's words and dragged syllables, on the part and (for sculpted songs)
+// its form instance, so they move with the part through re-renders.
+function setWords(state: SongState, part: number, lyrics: string | undefined, timing: LyricTiming | undefined) {
+  const inst = state.doc && state.doc.form.length === state.songStructure.length ? state.doc.form[part] : undefined;
+  for (const target of [state.songStructure[part], inst]) {
+    if (!target) continue;
+    if (lyrics) target.lyrics = lyrics;
+    else delete target.lyrics;
+    if (timing) target.lyricTiming = timing;
+    else delete target.lyricTiming;
+  }
+}
 
 // Classic songs (no document): number each part type's repeats in order
 // and lay the step ids out again after parts are added or removed.
@@ -364,13 +380,63 @@ const song = createSlice({
         const { part, text } = action.payload;
         const p = state.songStructure[part];
         if (!p || (p.lyrics ?? '') === text) return;
-        if (text) p.lyrics = text;
-        else delete p.lyrics;
-        const inst = state.doc && state.doc.form.length === state.songStructure.length ? state.doc.form[part] : undefined;
-        if (inst) {
-          if (text) inst.lyrics = text;
-          else delete inst.lyrics;
+        // Lines reworded lose their dragged syllables.
+        const timing = p.lyricTiming ? withLyricMove(text, current(state).songStructure[part].lyricTiming, -1, 0, null) : undefined;
+        setWords(state, part, text || undefined, timing);
+      },
+      // Drag a syllable of a part's words to a beat (null puts it back).
+      setLyricTiming: (state, action: PayloadAction<{ part: number, line: number, at: number, beat: number | null }>) => {
+        const { part, line, at, beat } = action.payload;
+        const p = current(state).songStructure[part];
+        if (!p?.lyrics) return;
+        const timing = withLyricMove(p.lyrics, p.lyricTiming, line, at, beat);
+        if (JSON.stringify(timing) === JSON.stringify(p.lyricTiming)) return;
+        setWords(state, part, p.lyrics, timing);
+      },
+      // Melody, for sculpted songs: on or off for the whole song.
+      setMelodyEnabled: (state, action: PayloadAction<boolean>) => {
+        if (!state.doc || !!state.doc.melody === action.payload) return;
+        if (action.payload) state.doc.melody = true;
+        else delete state.doc.melody;
+      },
+      // One sung syllable's pitch, on the part that owns the words. The tune
+      // is frozen around the edit and locked, as other hand edits lock their
+      // layer.
+      setMelodyNote: (state, action: PayloadAction<{ part: number, line: number, at: number, midi: number }>) => {
+        const { part, line, at, midi } = action.payload;
+        const doc = current(state).doc;
+        const melody = doc && frozenMelody(doc, current(state).songStructure, part, { line, at, midi });
+        if (melody) state.doc!.form[part].melody = melody;
+      },
+      // A fresh tune (for the part owning the words), unless it's locked.
+      rerollMelody: (state, action: PayloadAction<{ part: number }>) => {
+        const inst = state.doc?.form[action.payload.part];
+        if (!inst || inst.melody?.locked) return;
+        // A new tune over the same note lengths.
+        const rhythm = current(state).doc!.form[action.payload.part].melody?.rhythm;
+        inst.melody = { roll: (inst.melody?.roll ?? 0) + 1, ...(rhythm ? { rhythm } : {}) };
+      },
+      // The melody's rhythm strip: a sung syllable's note split `splits`
+      // times (on the part owning the words).
+      setMelodySplits: (state, action: PayloadAction<{ part: number, line: number, at: number, splits: number }>) => {
+        const { part, line, at, splits } = action.payload;
+        const doc = current(state).doc;
+        if (!doc?.form[part]) return;
+        const text = partLyrics(current(state).songStructure, part).text;
+        state.doc!.form[part].melody = melodyWithSplits(doc.form[part].melody, text, line, at, splits);
+      },
+      // Locking freezes the tune as it stands; unlocking keeps it until a
+      // re-roll.
+      toggleMelodyLock: (state, action: PayloadAction<{ part: number }>) => {
+        const { part } = action.payload;
+        const inst = state.doc?.form[part];
+        if (!inst) return;
+        if (inst.melody?.locked) {
+          inst.melody = { ...inst.melody, locked: false };
+          return;
         }
+        const melody = frozenMelody(current(state).doc!, current(state).songStructure, part);
+        if (melody) inst.melody = melody;
       },
       setPartLinked: (state, action: PayloadAction<{ part: number, linked: boolean }>) => {
         if (!state.doc) return;
@@ -398,7 +464,7 @@ const song = createSlice({
     },
   });
 
-export const { setIsPlaying, setMidi, setAcoustic, setSong, setBassState, setDrumState, setChordState, setCurrentBeat, reorderParts, incrementByAmount, loadSong, rerollLayer, toggleLock, setPartEnergy, setLoop, setLoopPick, pickLoopSpan, extendLoop, toggleLoop, setSounds, editHarmony, setPartLinked, setPartSection, setPartLyrics, editBassRhythm, duplicatePart, deletePart } = song.actions;
+export const { setIsPlaying, setMidi, setAcoustic, setSong, setBassState, setDrumState, setChordState, setCurrentBeat, reorderParts, incrementByAmount, loadSong, rerollLayer, toggleLock, setPartEnergy, setLoop, setLoopPick, pickLoopSpan, extendLoop, toggleLoop, setSounds, editHarmony, setPartLinked, setPartSection, setPartLyrics, setLyricTiming, editBassRhythm, setMelodyEnabled, setMelodyNote, rerollMelody, toggleMelodyLock, setMelodySplits, duplicatePart, deletePart } = song.actions;
 
 // Thunk: generate a fresh form-first song and load it into the store.
 // Dispatched on mount and by the song tabs. Pass a seed (or full options)
@@ -427,6 +493,12 @@ const UNDOABLE: Record<string, string> = {
   [song.actions.setPartLinked.type]: 'link change',
   [song.actions.setPartSection.type]: 'part change',
   [song.actions.setPartLyrics.type]: 'lyrics edit',
+  [song.actions.setLyricTiming.type]: 'syllable move',
+  [song.actions.setMelodyEnabled.type]: 'melody',
+  [song.actions.setMelodyNote.type]: 'melody edit',
+  [song.actions.rerollMelody.type]: 'melody re-roll',
+  [song.actions.toggleMelodyLock.type]: 'melody lock',
+  [song.actions.setMelodySplits.type]: 'melody rhythm',
   [song.actions.duplicatePart.type]: 'duplicate',
   [song.actions.deletePart.type]: 'delete',
   [song.actions.reorderParts.type]: 'reorder',

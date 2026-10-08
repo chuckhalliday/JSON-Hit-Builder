@@ -14,7 +14,7 @@
 import { Part } from '../types';
 import { PPQ, EIGHTH, BAR, beatsToTickPositions } from './time';
 import { Key, Mode, keySignature, MODES, MODE_NAMES } from './theory';
-import { MidiEvent, MidiTrack, keySignatureEvent, marker, note, programChange, tempo, textEvent, timeSignature, trackName, writeMidiFile } from './midiFile';
+import { MidiEvent, MidiTrack, keySignatureEvent, lyricEvent, marker, note, programChange, tempo, textEvent, timeSignature, trackName, writeMidiFile } from './midiFile';
 
 // General MIDI drum notes, in the drum machine's row order (doc.ts DRUM_VOICES).
 export const GM_DRUMS = [36, 38, 45, 47, 50, 42, 46, 51, 49];
@@ -22,6 +22,7 @@ const DRUM_CHANNEL = 9;
 const BASS_CHANNEL = 0;
 const CHORD_CHANNEL = 1;
 const GUIDE_CHANNEL = 2;
+const MELODY_CHANNEL = 3;
 
 const NOTE_PCS: Record<string, number> = { C: 0, D: 2, E: 4, F: 5, G: 7, A: 9, B: 11 };
 
@@ -83,12 +84,14 @@ export function parseKeyString(keyString: string): Key | null {
 
 export interface ExportInput {
   songStructure: Part[];
+  // Each part's sung melody (Core/melody.ts), if the song has one.
+  melody?: Array<Array<{ beat: number, dur: number, midi: number, text: string, hyphen: boolean }> | null>;
   bpm: number;
   key: string;
   title?: string;
 }
 
-export function songToMidi({ songStructure, bpm, key, title }: ExportInput): Uint8Array {
+export function songToMidi({ songStructure, bpm, key, title, melody }: ExportInput): Uint8Array {
   const conductor: MidiEvent[] = [trackName(title ?? `Song in ${key}`), tempo(0, bpm), timeSignature(0, 4, 4)];
   const parsedKey = parseKeyString(key);
   if (parsedKey) {
@@ -99,10 +102,13 @@ export function songToMidi({ songStructure, bpm, key, title }: ExportInput): Uin
   const bass: MidiEvent[] = [trackName('Bass'), programChange(0, BASS_CHANNEL, 33)];
   const chords: MidiEvent[] = [trackName('Chords'), programChange(0, CHORD_CHANNEL, 0)];
   const guide: MidiEvent[] = [trackName('Guide Tones'), programChange(0, GUIDE_CHANNEL, 73)];
+  // The melody (GM Voice Oohs), its words as lyric events - a hyphen ending
+  // a syllable whose word goes on, as notation software writes them.
+  const sung: MidiEvent[] = [trackName('Melody'), programChange(0, MELODY_CHANNEL, 53)];
 
   let partStart = 0;
   let lastTranspose = 0;
-  songStructure.forEach(part => {
+  songStructure.forEach((part, index) => {
     conductor.push(marker(partStart, `${part.type} ${part.repeat}`));
     // A key lift (e.g. the final chorus up a step) gets its own signature.
     const transpose = part.transpose ?? 0;
@@ -139,12 +145,19 @@ export function songToMidi({ songStructure, bpm, key, title }: ExportInput): Uin
       if (g) guide.push(...note(GUIDE_CHANNEL, g, chordPos[c], chordPos[c + 1] - chordPos[c], velocity(GUIDE_VELOCITY, chordPos[c] - partStart, part.energy)));
     });
 
+    melody?.[index]?.forEach(m => {
+      const at = partStart + Math.round(m.beat * 12) * (PPQ / 12);
+      sung.push(lyricEvent(at, m.text + (m.hyphen ? '-' : '')));
+      sung.push(...note(MELODY_CHANNEL, m.midi, at, Math.max(30, Math.round(m.dur * PPQ * 0.95)), velocity(CHORD_VELOCITY, at - partStart, part.energy) + 10));
+    });
+
     partStart = stepPos[stepPos.length - 1];
   });
   conductor.push(marker(partStart, 'End'));
 
   const tracks: MidiTrack[] = [{ events: conductor }, { events: drums }, { events: bass }, { events: chords }];
   if (guide.length > 2) tracks.push({ events: guide });
+  if (sung.length > 2) tracks.push({ events: sung });
   return writeMidiFile(tracks, PPQ);
 }
 

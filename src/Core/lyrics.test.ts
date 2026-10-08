@@ -1,4 +1,4 @@
-import { lineSyllables, partLyrics, placeLyrics, syllabify } from './lyrics';
+import { lineSyllables, partLyrics, placeLyrics, syllabify, withLyricMove } from './lyrics';
 import { generateDoc } from './generate';
 import { realizeSong } from './realize';
 import { stepXs } from '../SongStructure/bass';
@@ -90,6 +90,51 @@ describe('placeLyrics', () => {
   });
 });
 
+describe('dragged syllables', () => {
+  const text = 'one two three\nfour five six';
+  // 4 bars of eighths: two-bar phrases, each landing on beats 2, 3, 4 of its stretch.
+  const groove = eighths(4);
+
+  it('moves a syllable to the beat it was dragged to, and marks it', () => {
+    const timing = withLyricMove(text, undefined, 0, 1, 2.5);
+    const placed = placeLyrics(text, groove, timing).syllables;
+    expect(placed.map(s => s.beat)).toEqual([2, 2.5, 4, 10, 11, 12]);
+    expect(placed.map(s => s.moved)).toEqual([false, true, false, false, false, false]);
+    expect(placed[1].step).toBe(5);
+  });
+
+  it('can move a syllable anywhere between its neighbours, across the phrase it started in', () => {
+    // The first syllable of line 2 back into line 1's stretch, just past "three".
+    const placed = placeLyrics(text, groove, withLyricMove(text, undefined, 1, 0, 4.5)).syllables;
+    expect(placed[3].beat).toBe(4.5);
+  });
+
+  it("puts back moves that land off the grid or on or past a neighbour", () => {
+    for (const beat of [2.3, 2, 4, 9]) {
+      const placed = placeLyrics(text, groove, withLyricMove(text, undefined, 0, 1, beat)).syllables;
+      expect(placed[1]).toMatchObject({ beat: 3, moved: false });
+    }
+  });
+
+  it('keeps moves in order when two cross: the later one goes back', () => {
+    let timing = withLyricMove(text, undefined, 0, 0, 3.5);
+    timing = withLyricMove(text, timing, 0, 1, 2.5);
+    const placed = placeLyrics(text, groove, timing).syllables;
+    const beats = placed.map(s => s.beat);
+    beats.slice(1).forEach((b, i) => expect(b).toBeGreaterThan(beats[i]));
+  });
+
+  it('forgets a line\'s moves once the line is reworded, and keeps the other lines\'', () => {
+    let timing = withLyricMove(text, undefined, 0, 1, 2.5);
+    timing = withLyricMove(text, timing, 1, 2, 13);
+    const reworded = 'one two three four\nfour five six';
+    const placed = placeLyrics(reworded, groove, timing).syllables;
+    expect(placed.filter(s => s.moved).map(s => [s.line, s.at])).toEqual([[1, 2]]);
+    // Putting every move back clears the timing altogether.
+    expect(withLyricMove(text, withLyricMove(text, timing, 0, 1, null), 1, 2, null)).toBeUndefined();
+  });
+});
+
 describe('partLyrics', () => {
   const parts = [
     { type: 'Verse', lyrics: 'first verse' },
@@ -106,6 +151,13 @@ describe('partLyrics', () => {
     expect(partLyrics(parts, 3)).toEqual({ text: 'the hook', from: 1 });
     // Past a wordless chorus to the last one with words.
     expect(partLyrics(parts, 5)).toEqual({ text: 'the hook', from: 1 });
+  });
+
+  it('carries the dragged syllables of the words a repeat sings', () => {
+    const timing = withLyricMove('the hook', undefined, 0, 0, 1);
+    const withTiming = parts.map((p, i) => (i === 1 ? { ...p, lyricTiming: timing } : p));
+    expect(partLyrics(withTiming, 3).timing).toBe(timing);
+    expect(partLyrics(withTiming, 1).timing).toBe(timing);
   });
 
   it("doesn't repeat verse words, and leaves '-' parts and first instances wordless", () => {

@@ -2,6 +2,7 @@
 import playBeat from './playDrums.js';
 import playChords from './playChords.js';
 import playBass from './playBass.js';
+import playMelody, { MelodyPlayback } from './playMelody';
 import { SongState } from '../reducers.js';
 import { DrumHit, NoteLocation, ChordTones } from '../types';
 import { ensureAudioRunning } from './audioContext';
@@ -38,7 +39,8 @@ export interface VersePlaybackResult {
 
 export async function playVerse(bpm: number, midi: boolean, drumBeat: number, bassBeat: number, chordBeat: number, verseDrumGroove: number[], verseDrums: DrumHit[][],
   verseBassGroove: number[], verseBass: NoteLocation[], verseChordGroove: number[], verseChords: string[], verseChordTones: ChordTones, onStep: (lampIndex: number) => void, shouldStop?: () => boolean,
-  includeDrums = true, includeBass = true, includeChords = true, acoustic = true, key?: string, startAt?: number, ends: TrackEnds = {}): Promise<VersePlaybackResult> {
+  includeDrums = true, includeBass = true, includeChords = true, acoustic = true, key?: string, startAt?: number, ends: TrackEnds = {},
+  melody?: MelodyPlayback, includeMelody = true): Promise<VersePlaybackResult> {
   // One start time for every track of the part (the previous part's end
   // when chaining), and each track resolves PART_LOOKAHEAD early.
   const audioContext = await ensureAudioRunning();
@@ -58,7 +60,8 @@ export async function playVerse(bpm: number, midi: boolean, drumBeat: number, ba
     // callback already lights every lamp; passing it to these too only
     // tripled the per-step dispatches and re-renders.
     playBass(midi, bassBeat, verseBass, verseBassGroove, bpm, shouldStop, undefined, verseDrumGroove, !includeBass, acoustic, timing(), ends.bass),
-    playChords(midi, chordBeat, verseChords, verseChordTones, verseChordGroove, bpm, shouldStop, undefined, verseDrumGroove, !includeChords, acoustic, timing(), ends.chord)
+    playChords(midi, chordBeat, verseChords, verseChordTones, verseChordGroove, bpm, shouldStop, undefined, verseDrumGroove, !includeChords, acoustic, timing(), ends.chord),
+    ...(melody ? [playMelody(midi, melody, bpm, shouldStop, !includeMelody, acoustic, timing())] : []),
   ])
   const endTime = Math.max(start, ...timings.map(t => t.endTime ?? start));
   return { drumBeat: results[0], bassBeat: results[verseDrums.length], chordBeat: results[verseDrums.length + 1], endTime }

@@ -4,7 +4,7 @@ import { setThemePref, ThemePref, useThemePref } from '../theme'
 import MidiRoutingMenu from './MidiRoutingMenu'
 
 export type SoundSource = 'synth' | 'acoustic' | 'midi';
-export type Track = 'chords' | 'bass' | 'drums';
+export type Track = 'chords' | 'bass' | 'drums' | 'melody';
 
 const BPM_MIN = 90;
 const BPM_MAX = 150;
@@ -122,6 +122,8 @@ interface TransportProps {
   onBpmChange: (bpm: number) => void;
   tracks: Record<Track, boolean>;
   onToggleTrack: (track: Track) => void;
+  // The melody's toggle shows once the song has one.
+  hasMelody: boolean;
   loopOn: boolean;
   hasLoop: boolean;
   onToggleLoop: () => void;
@@ -136,6 +138,7 @@ interface TransportProps {
 }
 
 const TRACKS: Array<{ id: Track, label: string }> = [
+  { id: 'melody', label: 'Melody' },
   { id: 'chords', label: 'Chords' },
   { id: 'bass', label: 'Bass' },
   { id: 'drums', label: 'Drums' },
@@ -272,7 +275,7 @@ function Transport(props: TransportProps) {
 
       <div className={`${styles.transportSide} ${styles.transportRight}`}>
         <div className={styles.trackPills} role="group" aria-label="Tracks">
-          {TRACKS.map(t => (
+          {TRACKS.filter(t => t.id !== 'melody' || props.hasMelody).map(t => (
             <button
               key={t.id}
               className={`${styles.trackPill} ${props.tracks[t.id] ? styles.trackOn : ''}`}

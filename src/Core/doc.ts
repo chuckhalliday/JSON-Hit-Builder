@@ -8,6 +8,8 @@
 
 import { ChordEvent, Key } from './theory';
 import { GenerationTuning } from '../types';
+import type { LyricTiming } from './lyrics';
+import type { PartMelody } from './melody';
 
 export type SectionLabel =
   | 'Intro' | 'Verse' | 'Pre-Chorus' | 'Chorus' | 'Bridge' | 'Breakdown' | 'Drop' | 'Solo' | 'Outro';
@@ -75,6 +77,8 @@ export interface SectionInstance {
   // Words written for this part (Lyrics worksheet). Per part, not per
   // section: a second verse has its own words.
   lyrics?: string;
+  lyricTiming?: LyricTiming; // syllables dragged on the staff
+  melody?: PartMelody; // the tune for these words (see melody.ts)
 }
 
 export interface FormEntry {
@@ -114,4 +118,6 @@ export interface SongDoc {
   motifs: number[][] | null;
   arrangement: number[][] | null;
   liftFinalChorus: boolean;
+  // A sung melody over the lyrics, added from the Lyrics worksheet.
+  melody?: boolean;
 }

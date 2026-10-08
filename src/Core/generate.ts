@@ -255,7 +255,7 @@ export function changeInstanceSection(doc: SongDoc, index: number, label: Sectio
     }
   }
   const form = doc.form.map((f, i): SectionInstance =>
-    (i === index ? { sectionId: id, energy: sections[id].energy, transpose: f.transpose, drumOverrides: [], ...(f.lyrics ? { lyrics: f.lyrics } : {}) } : f));
+    (i === index ? { sectionId: id, energy: sections[id].energy, transpose: f.transpose, drumOverrides: [], ...(f.lyrics ? { lyrics: f.lyrics, lyricTiming: f.lyricTiming, melody: f.melody } : {}) } : f));
   if (!form.some(f => f.sectionId === from.id)) delete sections[from.id];
   const next = { ...doc, sections, form };
   // A part set to "this part only" while it was the section's sole player

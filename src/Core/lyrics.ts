@@ -11,7 +11,15 @@ export interface Syllable {
   step: number; // drum step it lands on
   beat: number; // the step's onset, in beats from the part's start
   hyphen: boolean; // its word continues on the next syllable
+  line: number; // which phrase (non-blank line) it's in
+  at: number; // its place in that line
+  moved: boolean; // dragged off its automatic spot
 }
+
+// Syllables dragged off their automatic spots, by line: each line's moves
+// (a beat, or null for "where it lands by itself", per syllable) are kept
+// with the line's text, and only apply while the line still reads the same.
+export type LyricTiming = Array<{ text: string; beats: Array<number | null> } | null>;
 
 export interface LyricPlacement {
   syllables: Syllable[];
@@ -136,10 +144,13 @@ const onGrid = (beat: number, per: number) => Math.abs(beat * per - Math.round(b
 // eighths, else on every step - so short lines read as pickups and long
 // ones fill the bar. Syllables that don't fit even on every step are
 // counted as overflow and left off.
-export function placeLyrics(text: string, drumGroove: number[]): LyricPlacement {
-  const lines = text.trim() === NO_WORDS
-    ? []
-    : text.split('\n').map(lineSyllables).filter(line => line.length > 0);
+//
+// Dragged syllables (`timing`) then move to their beats - each one only if a
+// step starts there and it stays strictly between its neighbours, else it
+// keeps its automatic spot.
+export function placeLyrics(text: string, drumGroove: number[], timing?: LyricTiming): LyricPlacement {
+  const lineTexts = lyricLines(text);
+  const lines = lineTexts.map(lineSyllables);
   const total = lines.reduce((n, line) => n + line.length, 0);
   const onsets: number[] = [];
   const length = drumGroove.reduce((t, d) => (onsets.push(t), t + d), 0);
@@ -166,9 +177,56 @@ export function placeLyrics(text: string, drumGroove: number[]): LyricPlacement 
     const fit = tiers.find(tier => tier.length >= line.length);
     const slots = fit ? fit.slice(fit.length - line.length) : steps.slice(0, line.length);
     placement.overflow += line.length - slots.length;
-    slots.forEach((slot, i) => placement.syllables.push({ ...line[i], step: slot.step, beat: slot.beat }));
+    slots.forEach((slot, i) => placement.syllables.push({ ...line[i], step: slot.step, beat: slot.beat, line: k, at: i, moved: false }));
   });
+  if (timing) applyTiming(placement.syllables, lineTexts, timing, onsets);
   return placement;
+}
+
+// The phrases of a part's words: its non-blank lines, trimmed (none for "-").
+export function lyricLines(text: string): string[] {
+  if (text.trim() === NO_WORDS) return [];
+  return text.split('\n').map(line => line.trim()).filter(line => lineSyllables(line).length > 0);
+}
+
+function applyTiming(syllables: Syllable[], lineTexts: string[], timing: LyricTiming, onsets: number[]) {
+  const auto = syllables.map(s => ({ step: s.step, beat: s.beat }));
+  const moves = syllables.map(s => {
+    const entry = timing[s.line];
+    const beat = entry && entry.text === lineTexts[s.line] ? entry.beats[s.at] : null;
+    const step = beat === null || beat === undefined ? -1 : onsets.findIndex(t => Math.abs(t - beat) < EPS);
+    return step === -1 ? null : { step, beat: onsets[step] };
+  });
+  moves.forEach((move, i) => { if (move) Object.assign(syllables[i], move, { moved: true }); });
+  // A move that lands on or past a neighbour goes back to where it'd be by
+  // itself; going back can upset another move, so repeat until all are in
+  // order (each pass takes at least one back, and automatic spots are).
+  for (let changed = true; changed;) {
+    changed = false;
+    syllables.forEach((s, i) => {
+      const before = syllables[i - 1]?.beat ?? -Infinity;
+      const after = syllables[i + 1]?.beat ?? Infinity;
+      if (s.moved && !(s.beat > before + EPS && s.beat < after - EPS)) {
+        Object.assign(s, auto[i], { moved: false });
+        changed = true;
+      }
+    });
+  }
+}
+
+// The timing with syllable `at` of line `line` dragged to `beat` (or, for
+// null, put back), for words `text`. Lines whose words have changed since
+// their moves were made lose them.
+export function withLyricMove(text: string, timing: LyricTiming | undefined, line: number, at: number, beat: number | null): LyricTiming | undefined {
+  const lines = lyricLines(text);
+  const next: LyricTiming = lines.map((lineText, k) => {
+    const entry = timing?.[k];
+    const beats = entry && entry.text === lineText ? [...entry.beats] : [];
+    if (k === line) beats[at] = beat === null ? null : Math.round(beat * 1000) / 1000;
+    const kept = Array.from({ length: lineSyllables(lineText).length }, (_, i) => beats[i] ?? null);
+    return kept.some(b => b !== null) ? { text: lineText, beats: kept } : null;
+  });
+  return next.some(Boolean) ? next : undefined;
 }
 
 // ---- Which words a part sings ---------------------------------------------
@@ -177,18 +235,20 @@ export interface PartWords {
   text: string;
   // The earlier part whose words this one repeats, when it has none of its own.
   from: number | null;
+  // Their dragged syllables - which travel with the words.
+  timing?: LyricTiming;
 }
 
 // A part's own words, or - for a repeated section other than a verse, left
 // blank - those of the last earlier part of the same kind that has some.
-export function partLyrics(parts: Array<{ type: string; lyrics?: string }>, index: number): PartWords {
+export function partLyrics(parts: Array<{ type: string; lyrics?: string; lyricTiming?: LyricTiming }>, index: number): PartWords {
   const part = parts[index];
   const own = part?.lyrics?.trim() ?? '';
-  if (own) return { text: own === NO_WORDS ? '' : part!.lyrics!, from: null };
+  if (own) return own === NO_WORDS ? { text: '', from: null } : { text: part!.lyrics!, from: null, timing: part!.lyricTiming };
   if (!part || part.type === 'Verse') return { text: '', from: null };
   for (let i = index - 1; i >= 0; i--) {
     const earlier = parts[i].lyrics?.trim() ?? '';
-    if (parts[i].type === part.type && earlier && earlier !== NO_WORDS) return { text: parts[i].lyrics!, from: i };
+    if (parts[i].type === part.type && earlier && earlier !== NO_WORDS) return { text: parts[i].lyrics!, from: i, timing: parts[i].lyricTiming };
   }
   return { text: '', from: null };
 }

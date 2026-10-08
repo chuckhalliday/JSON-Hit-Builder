@@ -1,5 +1,5 @@
 import { configureStore } from '@reduxjs/toolkit';
-import { songReducer, newSong, setPartLyrics, setPartSection, editHarmony, reorderParts, duplicatePart, rerollLayer, setSong, undo, SongState } from './reducers';
+import { songReducer, newSong, setPartLyrics, setLyricTiming, setPartSection, editHarmony, reorderParts, duplicatePart, rerollLayer, setSong, undo, SongState } from './reducers';
 import { createRandomSong } from './SongStructure/createSong';
 
 const makeStore = () => configureStore({ reducer: { song: songReducer }, middleware: d => d({ serializableCheck: false, immutableCheck: false }) });
@@ -70,5 +70,28 @@ describe('part lyrics', () => {
     expect(st(store).songStructure[0].lyrics).toBe('old school');
     store.dispatch(duplicatePart(0));
     expect(st(store).songStructure[1].lyrics).toBe('old school');
+  });
+
+  it('keeps dragged syllables with the words, one undo step per drag', () => {
+    const store = setup();
+    const c = st(store).songStructure.findIndex(p => p.type === 'Chorus');
+    store.dispatch(setPartLyrics({ part: c, text: 'carry me home\nhold on' }));
+    const pastBefore = st(store).past!.length;
+    store.dispatch(setLyricTiming({ part: c, line: 0, at: 1, beat: 2.5 }));
+    expect(st(store).songStructure[c].lyricTiming).toEqual([{ text: 'carry me home', beats: [null, 2.5, null, null] }, null]);
+    expect(st(store).doc!.form[c].lyricTiming).toEqual(st(store).songStructure[c].lyricTiming);
+    expect(st(store).past!.length).toBe(pastBefore + 1);
+    expect(st(store).past!.at(-1)!.label).toBe('syllable move');
+    // Re-rendering the section keeps them.
+    store.dispatch(editHarmony({ part: c, chord: 0, change: { root: 5, quality: 'maj' } }));
+    expect(st(store).songStructure[c].lyricTiming![0]!.beats[1]).toBe(2.5);
+    // Rewording that line drops its moves.
+    store.dispatch(setPartLyrics({ part: c, text: 'carry me away\nhold on' }));
+    expect(st(store).songStructure[c].lyricTiming).toBeUndefined();
+    store.dispatch(undo()); // the rewording
+    expect(st(store).songStructure[c].lyricTiming![0]!.beats[1]).toBe(2.5);
+    store.dispatch(undo()); // the chord change
+    store.dispatch(undo()); // the drag
+    expect(st(store).songStructure[c].lyricTiming).toBeUndefined();
   });
 });
