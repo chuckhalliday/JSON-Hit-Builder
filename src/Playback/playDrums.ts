@@ -49,7 +49,7 @@ export default function playBeat(midi: boolean, beat: number, pattern: DrumHit[]
         const stop = playDrumVoice(audioContext, audioContext.destination, voice, time, velocity / 100, acoustic, rootHz);
         if (stop) register(stop);
       } else {
-        scheduleTimer(time, () => triggerMidi('1', midiNote, duration, velocity, release), register);
+        scheduleTimer(time, () => triggerMidi('drums', midiNote, duration, velocity, release), register);
       }
     };
 

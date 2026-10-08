@@ -169,7 +169,7 @@ export default async function playChords(midi: boolean, beat: number, pattern: s
         if (pattern[index] === '-' || mute) return;
         const chordTones = chords.midiTones[index];
         for (const note of chordTones) {
-          scheduleTimer(time, () => triggerMidi('3', note, duration, velocity, release), register);
+          scheduleTimer(time, () => triggerMidi('chords', note, duration, velocity, release), register);
         }
       };
 

@@ -195,7 +195,7 @@ function playSynthBassOsc(audioContext: AudioContext, startTime: number, bass: n
           }
         });
       } else {
-        scheduleTimer(time, () => triggerMidi('2', bass, duration, velocity, release), register);
+        scheduleTimer(time, () => triggerMidi('bass', bass, duration, velocity, release), register);
       }
     };
 
