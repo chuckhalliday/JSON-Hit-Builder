@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react'
 import styles from "../Styles/App.module.scss"
 import { setThemePref, ThemePref, useThemePref } from '../theme'
+import MidiRoutingMenu from './MidiRoutingMenu'
 
 export type SoundSource = 'synth' | 'acoustic' | 'midi';
 export type Track = 'chords' | 'bass' | 'drums';
@@ -159,6 +160,31 @@ function Transport(props: TransportProps) {
   const menuWrapRef = useRef<HTMLDivElement>(null);
   const themePref = useThemePref();
 
+  // The MIDI routing menu: opens when MIDI is picked as the source; clicking
+  // MIDI again while it's the source toggles it.
+  const [midiMenuOpen, setMidiMenuOpen] = useState(false);
+  const sourceWrapRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (props.source !== 'midi') setMidiMenuOpen(false);
+  }, [props.source]);
+  useEffect(() => {
+    if (!midiMenuOpen) return;
+    const onDown = (e: MouseEvent) => {
+      if (!sourceWrapRef.current?.contains(e.target as Node)) setMidiMenuOpen(false);
+    };
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setMidiMenuOpen(false); };
+    document.addEventListener('mousedown', onDown);
+    window.addEventListener('keydown', onKey);
+    return () => {
+      document.removeEventListener('mousedown', onDown);
+      window.removeEventListener('keydown', onKey);
+    };
+  }, [midiMenuOpen]);
+  const pickSource = (source: SoundSource) => {
+    if (source === 'midi') setMidiMenuOpen(open => (props.source === 'midi' ? !open : true));
+    props.onSourceChange(source);
+  };
+
   useEffect(() => {
     if (!menuOpen) return;
     const onDown = (e: MouseEvent) => {
@@ -182,18 +208,22 @@ function Transport(props: TransportProps) {
           <span className={styles.keyChipLabel}>Key</span>
           <span className={styles.keyChipValue}>{props.songKey}</span>
         </button>
-        <div className={styles.segmented} role="group" aria-label="Sound source">
-          {SOURCES.map(s => (
-            <button
-              key={s.id}
-              className={props.source === s.id ? styles.segmentOn : ''}
-              aria-pressed={props.source === s.id}
-              onClick={() => props.onSourceChange(s.id)}
-              title={s.title}
-            >
-              {s.label}
-            </button>
-          ))}
+        <div className={styles.menuWrap} ref={sourceWrapRef}>
+          <div className={styles.segmented} role="group" aria-label="Sound source">
+            {SOURCES.map(s => (
+              <button
+                key={s.id}
+                className={props.source === s.id ? styles.segmentOn : ''}
+                aria-pressed={props.source === s.id}
+                aria-expanded={s.id === 'midi' ? midiMenuOpen : undefined}
+                onClick={() => pickSource(s.id)}
+                title={s.id === 'midi' && props.source === 'midi' ? 'Choose which MIDI output each track plays to' : s.title}
+              >
+                {s.label}{s.id === 'midi' && props.source === 'midi' ? ' ▾' : ''}
+              </button>
+            ))}
+          </div>
+          {midiMenuOpen && <MidiRoutingMenu />}
         </div>
       </div>
 

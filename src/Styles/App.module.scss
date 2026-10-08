@@ -1265,6 +1265,86 @@
     background: var(--c-border);
 }
 
+// MIDI routing: the "more" menu's look, opening upward from the source
+// switch. Doubled up to beat .partMenu's fixed positioning.
+.partMenu.midiMenu {
+    position: absolute;
+    left: 0;
+    bottom: calc(100% + 6px);
+    width: 420px;
+    max-width: calc(100vw - 40px);
+    cursor: default;
+
+    .segmented button {
+      white-space: nowrap;
+    }
+
+    > button {
+      margin-top: 4px;
+      text-align: center;
+      border: 1px solid var(--c-border);
+    }
+}
+
+.midiRow {
+    display: grid;
+    grid-template-columns: 10px 56px 1fr;
+    align-items: center;
+    column-gap: 8px;
+    padding: 4px 8px;
+    font-size: 13px;
+
+    select {
+      min-width: 0;
+      padding: 4px 6px;
+      border: 1px solid var(--c-border-strong);
+      border-radius: 6px;
+      background: var(--c-surface-2);
+      color: var(--c-text);
+      font: inherit;
+      font-size: 12px;
+    }
+}
+
+.midiTrack {
+    font-weight: 600;
+}
+
+.midiDot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--c-border-strong);
+}
+
+.midiDotOn {
+    background: var(--c-accent);
+    box-shadow: 0 0 6px var(--c-accent);
+}
+
+.midiDotOff {
+    background: var(--c-danger);
+}
+
+.midiNote {
+    margin: 4px 8px;
+    font-size: 11px;
+    line-height: 1.45;
+    color: var(--c-text-muted);
+}
+
+.midiNote code {
+    padding: 0 3px;
+    border-radius: 3px;
+    background: var(--c-surface-2);
+    color: var(--c-text);
+    font-size: 11px;
+}
+
+.midiProblem {
+    color: var(--c-danger);
+}
+
 // Theme switch inside the "more" menu: a compact segmented row that
 // overrides the menu's full-width, left-aligned item buttons.
 .menuThemeRow {
