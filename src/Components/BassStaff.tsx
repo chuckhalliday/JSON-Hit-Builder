@@ -79,6 +79,9 @@ const MELODY_ZONE_BOTTOM = melodyY(MELODY_LOW_STEP) + SPACING;
 // With the melody and words shown over the bass, the Bass section's header
 // sits in a gap this tall between them, which moves the staff/tab down.
 const BASS_HEADER = 32;
+// How far a fitted canvas may be squeezed or stretched (vertically only).
+const FIT_MIN = 0.5;
+const FIT_MAX = 1.2;
 // A part's words while the Melody & lyrics section is collapsed.
 const NO_LYRICS = placeLyrics('', []);
 
@@ -239,6 +242,11 @@ interface BassStaffProps {
   showBass: boolean;
   onToggleWords: () => void;
   onToggleBass: () => void;
+  // Whether it draws those sections' headers (phones put them in a tab row
+  // instead), and a height to fit the canvas into by squeezing or stretching
+  // it vertically - its columns have to stay in line with the lamps'.
+  headers?: boolean;
+  fitHeight?: number;
 }
 
 
@@ -279,7 +287,7 @@ function readCanvasColors() {
   };
 }
 
-const BassStaff = forwardRef<PlayHandle, BassStaffProps>(function BassStaff({ renderWidth, part, lampsRef, onPlayingChange, viewMode, onViewModeChange, showWords, showBass, onToggleWords, onToggleBass }, ref) {
+const BassStaff = forwardRef<PlayHandle, BassStaffProps>(function BassStaff({ renderWidth, part, lampsRef, onPlayingChange, viewMode, onViewModeChange, showWords, showBass, onToggleWords, onToggleBass, headers = true, fitHeight }, ref) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const dispatch = useDispatch()
 
@@ -366,6 +374,9 @@ const BassStaff = forwardRef<PlayHandle, BassStaffProps>(function BassStaff({ re
   const headerGap = bassHeaderInGap ? BASS_HEADER + (lyrics.syllables.length > 0 ? 0 : wordsBottom - lift) : 0;
   const offset = band + lift + headerGap;
   const canvasHeight = showBass ? CANVAS_HEIGHT + offset : wordsBottom + 4;
+  // Drawn at its own height and shown at the fitted one; the mouse handlers
+  // map back by the ratio.
+  const fitScale = fitHeight ? Math.min(FIT_MAX, Math.max(FIT_MIN, fitHeight / canvasHeight)) : 1;
   const bandRef = useRef(offset);
   bandRef.current = offset;
 
@@ -1298,7 +1309,9 @@ const BassStaff = forwardRef<PlayHandle, BassStaffProps>(function BassStaff({ re
         const scrollLeft = document.documentElement.scrollLeft;
         const scrollTop = document.documentElement.scrollTop;
         MOUSE.x = event.clientX - rect.left - scrollLeft;
-        MOUSE.y = event.clientY - rect.top - scrollTop - bandRef.current;
+        // Back to canvas pixels when it's shown squeezed or stretched.
+        const scaleY = rect.height ? CANVAS.height / rect.height : 1;
+        MOUSE.y = (event.clientY - rect.top - scrollTop) * scaleY - bandRef.current;
         CANVAS.style.cursor = lyricDrag.current ? 'grabbing' : lyricAtMouse() !== -1 ? 'grab'
           : inMelodyRows() && melodyNoteAtMouse() !== -1 ? 'pointer' : '';
         requestDraw();
@@ -1661,19 +1674,23 @@ const BassStaff = forwardRef<PlayHandle, BassStaffProps>(function BassStaff({ re
     // stop sticking a screen-width into the scroll. Matching the canvas's
     // actual rendered width here gives it room to stick the whole way.
     <div style={{ width: renderWidth || '100%', position: 'relative' }}>
-      {(hasMelody || hasLyrics) && (
+      {headers && (hasMelody || hasLyrics) && (
         <SectionToggle
           label={hasMelody && hasLyrics ? 'Melody & lyrics' : hasMelody ? 'Melody' : 'Lyrics'}
           open={showWords}
           onToggle={onToggleWords}
         />
       )}
-      {!wordsShown && bassHeader}
+      {headers && !wordsShown && bassHeader}
       {/* Kept mounted while hidden: the canvas holds the drawing state. */}
       <div className={appStyles.canvasWrap} hidden={!showBass && !wordsShown}>
-        <canvas ref={canvasRef} id="myCanvas" />
-        {bassHeaderInGap && (
-          <div className={appStyles.canvasHeaderGap} style={{ top: wordsBottom, height: BASS_HEADER }}>
+        <canvas
+          ref={canvasRef}
+          id="myCanvas"
+          style={fitScale !== 1 ? { width: renderWidth || undefined, height: canvasHeight * fitScale } : undefined}
+        />
+        {headers && bassHeaderInGap && (
+          <div className={appStyles.canvasHeaderGap} style={{ top: wordsBottom * fitScale, height: BASS_HEADER * fitScale }}>
             {bassHeader}
           </div>
         )}
@@ -1683,7 +1700,7 @@ const BassStaff = forwardRef<PlayHandle, BassStaffProps>(function BassStaff({ re
             className={appStyles.tabInput}
             style={{
               left: tabEdit.x - 15,
-              top: (canvasRef.current?.offsetTop ?? 0) + offset + TAB_LINE_Y[rowOfString(tabEdit.stringIndex)] - 12,
+              top: (canvasRef.current?.offsetTop ?? 0) + (offset + TAB_LINE_Y[rowOfString(tabEdit.stringIndex)]) * fitScale - 12,
             }}
             value={tabEdit.value}
             autoFocus
@@ -1704,7 +1721,7 @@ const BassStaff = forwardRef<PlayHandle, BassStaffProps>(function BassStaff({ re
           />
         )}
       </div>
-      {wordsShown && !showBass && bassHeader}
+      {headers && wordsShown && !showBass && bassHeader}
     </div>
   )
 });

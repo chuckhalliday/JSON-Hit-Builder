@@ -14,6 +14,9 @@ import { SectionLabel } from '../Core/doc';
 import { melodyFor } from '../Core/melody';
 import DrumMachine, { StepTracker } from "./DrumMachine";
 import SectionToggle from './SectionToggle';
+import FitBox from './FitBox';
+import { PHONE_QUERY, useMediaQuery } from './useMediaQuery';
+import { partLyrics, placeLyrics } from '../Core/lyrics';
 import BassStaff from "./BassStaff";
 import Piano, { PlayHandle } from './Piano';
 import { useSelector, useDispatch } from "react-redux"
@@ -37,16 +40,7 @@ const SONG_TAB_COUNT = 10;
 // The collapsible sections of an open part, between the bar/lamp strip and
 // the transport.
 type PartSection = 'section' | 'words' | 'bass' | 'drums';
-const COLLAPSED_KEY = 'hitBuilder.collapsedSections';
 const NONE_COLLAPSED: Record<PartSection, boolean> = { section: false, words: false, bass: false, drums: false };
-function loadCollapsed(): Record<PartSection, boolean> {
-  try {
-    const saved = JSON.parse(localStorage.getItem(COLLAPSED_KEY) ?? '{}');
-    return { ...NONE_COLLAPSED, ...(saved && typeof saved === 'object' ? saved : {}) };
-  } catch {
-    return NONE_COLLAPSED;
-  }
-}
 
 function listInputsAndOutputs(midiAccess: WebMidi.MIDIAccess) {
   console.log("MIDI ready!");
@@ -82,15 +76,26 @@ function App() {
   const [saveScreen, setSaveScreen] = useState(false);
   const [soundsScreen, setSoundsScreen] = useState(false);
   const [showLyrics, setShowLyrics] = useState(false);
-  // Which sections of the open part are collapsed - kept per device, so a
-  // phone can stay folded down to what fits.
-  const [collapsed, setCollapsed] = useState<Record<PartSection, boolean>>(loadCollapsed);
-  useEffect(() => {
-    try {
-      localStorage.setItem(COLLAPSED_KEY, JSON.stringify(collapsed));
-    } catch { /* storage unavailable: the choice lasts this visit */ }
-  }, [collapsed]);
+  // Which sections are collapsed (wider screens). Everything starts open
+  // when the app loads; from then on what's closed stays closed from part
+  // to part, since this is one setting for every part, not one per part.
+  const [collapsed, setCollapsed] = useState<Record<PartSection, boolean>>(NONE_COLLAPSED);
   const toggleSection = (section: PartSection) => setCollapsed(prev => ({ ...prev, [section]: !prev[section] }));
+  // Phones show one section at a time, as tabs, starting each visit on the
+  // drum machine; the open section fills the height left under the tabs,
+  // measured here for the staff canvas to fit itself to.
+  const isPhone = useMediaQuery(PHONE_QUERY);
+  const [phoneSection, setPhoneSection] = useState<PartSection>('drums');
+  const [sectionBodyHeight, setSectionBodyHeight] = useState(0);
+  const sectionBodyObserver = React.useRef<ResizeObserver | null>(null);
+  const sectionBodyRef = useCallback((el: HTMLDivElement | null) => {
+    sectionBodyObserver.current?.disconnect();
+    sectionBodyObserver.current = null;
+    if (!el) return;
+    const observer = new ResizeObserver(() => setSectionBodyHeight(el.clientHeight));
+    observer.observe(el);
+    sectionBodyObserver.current = observer;
+  }, []);
   const anyPartOpen = Object.values(openedParts).some(Boolean);
 
   // T1-T10 song-generation slots. Only the active tab's song lives in Redux;
@@ -781,113 +786,177 @@ function App() {
                   <span className={styles.energyBar} style={{ width: `${Math.round(songProps.energy * 100)}%` }} />
                 )}
               </button>
-              {isOpen && currentPart === index && (
-                <div className={styles.openedPart}>
-                  {/* Bar numbers and lamps stay pinned under the keyboard,
-                      whichever sections below are collapsed or scrolled to. */}
-                  <div className={styles.trackerBar} style={{ width: renderWidth ? `max(${renderWidth}px, 100%)` : '100%' }}>
-                    <StepTracker
-                      onRenderWidthChange={handleRenderWidthChange}
+              {isOpen && currentPart === index && (() => {
+                const wide = { width: renderWidth ? `max(${renderWidth}px, 100%)` : '100%' };
+                const hasPanel = !!(song.doc && songProps.sectionId && song.doc.sections[songProps.sectionId]);
+                // The part's vocal section, if it has a melody or words.
+                const hasMelody = (melodyFor(song.doc, song.songStructure, index)?.notes.length ?? 0) > 0;
+                const hasWords = placeLyrics(partLyrics(song.songStructure, index).text, songProps.drumGroove).syllables.length > 0;
+                const vocalTab = hasMelody && hasWords ? 'Vocal' : hasMelody ? 'Melody' : hasWords ? 'Lyrics' : null;
+                const phoneOpen: PartSection = phoneSection === 'words' && !vocalTab ? 'drums' : phoneSection;
+                const shows = (section: PartSection) => (isPhone ? phoneOpen === section : !collapsed[section]);
+                const tabs: Array<[PartSection, string]> = [['section', 'Section'], ...(vocalTab ? [['words', vocalTab] as [PartSection, string]] : []), ['bass', 'Bass'], ['drums', 'Drums']];
+                const titleRow = (
+                  <div className={styles.partTitleRow}>
+                    {song.doc && song.doc.form.length === song.songStructure.length ? (
+                      <h3>
+                        <button
+                          ref={partTitleRef}
+                          className={styles.partTitleButton}
+                          onClick={() => setSectionTypeMenuOpen(open => !open)}
+                          aria-haspopup="menu"
+                          aria-expanded={sectionTypeMenuOpen}
+                          title="Change this part to another kind of section"
+                        >
+                          {songProps.type} ({songProps.repeat})
+                          <span className={styles.partTitleCaret} aria-hidden="true">▾</span>
+                        </button>
+                      </h3>
+                    ) : (
+                      <h3>{songProps.type} ({songProps.repeat})</h3>
+                    )}
+                    {sectionTypeMenuOpen && song.doc && (
+                      <SectionTypeMenu
+                        doc={song.doc}
+                        part={index}
+                        anchor={partTitleRef}
+                        onPick={(label) => handleChangePartSection(index, label)}
+                        onClose={closeSectionTypeMenu}
+                      />
+                    )}
+                    {song.doc && songProps.sectionId && (() => {
+                      const sharing = linkedCount(song.doc, index);
+                      const partOnly = isDetached(song.doc, index);
+                      return (
+                        <div className={styles.scopeToggle} role="group" aria-label="Which parts edits change">
+                          <button
+                            className={!partOnly ? styles.scopeOn : ''}
+                            aria-pressed={!partOnly}
+                            onClick={() => partOnly && dispatch(setPartLinked({ part: index, linked: true }))}
+                            title={partOnly
+                              ? `Re-link: every linked ${songProps.type.toLowerCase()} takes on this part's current state`
+                              : `Edits change this ${songProps.type.toLowerCase()} everywhere it plays`}
+                          >
+                            All linked{sharing > 1 ? ` (${sharing})` : ''}
+                          </button>
+                          <button
+                            className={partOnly ? styles.scopeOn : ''}
+                            aria-pressed={partOnly}
+                            onClick={() => !partOnly && dispatch(setPartLinked({ part: index, linked: false }))}
+                            title="Edits change only this part (it gets its own copy of the section); other parts stay linked"
+                          >
+                            This part only
+                          </button>
+                        </div>
+                      );
+                    })()}
+                  </div>
+                );
+                const sections = (
+                  <>
+                    {isPhone ? (
+                      phoneOpen === 'section' && (
+                        <div className={styles.stickyHeader}>
+                          <FitBox className={styles.fillSection} min={0.55}>
+                            {titleRow}
+                            {hasPanel && <SectionPanel part={index} />}
+                          </FitBox>
+                        </div>
+                      )
+                    ) : (
+                      // The title and section controls stay in view while the
+                      // staff and grid scroll sideways (by hand or following
+                      // playback). Sticky only travels within its parent, so
+                      // the parent spans the full scrollable width - the same
+                      // arrangement as the section headers further down.
+                      <div style={wide}>
+                        <div className={styles.stickyHeader}>
+                          {titleRow}
+                          {hasPanel && (
+                            <>
+                              <SectionToggle label="Section controls" open={shows('section')} onToggle={() => toggleSection('section')} />
+                              {shows('section') && <SectionPanel part={index} />}
+                            </>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                    <BassStaff
+                      ref={bassStaffRef}
+                      renderWidth={renderWidth}
                       part={index}
                       lampsRef={lampsRef}
-                      manualSeekEpochRef={manualSeekEpochRef}
+                      viewMode={bassViewMode}
+                      onViewModeChange={setBassViewMode}
+                      showWords={shows('words')}
+                      showBass={shows('bass')}
+                      onToggleWords={() => toggleSection('words')}
+                      onToggleBass={() => toggleSection('bass')}
+                      headers={!isPhone}
+                      fitHeight={isPhone ? sectionBodyHeight : undefined}
                     />
-                  </div>
-                  {/* The title and section controls stay in view while the
-                      staff and grid scroll sideways (by hand or following
-                      playback). Sticky only travels within its parent, so
-                      the parent spans the full scrollable width - the same
-                      arrangement as the staff's Staff/Tab toggle. */}
-                  <div style={{ width: renderWidth ? `max(${renderWidth}px, 100%)` : '100%' }}>
-                    <div className={styles.stickyHeader}>
-                      <div className={styles.partTitleRow}>
-                        {song.doc && song.doc.form.length === song.songStructure.length ? (
-                          <h3>
-                            <button
-                              ref={partTitleRef}
-                              className={styles.partTitleButton}
-                              onClick={() => setSectionTypeMenuOpen(open => !open)}
-                              aria-haspopup="menu"
-                              aria-expanded={sectionTypeMenuOpen}
-                              title="Change this part to another kind of section"
-                            >
-                              {songProps.type} ({songProps.repeat})
-                              <span className={styles.partTitleCaret} aria-hidden="true">▾</span>
-                            </button>
-                          </h3>
-                        ) : (
-                          <h3>{songProps.type} ({songProps.repeat})</h3>
-                        )}
-                        {sectionTypeMenuOpen && song.doc && (
-                          <SectionTypeMenu
-                            doc={song.doc}
-                            part={index}
-                            anchor={partTitleRef}
-                            onPick={(label) => handleChangePartSection(index, label)}
-                            onClose={closeSectionTypeMenu}
-                          />
-                        )}
-                        {song.doc && songProps.sectionId && (() => {
-                          const sharing = linkedCount(song.doc, index);
-                          const partOnly = isDetached(song.doc, index);
-                          return (
-                            <div className={styles.scopeToggle} role="group" aria-label="Which parts edits change">
-                              <button
-                                className={!partOnly ? styles.scopeOn : ''}
-                                aria-pressed={!partOnly}
-                                onClick={() => partOnly && dispatch(setPartLinked({ part: index, linked: true }))}
-                                title={partOnly
-                                  ? `Re-link: every linked ${songProps.type.toLowerCase()} takes on this part's current state`
-                                  : `Edits change this ${songProps.type.toLowerCase()} everywhere it plays`}
-                              >
-                                All linked{sharing > 1 ? ` (${sharing})` : ''}
-                              </button>
-                              <button
-                                className={partOnly ? styles.scopeOn : ''}
-                                aria-pressed={partOnly}
-                                onClick={() => !partOnly && dispatch(setPartLinked({ part: index, linked: false }))}
-                                title="Edits change only this part (it gets its own copy of the section); other parts stay linked"
-                              >
-                                This part only
-                              </button>
-                            </div>
-                          );
-                        })()}
+                    <div className={isPhone ? styles.fillSection : undefined} style={wide} hidden={isPhone && !shows('drums')}>
+                      {!isPhone && <SectionToggle label="Drums" open={shows('drums')} onToggle={() => toggleSection('drums')} />}
+                      {/* Hidden rather than unmounted: its checkboxes mirror the
+                          store and its ref plays the part's drums. */}
+                      <div className={isPhone ? styles.fillSection : undefined} hidden={!shows('drums')}>
+                        <DrumMachine
+                          ref={drumMachineRef}
+                          part={index}
+                          lampsRef={lampsRef}
+                          fill={isPhone}
+                        />
                       </div>
-                      {song.doc && songProps.sectionId && song.doc.sections[songProps.sectionId] && (
-                        <>
-                          <SectionToggle label="Section controls" open={!collapsed.section} onToggle={() => toggleSection('section')} />
-                          {!collapsed.section && <SectionPanel part={index} />}
-                        </>
-                      )}
                     </div>
-                  </div>
-                  <BassStaff
-                    ref={bassStaffRef}
-                    renderWidth={renderWidth}
-                    part={index}
-                    lampsRef={lampsRef}
-                    viewMode={bassViewMode}
-                    onViewModeChange={setBassViewMode}
-                    showWords={!collapsed.words}
-                    showBass={!collapsed.bass}
-                    onToggleWords={() => toggleSection('words')}
-                    onToggleBass={() => toggleSection('bass')}
-                  />
-                  <div style={{ width: renderWidth ? `max(${renderWidth}px, 100%)` : '100%' }}>
-                    <SectionToggle label="Drums" open={!collapsed.drums} onToggle={() => toggleSection('drums')} />
-                    {/* Hidden rather than unmounted: its checkboxes mirror the
-                        store and its ref plays the part's drums. */}
-                    <div hidden={collapsed.drums}>
-                      <DrumMachine
-                        ref={drumMachineRef}
+                  </>
+                );
+                return (
+                  <div className={styles.openedPart}>
+                    {/* Bar numbers and lamps stay pinned under the keyboard,
+                        whichever sections below are collapsed or scrolled to. */}
+                    <div className={styles.trackerBar} style={wide}>
+                      <StepTracker
+                        onRenderWidthChange={handleRenderWidthChange}
                         part={index}
                         lampsRef={lampsRef}
+                        manualSeekEpochRef={manualSeekEpochRef}
                       />
                     </div>
+                    {isPhone ? (
+                      <>
+                        <div className={styles.sectionTabs} role="tablist" aria-label="Part sections">
+                          {tabs.map(([section, label]) => (
+                            <button
+                              key={section}
+                              type="button"
+                              role="tab"
+                              aria-selected={phoneOpen === section}
+                              className={phoneOpen === section ? `${styles.sectionToggle} ${styles.sectionTabOn}` : styles.sectionToggle}
+                              onClick={() => setPhoneSection(section)}
+                            >
+                              <span className={styles.sectionToggleCaret} aria-hidden="true">{phoneOpen === section ? '▾' : '▸'}</span>
+                              {label}
+                            </button>
+                          ))}
+                          {phoneOpen === 'bass' && (
+                            <button
+                              type="button"
+                              onClick={() => setBassViewMode(bassViewMode === 'staff' ? 'tab' : 'staff')}
+                              className={bassViewMode === 'tab' ? `${styles.viewToggle} ${styles.viewToggleOn}` : styles.viewToggle}
+                              title={bassViewMode === 'staff' ? 'Showing the staff: switch to tab' : 'Showing tab: switch to the staff'}
+                            >
+                              {bassViewMode === 'staff' ? 'Staff' : 'Tab'}
+                            </button>
+                          )}
+                        </div>
+                        <div className={styles.sectionBody} ref={sectionBodyRef} style={wide}>
+                          {sections}
+                        </div>
+                      </>
+                    ) : sections}
                   </div>
-                </div>
-              )}
+                );
+              })()}
             </div>
           );
         })}
@@ -920,9 +989,11 @@ function App() {
             </button>
           </div>
         )}
-        <div className={styles.info}>
-          {showInfoScreen && !anyPartOpen && <Info />}
-        </div>
+        {showInfoScreen && !anyPartOpen && (
+          <div className={styles.info}>
+            <Info phone={isPhone} />
+          </div>
+        )}
         {/* Renders controls */}
         <div className={styles.footer} ref={footerRef}>
         <Transport

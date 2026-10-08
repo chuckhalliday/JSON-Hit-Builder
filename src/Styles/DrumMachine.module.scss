@@ -73,6 +73,11 @@ $rowGap: 8px;
 .grooveLabel {
   font-size: small;
   align-items: center;
+
+  // Phones keep just the bar numbers and lamps in the pinned strip.
+  @media (max-width: 600px) {
+    display: none;
+  }
 }
 
 .cellList {
@@ -222,5 +227,57 @@ $rowGap: 8px;
     border-color: var(--c-loop);
     background: var(--c-loop-soft);
     cursor: crosshair;
+  }
+}
+
+// Phones: the grid shares out its section's height - rows (and their
+// labels) grow or shrink together instead of keeping their fixed size.
+.machine.fill {
+  height: 100%;
+  row-gap: 0;
+
+  .labelList {
+    place-self: stretch;
+    row-gap: 4px;
+    font-size: 12px;
+
+    & > * {
+      flex: 1 1 0;
+      min-height: 0;
+      height: auto;
+    }
+  }
+
+  .grid {
+    min-height: 0;
+  }
+
+  .cellList {
+    flex: 1 1 0;
+    min-height: 0;
+    row-gap: 4px;
+  }
+
+  .row {
+    flex: 1 1 0;
+    min-height: 0;
+  }
+
+  .cell {
+    display: flex;
+  }
+
+  .cell__content {
+    height: auto;
+  }
+
+  // Bar lines reach down through the gap to the next row - except from the
+  // bottom row, where they'd hang out of the section.
+  .row > [measure-end=true]::after {
+    height: calc(100% + 4px);
+  }
+
+  .row:last-child > [measure-end=true]::after {
+    height: 100%;
   }
 }
