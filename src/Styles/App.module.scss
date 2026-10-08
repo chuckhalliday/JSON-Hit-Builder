@@ -1447,6 +1447,25 @@
     color: var(--c-text-muted);
 }
 
+.melodyToggle {
+    display: flex;
+    align-items: center;
+    column-gap: 10px;
+    margin: 0 0 12px;
+    font-size: 12px;
+    line-height: 1.4;
+    color: var(--c-text-muted);
+
+    button {
+      flex: 0 0 auto;
+    }
+
+    button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+}
+
 .lyricsParts {
     display: flex;
     flex-direction: column;

@@ -10,7 +10,7 @@ import { useSyncExternalStore } from 'react';
 // (VirMIDI 3-0, 3-1...), which differs between machines - so that preset
 // takes whichever VirMIDI ports are there. The presets give one bus or port
 // per track; any detected output can be picked instead.
-export type MidiTrack = 'drums' | 'bass' | 'chords';
+export type MidiTrack = 'drums' | 'bass' | 'chords' | 'melody';
 export type MidiRouting = Record<MidiTrack, string>;
 export type MidiPreset = 'mac' | 'windows' | 'linux';
 
@@ -18,6 +18,7 @@ export const MIDI_TRACKS: Array<{ id: MidiTrack, label: string }> = [
   { id: 'drums', label: 'Drums' },
   { id: 'bass', label: 'Bass' },
   { id: 'chords', label: 'Chords' },
+  { id: 'melody', label: 'Melody' },
 ];
 
 // `match` marks presets whose port names vary: detected outputs matching
@@ -25,15 +26,15 @@ export const MIDI_TRACKS: Array<{ id: MidiTrack, label: string }> = [
 export const PRESETS: Record<MidiPreset, { label: string, routing: MidiRouting, match?: RegExp }> = {
   mac: {
     label: 'Mac · IAC Driver',
-    routing: { drums: 'IAC Driver Bus 1', bass: 'IAC Driver Bus 2', chords: 'IAC Driver Bus 3' },
+    routing: { drums: 'IAC Driver Bus 1', bass: 'IAC Driver Bus 2', chords: 'IAC Driver Bus 3', melody: 'IAC Driver Bus 4' },
   },
   windows: {
     label: 'Windows · loopMIDI',
-    routing: { drums: 'loopMIDI Port 1', bass: 'loopMIDI Port 2', chords: 'loopMIDI Port 3' },
+    routing: { drums: 'loopMIDI Port 1', bass: 'loopMIDI Port 2', chords: 'loopMIDI Port 3', melody: 'loopMIDI Port 4' },
   },
   linux: {
     label: 'Linux · VirMIDI',
-    routing: { drums: 'VirMIDI 1-0', bass: 'VirMIDI 1-1', chords: 'VirMIDI 1-2' },
+    routing: { drums: 'VirMIDI 1-0', bass: 'VirMIDI 1-1', chords: 'VirMIDI 1-2', melody: 'VirMIDI 1-3' },
     match: /VirMIDI|Virtual Raw MIDI/i,
   },
 };
@@ -53,7 +54,7 @@ export function presetRouting(preset: MidiPreset, outputs: string[]): MidiRoutin
 }
 
 // Which preset a routing is, if it's exactly one: its names, or for one whose
-// names vary, three different ports matching it.
+// names vary, a different matching port for each track.
 export const presetOf = (routing: MidiRouting): MidiPreset | null =>
   (Object.keys(PRESETS) as MidiPreset[]).find(p => {
     const { match } = PRESETS[p];
@@ -66,13 +67,18 @@ export const presetOf = (routing: MidiRouting): MidiPreset | null =>
 const STORAGE_KEY = 'midiRouting';
 const listeners = new Set<() => void>();
 
+// The stored routing, any track it doesn't name (one added since, like the
+// melody) taking the system preset's port.
 function load(): MidiRouting {
   const fallback = PRESETS[defaultPreset(typeof navigator !== 'undefined' ? navigator.platform || navigator.userAgent : '')].routing;
+  let stored: Partial<Record<MidiTrack, unknown>> | null = null;
   try {
-    const stored = JSON.parse(localStorage.getItem(STORAGE_KEY) ?? 'null');
-    if (stored && MIDI_TRACKS.every(({ id }) => typeof stored[id] === 'string')) return stored;
+    stored = JSON.parse(localStorage.getItem(STORAGE_KEY) ?? 'null');
   } catch { /* unreadable or unavailable: use the preset */ }
-  return { ...fallback };
+  return Object.fromEntries(MIDI_TRACKS.map(({ id }) => {
+    const name = stored?.[id];
+    return [id, typeof name === 'string' ? name : fallback[id]];
+  })) as MidiRouting;
 }
 
 let routing: MidiRouting | null = null;

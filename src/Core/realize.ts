@@ -126,6 +126,7 @@ export function realizeInstance(doc: SongDoc, i: number, repeat: number): Part {
     energy: inst.energy,
     transpose: inst.transpose,
     ...(inst.lyrics ? { lyrics: inst.lyrics } : {}),
+    ...(inst.lyricTiming ? { lyricTiming: inst.lyricTiming } : {}),
   };
 }
 

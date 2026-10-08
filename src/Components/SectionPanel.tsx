@@ -1,6 +1,7 @@
 import { useCallback, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { SongState, rerollLayer, toggleLock, setPartEnergy, setLoop, editHarmony } from "../reducers";
+import { SongState, rerollLayer, toggleLock, setPartEnergy, setLoop, editHarmony, rerollMelody, toggleMelodyLock } from "../reducers";
+import { melodyFor } from "../Core/melody";
 import ChordMenu, { ChordMenuKind } from "./ChordMenu";
 import { inversionOptions } from "../Core/chordOptions";
 import { isDetached } from "../Core/generate";
@@ -41,6 +42,9 @@ export default function SectionPanel({ part }: SectionPanelProps) {
   const whole = { start: { part, beat: 0 }, end: { part, beat: sum(p.drumGroove) } };
   const loop = clampRegion(song.loop, song.songStructure);
   const loopingThis = !!song.loopEnabled && !!loop && comparePoints(loop.start, whole.start) === 0 && comparePoints(loop.end, whole.end) === 0;
+  // The tune this part sings - its own, or a repeat's earlier part's.
+  const melody = melodyFor(doc, song.songStructure, part);
+  const melodyOwner = melody ? song.songStructure[melody.owner] : null;
 
   return (
     <div className={styles.sectionPanel}>
@@ -120,6 +124,29 @@ export default function SectionPanel({ part }: SectionPanelProps) {
             </span>
           );
         })}
+        {melody && melodyOwner && (
+          <span
+            className={styles.layerControl}
+            title={`The sung melody: chord tones on the strong beats, mostly stepwise, against the bass line. Editing a note locks it.${melody.owner !== part ? ` This part repeats ${melodyOwner.type} ${melodyOwner.repeat}'s words and tune.` : ''}`}
+          >
+            <button
+              className={melody.melody.locked ? `${styles.lockButton} ${styles.locked}` : styles.lockButton}
+              onClick={() => dispatch(toggleMelodyLock({ part: melody.owner }))}
+              aria-pressed={!!melody.melody.locked}
+              title={melody.melody.locked ? "Locked: the tune stays as it is. Click to unlock." : "Click to lock the tune as it is."}
+            >
+              {melody.melody.locked ? "🔒" : "🔓"}
+            </button>
+            <button
+              className={styles.rerollButton}
+              disabled={!!melody.melody.locked}
+              onClick={() => dispatch(rerollMelody({ part: melody.owner }))}
+            >
+              Re-roll Melody
+            </button>
+            {melody.owner !== part && <span className={styles.layerNote}>{melodyOwner.type} {melodyOwner.repeat}'s tune</span>}
+          </span>
+        )}
       </div>
       <p className={styles.sectionNote}>
         Click a chord, its numeral or its bass note to change it. {isDetached(doc, part)

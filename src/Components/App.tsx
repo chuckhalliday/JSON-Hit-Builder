@@ -11,6 +11,7 @@ import { SHORT_LABELS } from '../Core/form';
 import { downloadMidi } from '../Core/exportMidi';
 import { PaletteInput, SoundPick } from '../Core/timbre';
 import { SectionLabel } from '../Core/doc';
+import { melodyFor } from '../Core/melody';
 import DrumMachine from "./DrumMachine";
 import BassStaff from "./BassStaff";
 import Piano, { PlayHandle } from './Piano';
@@ -208,6 +209,7 @@ function App() {
   const [includeChords, setIncludeChords] = useState(true);
   const [includeBass, setIncludeBass] = useState(true);
   const [includeDrums, setIncludeDrums] = useState(true);
+  const [includeMelody, setIncludeMelody] = useState(true);
   // Lifted above BassStaff (rather than local state there) because each part's
   // BassStaff only mounts while its part is open - a local toggle would reset
   // to "staff" every time the user switched parts.
@@ -253,6 +255,7 @@ function App() {
       const loopEndBeat = (region: typeof loop) => region && region.end.part === verse ? partWindow(region, verse, part).toBeat : null;
       const cycleAt = loopEndBeat(loop);
       const toBeat = cycleAt !== null && fromBeat < cycleAt - 0.01 ? cycleAt : partBeats;
+      const melodyNotes = melodyFor(song.doc, song.songStructure, verse)?.notes;
       const windowed = {
         drum: trackWindow(part.drumGroove, fromBeat, toBeat),
         bass: trackWindow(part.bassGroove, fromBeat, toBeat),
@@ -279,7 +282,9 @@ function App() {
         acoustic,
         song.key,
         startAt,
-        { drum: windowed.drum.end, bass: windowed.bass.end, chord: windowed.chord.end }
+        { drum: windowed.drum.end, bass: windowed.bass.end, chord: windowed.chord.end },
+        melodyNotes ? { notes: melodyNotes, from: fromBeat, to: toBeat } : undefined,
+        includeMelody,
       );
 
       if (stopRef.current) {
@@ -624,6 +629,7 @@ function App() {
   const handleToggleTrack = (track: Track) => {
     if (track === 'chords') setIncludeChords(prev => !prev);
     else if (track === 'bass') setIncludeBass(prev => !prev);
+    else if (track === 'melody') setIncludeMelody(prev => !prev);
     else setIncludeDrums(prev => !prev);
   };
 
@@ -641,7 +647,8 @@ function App() {
 
   // Download the song (with every edit) as a Standard MIDI File for a DAW.
   const handleExport = () => {
-    downloadMidi({ songStructure: song.songStructure, bpm: song.bpm, key: song.key, title: `Song in ${song.key}` }, exportName);
+    const melody = song.songStructure.map((_, i) => melodyFor(song.doc, song.songStructure, i)?.notes ?? null);
+    downloadMidi({ songStructure: song.songStructure, bpm: song.bpm, key: song.key, title: `Song in ${song.key}`, melody }, exportName);
   };
 
   const handleMidi = async () => {
@@ -880,7 +887,8 @@ function App() {
           onPlay={handleStartClick}
           bpm={bpm}
           onBpmChange={(value) => dispatch(incrementByAmount(`${value}`))}
-          tracks={{ chords: includeChords, bass: includeBass, drums: includeDrums }}
+          tracks={{ chords: includeChords, bass: includeBass, drums: includeDrums, melody: includeMelody }}
+          hasMelody={!!song.doc?.melody}
           onToggleTrack={handleToggleTrack}
           loopOn={loopOn}
           hasLoop={!!loopRegion}

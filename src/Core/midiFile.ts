@@ -33,6 +33,7 @@ export const meta = (tick: number, type: number, payload: number[]): MidiEvent =
 export const trackName = (name: string) => meta(0, 0x03, text(name));
 export const textEvent = (tick: number, s: string) => meta(tick, 0x01, text(s));
 export const marker = (tick: number, s: string) => meta(tick, 0x06, text(s));
+export const lyricEvent = (tick: number, s: string) => meta(tick, 0x05, text(s));
 
 export const tempo = (tick: number, bpm: number) => {
   const us = Math.round(60_000_000 / bpm);

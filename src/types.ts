@@ -1,3 +1,5 @@
+import type { LyricTiming } from './Core/lyrics';
+
 // Shared domain types for the song model.
 //
 // One definition per shape, imported everywhere the song tree is produced,
@@ -104,6 +106,8 @@ export interface Part {
   // Words written for this part in the Lyrics worksheet (lines are phrases;
   // see Core/lyrics.ts). Absent until some are written.
   lyrics?: string;
+  // Syllables dragged off their automatic spots on the staff.
+  lyricTiming?: LyricTiming;
 }
 
 export type SongStructure = Part[];

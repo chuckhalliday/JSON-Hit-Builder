@@ -4,9 +4,9 @@ import { listMidiOutputs } from "../Playback/playFunctions";
 import styles from "../Styles/App.module.scss";
 
 const HELP: Record<MidiPreset, ReactNode> = {
-  mac: 'Turn on the IAC Driver in Audio MIDI Setup (Window › Show MIDI Studio) and give it Bus 1, Bus 2 and Bus 3 - one per track. In your DAW, arm a track on each bus.',
-  windows: 'Windows has no built-in virtual MIDI. Install loopMIDI and add three ports named loopMIDI Port 1, 2 and 3 - or pick any detected port above. In your DAW, arm a track on each port.',
-  linux: <>Load ALSA's virtual MIDI ports with <code>sudo modprobe snd-virmidi midi_devs=3</code> (list <code>snd-virmidi</code> in <code>/etc/modules-load.d</code> to keep them), then Rescan and pick this preset again: it takes the VirMIDI ports in order. In your DAW, arm a track on each.</>,
+  mac: 'Turn on the IAC Driver in Audio MIDI Setup (Window › Show MIDI Studio) and give it Bus 1 to Bus 4 - one per track. In your DAW, arm a track on each bus.',
+  windows: 'Windows has no built-in virtual MIDI. Install loopMIDI and add four ports named loopMIDI Port 1, 2, 3 and 4 - or pick any detected port above. In your DAW, arm a track on each port.',
+  linux: <>Load ALSA's virtual MIDI ports with <code>sudo modprobe snd-virmidi midi_devs=4</code> (list <code>snd-virmidi</code> in <code>/etc/modules-load.d</code> to keep them), then Rescan and pick this preset again: it takes the VirMIDI ports in order. In your DAW, arm a track on each.</>,
 };
 
 // Which MIDI output each track plays to, opened from the MIDI source button.

@@ -1,6 +1,6 @@
 import { useEffect, useRef } from "react";
-import { useDispatch } from "react-redux";
-import { setPartLyrics } from "../reducers";
+import { useDispatch, useSelector } from "react-redux";
+import { setMelodyEnabled, setPartLyrics, SongState } from "../reducers";
 import { NO_WORDS, partLyrics, placeLyrics } from "../Core/lyrics";
 import { Part } from "../types";
 import styles from "../Styles/App.module.scss";
@@ -18,6 +18,8 @@ const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? '' : 's'}`;
 // opens that part, so its syllables can be seen landing on the staff.
 export default function LyricsSheet({ parts, openPart, onOpenPart, onClose }: LyricsSheetProps) {
   const dispatch = useDispatch();
+  const doc = useSelector((state: { song: SongState }) => state.song.doc);
+  const melodyOn = !!doc?.melody;
   const sheetRef = useRef<HTMLElement>(null);
   const cardRefs = useRef<Array<HTMLLIElement | null>>([]);
 
@@ -38,8 +40,26 @@ export default function LyricsSheet({ parts, openPart, onOpenPart, onClose }: Ly
       <p className={styles.lyricsHelp}>
         One line per phrase; lines share out the part's bars and land on the beat.
         Hyphenate to split syllables your way (<i>beau-ti-ful</i>). A repeated chorus left
-        blank sings the earlier words; write <b>{NO_WORDS}</b> for none.
+        blank sings the earlier words; write <b>{NO_WORDS}</b> for none. Drag a syllable on the
+        staff to move it between its neighbours; double-click it to put it back.
       </p>
+      <div className={styles.melodyToggle}>
+        <button
+          className={melodyOn ? styles.ghostButton : styles.primaryButton}
+          onClick={() => dispatch(setMelodyEnabled(!melodyOn))}
+          disabled={!doc}
+          aria-pressed={melodyOn}
+        >
+          {melodyOn ? 'Remove melody' : '♪ Add melody'}
+        </button>
+        <span>
+          {!doc
+            ? 'A melody needs a song from the form-first engine.'
+            : melodyOn
+              ? 'Each part sings its words on the treble staff. Click the staff to change a note; lock or re-roll it in the section panel.'
+              : 'Sets the words to a tune on a staff above the bass, following the chords and answering the bass line.'}
+        </span>
+      </div>
       <ol className={styles.lyricsParts}>
         {parts.map((p, i) => {
           const own = p.lyrics ?? '';
