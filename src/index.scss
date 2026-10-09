@@ -179,7 +179,12 @@ input {
 body {
   display: grid;
   place-content: center;
+  // Exactly the window: the app is pinned to it, so the page itself has
+  // nothing to scroll (the default margin and 100vh - taller than the window
+  // while a phone's toolbars show - let it scroll a little).
+  margin: 0;
   min-height: 100vh;
+  min-height: 100dvh;
   background: var(--c-bg);
   color: var(--c-text);
 }

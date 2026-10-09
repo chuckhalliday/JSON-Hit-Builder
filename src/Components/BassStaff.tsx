@@ -1305,13 +1305,15 @@ const BassStaff = forwardRef<PlayHandle, BassStaffProps>(function BassStaff({ re
     function onMouseMove(event: React.MouseEvent<HTMLCanvasElement, MouseEvent>) {
       const CANVAS = canvasRef.current;
       if (CANVAS) {
+        // Both the event's and the canvas's positions are measured from the
+        // window, so the page's own scroll never enters into it (subtracting
+        // it put every touch above the finger on phones, where the page can
+        // scroll a little).
         const rect = CANVAS.getBoundingClientRect();
-        const scrollLeft = document.documentElement.scrollLeft;
-        const scrollTop = document.documentElement.scrollTop;
-        MOUSE.x = event.clientX - rect.left - scrollLeft;
+        MOUSE.x = event.clientX - rect.left;
         // Back to canvas pixels when it's shown squeezed or stretched.
         const scaleY = rect.height ? CANVAS.height / rect.height : 1;
-        MOUSE.y = (event.clientY - rect.top - scrollTop) * scaleY - bandRef.current;
+        MOUSE.y = (event.clientY - rect.top) * scaleY - bandRef.current;
         CANVAS.style.cursor = lyricDrag.current ? 'grabbing' : lyricAtMouse() !== -1 ? 'grab'
           : inMelodyRows() && melodyNoteAtMouse() !== -1 ? 'pointer' : '';
         requestDraw();
@@ -1326,7 +1328,7 @@ const BassStaff = forwardRef<PlayHandle, BassStaffProps>(function BassStaff({ re
       lyricDrag.current = { index: i, from, step: from };
       const onMove = (e: MouseEvent) => {
         const rect = CANVAS!.getBoundingClientRect();
-        const x = e.clientX - rect.left - document.documentElement.scrollLeft;
+        const x = e.clientX - rect.left;
         const step = range.reduce((best, s) => (Math.abs(lyricXs[s] - x) < Math.abs(lyricXs[best] - x) ? s : best), from);
         if (lyricDrag.current && step !== lyricDrag.current.step) {
           lyricDrag.current = { ...lyricDrag.current, step };
