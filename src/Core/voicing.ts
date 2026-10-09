@@ -167,3 +167,18 @@ export function revoiceChord(harmony: ChordEvent[], voicing: number[][], i: numb
   }
   return best ?? [];
 }
+
+// Voicings after a progression has been reworked: a chord still sounding
+// where it did keeps its voicing, and the rest are re-voiced in order, each
+// led from the one before.
+export function refitVoicings(oldHarmony: ChordEvent[], oldVoicings: number[][], harmony: ChordEvent[], key: Key, energy: number): number[][] {
+  const voicing = remapVoicings(oldHarmony, oldVoicings, harmony);
+  const stale: number[] = [];
+  harmony.forEach((c, i) => {
+    const k = oldHarmony.findIndex(o => mod12(o.root) === mod12(c.root) && o.quality === c.quality && o.start < c.start + c.dur && c.start < o.start + o.dur);
+    if (k === -1 || !oldVoicings[k]) stale.push(i);
+    else voicing[i] = [...oldVoicings[k]];
+  });
+  for (const i of stale) voicing[i] = revoiceChord(harmony, voicing, i, key, energy);
+  return voicing;
+}

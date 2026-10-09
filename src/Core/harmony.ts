@@ -149,13 +149,16 @@ function bluesChanges(bars: number, mode: Mode, rng: Rng): Array<Slot & { start:
   return pattern.map((slot, i) => ({ ...slot, start: i * BAR, dur: BAR }));
 }
 
+// Bars per phrase: 4, or the whole of a section shorter than 8 bars.
+export const phraseLength = (bars: number) => (bars >= 8 ? 4 : bars);
+
 export function generateHarmony(req: HarmonyRequest, rng: Rng): ChordEvent[] {
   const mode = req.key.mode;
   if (req.style === 'blues') {
     return bluesChanges(req.bars, mode, rng).map(s => finalize(s, mode));
   }
 
-  const phraseBars = req.bars >= 8 ? 4 : req.bars;
+  const phraseBars = phraseLength(req.bars);
   const phrases = Math.max(1, Math.round(req.bars / phraseBars));
   const opening = openingSlot(req.label, mode, rng);
   const events: Array<Slot & { start: number; dur: number }> = [];

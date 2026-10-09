@@ -1073,6 +1073,36 @@ $phone-stage-top: 192px;
     background-color: var(--c-raised);
 }
 
+// Simplify the progression: how many different chords (the current count
+// lit, fewer to pick), one per bar, plain triads.
+.simplifyRow {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px 10px;
+    margin: 0 0 8px;
+    color: var(--c-text-muted);
+
+    .segmented button {
+      padding: 2px 8px;
+      font-variant-numeric: tabular-nums;
+
+      &:disabled {
+        cursor: default;
+      }
+
+      &:disabled:not(.segmentOn) {
+        opacity: 0.4;
+      }
+    }
+}
+
+.simplifyCount {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
 // Chord symbol, numeral and bass note are buttons that open their menus,
 // styled as the text they show.
 .chordSymbol, .chordRoman, .chordBass {

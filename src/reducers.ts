@@ -4,7 +4,8 @@ import { bassPitch } from "./SongStructure/bassPitch";
 import { SongDoc, Layer, GenerateOptions, SectionLabel } from "./Core/doc";
 import { generateDoc, regenerateLayer, setLock, setInstanceEnergy, moveInstance, detachInstance, relinkInstance, duplicateInstance, deleteInstance, changeInstanceSection } from "./Core/generate";
 import { realizeSong, realizeSection, realizeInstance, assignStepIds } from "./Core/realize";
-import { editBass, editDrum, editDrums, editChordTone, editChord, splitBassNote, joinBassNotes } from "./Core/edits";
+import { editBass, editDrum, editDrums, editChordTone, editChord, simplifyChords, splitBassNote, joinBassNotes } from "./Core/edits";
+import { Simplify } from "./Core/simplify";
 import { DrumCellEdit } from "./Core/drumBars";
 import { ChordEvent } from "./Core/theory";
 import { LyricTiming, withLyricMove } from "./Core/lyrics";
@@ -336,6 +337,14 @@ const song = createSlice({
         const { part, chord, change } = action.payload;
         applyDoc(state, editChord(sculpted.doc, part, chord, change), sculpted.sectionId);
       },
+      // Simplify a section's progression (fewer different chords, one per
+      // bar, or plain triads) - every instance follows.
+      simplifyHarmony: (state, action: PayloadAction<{ part: number, how: Simplify }>) => {
+        const sculpted = docFor(state, action.payload.part);
+        if (!sculpted) return;
+        const doc = simplifyChords(sculpted.doc, action.payload.part, action.payload.how);
+        if (doc !== sculpted.doc) applyDoc(state, doc, sculpted.sectionId);
+      },
       // Re-roll one layer of one section (unlocked dependents follow).
       // With `part` given, the edit scope decides whether that part's whole
       // section or just the part is re-rolled / locked.
@@ -481,7 +490,7 @@ const song = createSlice({
     },
   });
 
-export const { setIsPlaying, setMidi, setAcoustic, setSong, setBassState, setDrumState, setDrumCells, setChordState, setCurrentBeat, reorderParts, incrementByAmount, loadSong, rerollLayer, toggleLock, setPartEnergy, setLoop, setLoopPick, pickLoopSpan, extendLoop, toggleLoop, setSounds, editHarmony, setPartLinked, setPartSection, setPartLyrics, setLyricTiming, editBassRhythm, setMelodyEnabled, setMelodyNote, rerollMelody, toggleMelodyLock, setMelodySplits, duplicatePart, deletePart } = song.actions;
+export const { setIsPlaying, setMidi, setAcoustic, setSong, setBassState, setDrumState, setDrumCells, setChordState, setCurrentBeat, reorderParts, incrementByAmount, loadSong, rerollLayer, toggleLock, setPartEnergy, setLoop, setLoopPick, pickLoopSpan, extendLoop, toggleLoop, setSounds, editHarmony, simplifyHarmony, setPartLinked, setPartSection, setPartLyrics, setLyricTiming, editBassRhythm, setMelodyEnabled, setMelodyNote, rerollMelody, toggleMelodyLock, setMelodySplits, duplicatePart, deletePart } = song.actions;
 
 // Thunk: generate a fresh form-first song and load it into the store.
 // Dispatched on mount and by the song tabs. Pass a seed (or full options)
@@ -512,6 +521,7 @@ const UNDOABLE: Record<string, string> = {
   [song.actions.editBassRhythm.type]: 'rhythm edit',
   [song.actions.setChordState.type]: 'voicing edit',
   [song.actions.editHarmony.type]: 'chord change',
+  [song.actions.simplifyHarmony.type]: 'simplify',
   [song.actions.rerollLayer.type]: 're-roll',
   [song.actions.toggleLock.type]: 'lock',
   [song.actions.setPartEnergy.type]: 'energy change',
