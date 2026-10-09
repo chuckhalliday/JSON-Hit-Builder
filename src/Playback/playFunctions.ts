@@ -37,7 +37,8 @@ export async function listMidiOutputs(): Promise<string[]> {
   return [...(await access()).outputs.values()].map(output => output.name ?? '').filter(Boolean);
 }
 
-export async function triggerMidi(track: MidiTrack, note: number, duration: number, velocity: number, release: number) {
+// `release` is the note-off velocity; 64 is MIDI's "no particular one".
+export async function triggerMidi(track: MidiTrack, note: number, duration: number, velocity: number, release = 64) {
   try {
     const outputDevice = await outputFor(getMidiRouting()[track]);
     if (!outputDevice) return;

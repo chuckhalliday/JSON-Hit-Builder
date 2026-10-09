@@ -3,6 +3,7 @@ import { indexToLamp } from "../SongStructure/beatMapping";
 import { getAudioContext } from "./audioContext";
 import { runPreScheduledSequence, scheduleTimer, Register, SequenceTiming } from "./scheduler";
 import { NoteLocation } from "../types";
+import { feelFor, velocity } from "./realism";
 
 const distortionAmount = 30; // Adjust distortion amount as needed
 const distortionCurve = new Float32Array(65536);
@@ -11,11 +12,20 @@ for (let i = 0; i < 65536; i++) {
   distortionCurve[i] = Math.tanh(x * distortionAmount);
 }
 
+// A voice's output, at the note's `level` (realism.ts).
+function noteOut(audioContext: AudioContext, level: number): GainNode {
+  const out = audioContext.createGain();
+  out.gain.value = level;
+  out.connect(audioContext.destination);
+  return out;
+}
+
 // "Synth" voice: the original growly, distorted saw + harmonics patch.
-function playSynthBassOsc(audioContext: AudioContext, startTime: number, bass: number, duration: number, _velocity: number, _release: number): OscillatorNode[] {
+function playSynthBassOsc(audioContext: AudioContext, startTime: number, bass: number, duration: number, level: number): OscillatorNode[] {
     const osc = audioContext.createOscillator();
     const gainNode = audioContext.createGain();
     const filterNode = audioContext.createBiquadFilter();
+    const out = noteOut(audioContext, level);
 
     const fundamentalFreq = bass;
 
@@ -27,7 +37,7 @@ function playSynthBassOsc(audioContext: AudioContext, startTime: number, bass: n
 
     osc.connect(gainNode);
     gainNode.connect(filterNode);
-    filterNode.connect(audioContext.destination);
+    filterNode.connect(out);
 
     const oscillators: OscillatorNode[] = [osc];
 
@@ -70,6 +80,7 @@ function playSynthBassOsc(audioContext: AudioContext, startTime: number, bass: n
       gainNode.disconnect();
       filterNode.disconnect();
       distortion.disconnect();
+      out.disconnect();
     };
 
     return oscillators;
@@ -78,7 +89,7 @@ function playSynthBassOsc(audioContext: AudioContext, startTime: number, bass: n
   // "Acoustic" voice: smooth plucked bass - saw + detuned saw for thickness, a unison
   // sine and a true sub-octave sine for a full, round low end, and a filter envelope
   // that opens bright on the pluck and settles into a warm sustain.
-  function playAcousticBassOsc(audioContext: AudioContext, startTime: number, bass: number, duration: number, _velocity: number, _release: number): OscillatorNode[] {
+  function playAcousticBassOsc(audioContext: AudioContext, startTime: number, bass: number, duration: number, level: number): OscillatorNode[] {
     const fundamentalFreq = bass;
 
     const osc = audioContext.createOscillator();
@@ -110,7 +121,9 @@ function playSynthBassOsc(audioContext: AudioContext, startTime: number, bass: n
     filterNode.Q.value = 0.8;
 
     // Compressor lets the note sit louder without the combined layers clipping.
+    // The note's level goes on after it, which would otherwise flatten it.
     const compressor = audioContext.createDynamicsCompressor();
+    const out = noteOut(audioContext, level);
     compressor.threshold.value = -22;
     compressor.knee.value = 12;
     compressor.ratio.value = 4;
@@ -126,7 +139,7 @@ function playSynthBassOsc(audioContext: AudioContext, startTime: number, bass: n
     subOctaveGain.connect(filterNode);
     filterNode.connect(gainNode);
     gainNode.connect(compressor);
-    compressor.connect(audioContext.destination);
+    compressor.connect(out);
 
     // Filter opens bright on the pluck, then decays quickly into a warm, smooth sustain.
     const sweepTime = Math.min(0.22, duration * 0.6);
@@ -160,12 +173,13 @@ function playSynthBassOsc(audioContext: AudioContext, startTime: number, bass: n
       gainNode.disconnect();
       filterNode.disconnect();
       compressor.disconnect();
+      out.disconnect();
     };
 
     return oscillators;
   }
 
-  function playBass(midi: boolean, beat: number, pattern: NoteLocation[], groove: number[], bpm: number, shouldStop?: () => boolean, onStep?: (lampIndex: number) => void, drumGroove?: number[], mute?: boolean, acoustic = true, timing?: SequenceTiming, end?: number) {
+  function playBass(midi: boolean, beat: number, pattern: NoteLocation[], groove: number[], bpm: number, shouldStop?: () => boolean, onStep?: (lampIndex: number) => void, drumGroove?: number[], mute?: boolean, acoustic = true, timing?: SequenceTiming, end?: number, realism?: () => boolean) {
     const beatDuration = 60 / bpm; // duration of one beat in seconds
     const audioContext = getAudioContext();
 
@@ -177,8 +191,6 @@ function playSynthBassOsc(audioContext: AudioContext, startTime: number, bass: n
         scheduleTimer(time, () => onStep(lampIndex), register);
       }
 
-      const velocity = Math.floor(Math.random() * (70 - 50 + 1) + 50);
-      const release = Math.floor(Math.random() * (70 - 50 + 1) + 50);
       // Read the note's pre-computed pitch. The staff→pitch mapping now lives in
       // bassPitch() at generation/edit time, so the scheduler no longer inspects
       // pixel coordinates.
@@ -186,16 +198,20 @@ function playSynthBassOsc(audioContext: AudioContext, startTime: number, bass: n
 
       if (bass <= 0 || mute) return;
 
+      const feel = feelFor('bass', realism);
+      const at = feel.at(time);
+      const level = feel.level(time);
+
       if (!midi) {
         const playOsc = acoustic ? playAcousticBassOsc : playSynthBassOsc;
-        const oscillators = playOsc(audioContext, time, bass, duration, velocity, release);
+        const oscillators = playOsc(audioContext, at, bass, duration, level);
         register(() => {
           for (const o of oscillators) {
             try { o.stop(); } catch { /* already stopped */ }
           }
         });
       } else {
-        scheduleTimer(time, () => triggerMidi('bass', bass, duration, velocity, release), register);
+        scheduleTimer(at, () => triggerMidi('bass', bass, duration, velocity(60, level)), register);
       }
     };
 

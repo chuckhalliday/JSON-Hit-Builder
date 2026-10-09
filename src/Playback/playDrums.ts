@@ -2,6 +2,7 @@ import { triggerMidi } from "./playFunctions";
 import { getAudioContext } from "./audioContext";
 import { runPreScheduledSequence, scheduleTimer, Register, SequenceTiming } from "./scheduler";
 import { playDrumVoice, keyRootHz } from "./drumSynth";
+import { feelFor, velocity } from "./realism";
 import { DrumHit } from "../types";
 
 // General MIDI drum notes for every drum-machine row (kick, snare, toms,
@@ -11,8 +12,9 @@ const MIDI_NOTES: Record<number, number> = {
 };
 
 // `mute` may be a function, asked as each hit is scheduled (half a second
-// ahead), so muting a drum mid-part takes effect almost at once.
-export default function playBeat(midi: boolean, beat: number, pattern: DrumHit[], groove: number[], bpm: number, stepsRef: DrumHit[][], onStep?: (index: number) => void, shouldStop?: () => boolean, mute?: boolean | (() => boolean), acoustic = true, key?: string, timing?: SequenceTiming, end?: number) {
+// ahead), so muting a drum mid-part takes effect almost at once. So is
+// `realism`.
+export default function playBeat(midi: boolean, beat: number, pattern: DrumHit[], groove: number[], bpm: number, stepsRef: DrumHit[][], onStep?: (index: number) => void, shouldStop?: () => boolean, mute?: boolean | (() => boolean), acoustic = true, key?: string, timing?: SequenceTiming, end?: number, realism?: () => boolean) {
     const beatDuration = 60 / bpm // duration of one beat in seconds
     const swingRatio = 3/3; // adjust as needed
 
@@ -31,15 +33,6 @@ export default function playBeat(midi: boolean, beat: number, pattern: DrumHit[]
     };
 
     const onSchedule = (index: number, time: number, duration: number, register: Register) => {
-      let velocity = Math.floor(Math.random() * (70 - 50 + 1) + 50);
-      if (pattern[index].accent) {
-        velocity = 90;
-        if (Math.random() < 0.17) {  // 1 in 6 chance
-          velocity = Math.floor(Math.random() * (120 - 100 + 1) + 100);
-        }
-      }
-      const release = Math.floor(Math.random() * (70 - 50 + 1) + 50);
-
       if (onStep) {
         scheduleTimer(time, () => onStep(index), register);
       }
@@ -47,12 +40,17 @@ export default function playBeat(midi: boolean, beat: number, pattern: DrumHit[]
       if (midiNote === undefined || !pattern[index].checked) return;
       if (typeof mute === 'function' ? mute() : mute) return;
 
+      // Accented hits are written at 90, the rest at 60.
+      const feel = feelFor('drums', realism);
+      const at = feel.at(time);
+      const hit = velocity(pattern[index].accent ? 90 : 60, feel.level(time));
+
       if (!midi) {
         const audioContext = getAudioContext();
-        const stop = playDrumVoice(audioContext, audioContext.destination, voice, time, velocity / 100, acoustic, rootHz);
+        const stop = playDrumVoice(audioContext, audioContext.destination, voice, at, hit / 100, acoustic, rootHz);
         if (stop) register(stop);
       } else {
-        scheduleTimer(time, () => triggerMidi('drums', midiNote, duration, velocity, release), register);
+        scheduleTimer(at, () => triggerMidi('drums', midiNote, duration, hit), register);
       }
     };
 

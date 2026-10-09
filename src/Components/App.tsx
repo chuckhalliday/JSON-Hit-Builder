@@ -260,6 +260,12 @@ function App() {
   metronomeRef.current = metronome;
   const countInRef = React.useRef(false);
   const metronomeButtonRef = React.useRef<HTMLButtonElement>(null);
+  // Realism: the tracks played with a band's small unevenness in timing and
+  // dynamics instead of exactly on the grid (realism.ts). Asked note by
+  // note, like the metronome, so it can be switched mid-song.
+  const [realism, setRealism] = useState(false);
+  const realismRef = React.useRef(realism);
+  realismRef.current = realism;
   // Lifted above BassStaff (rather than local state there) because each part's
   // BassStaff only mounts while its part is open - a local toggle would reset
   // to "staff" every time the user switched parts.
@@ -343,6 +349,7 @@ function App() {
         includeMelody,
         voice => !!mutedDrumsRef.current[voice],
         { from: fromBeat, to: toBeat, on: () => metronomeRef.current, onClick: swing },
+        () => realismRef.current,
       );
 
       if (stopRef.current) {
@@ -1041,6 +1048,8 @@ function App() {
           metronome={metronome}
           onToggleMetronome={() => setMetronome(on => !on)}
           metronomeRef={metronomeButtonRef}
+          realism={realism}
+          onToggleRealism={() => setRealism(on => !on)}
           tracks={{ chords: includeChords, bass: includeBass, drums: includeDrums, melody: includeMelody }}
           hasMelody={!!song.doc?.melody}
           onToggleTrack={handleToggleTrack}

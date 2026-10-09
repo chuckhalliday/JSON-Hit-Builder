@@ -369,9 +369,9 @@ $phone-stage-top: 192px;
     box-sizing: border-box;
 }
 
-// Transport bar: [key · sound source] [loop · play · tempo / loop points]
-// [tracks · save · more]. The side groups wrap under the center on narrow
-// windows.
+// Transport bar: [key · sound source] [loop · realism · play · tempo ·
+// metronome / loop points] [tracks · save · more]. The side groups wrap
+// under the center on narrow windows.
 .transport {
     display: grid;
     grid-template-columns: 1fr auto 1fr;
@@ -600,7 +600,8 @@ $phone-stage-top: 192px;
 
 // The metronome: its arm rests tilted, and while it clicks it swings from
 // side to side, a beat per swing (Transport's swingMetronome).
-.metronomeButton svg {
+.metronomeButton svg,
+.realismButton svg {
     width: 20px;
     height: 20px;
     fill: none;
@@ -609,7 +610,8 @@ $phone-stage-top: 192px;
     stroke-linecap: round;
     stroke-linejoin: round;
 
-    rect {
+    rect,
+    circle {
       fill: currentColor;
       stroke: none;
     }
@@ -630,7 +632,8 @@ $phone-stage-top: 192px;
     }
 }
 
-.metronomeOn {
+.metronomeOn,
+.realismOn {
     background: var(--c-info);
     border-color: var(--c-info);
     color: var(--c-on-info);
