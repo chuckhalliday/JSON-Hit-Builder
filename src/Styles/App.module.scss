@@ -1385,6 +1385,30 @@ $phone-stage-top: 192px;
     }
 }
 
+// Phones: the arrow buttons either side of a picked syllable.
+.syllableArrow {
+    position: absolute;
+    z-index: 2;
+    display: grid;
+    place-items: center;
+    padding: 0;
+    border: none;
+    border-radius: 6px;
+    background-color: var(--c-accent);
+    color: var(--c-on-accent);
+    font: inherit;
+    font-size: 13px;
+    font-weight: 700;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.35);
+    cursor: pointer;
+    touch-action: manipulation;
+
+    &:disabled {
+      opacity: 0.35;
+      cursor: default;
+    }
+}
+
 .canvasHeaderGap {
     position: absolute;
     left: 0;

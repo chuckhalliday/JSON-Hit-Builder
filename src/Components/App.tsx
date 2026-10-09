@@ -894,6 +894,7 @@ function App() {
                       onToggleBass={() => toggleSection('bass')}
                       headers={!isPhone}
                       fitHeight={isPhone ? sectionBodyHeight : undefined}
+                      syllableArrows={isPhone}
                     />
                     <div className={isPhone ? styles.fillSection : undefined} style={wide} hidden={isPhone && !shows('drums')}>
                       {!isPhone && <SectionToggle label="Drums" open={shows('drums')} onToggle={() => toggleSection('drums')} />}
