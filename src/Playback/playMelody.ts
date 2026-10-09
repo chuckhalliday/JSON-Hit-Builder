@@ -4,6 +4,7 @@ import { runPreScheduledSequence, scheduleTimer, Register, SequenceTiming } from
 import { midiToFreq } from "../Core/theory";
 import { SungSyllable, sungSyllables } from "../Core/phonemes";
 import { scheduleSungSyllable } from "./singingVoice";
+import { feelFor, velocity } from "./realism";
 
 // The melody notes of the stretch of a part being played (beats from the
 // part's start).
@@ -43,7 +44,7 @@ export function melodySegments({ notes, from, to }: MelodyPlayback): Segment[] {
 
 // A lead voice. "Synth": a filtered square, a little vibrato. "Acoustic":
 // a breathier sine-and-triangle blend with a softer attack, more voice-like.
-function scheduleMelodyNote(audioContext: AudioContext, destination: AudioNode, midi: number, now: number, duration: number, acoustic: boolean, register: Register) {
+function scheduleMelodyNote(audioContext: AudioContext, destination: AudioNode, midi: number, now: number, duration: number, acoustic: boolean, level: number, register: Register) {
   const freq = midiToFreq(midi);
   const attack = Math.min(acoustic ? 0.06 : 0.015, duration * 0.3);
   const release = Math.min(0.08, duration * 0.3);
@@ -80,8 +81,8 @@ function scheduleMelodyNote(audioContext: AudioContext, destination: AudioNode, 
   });
 
   envelope.gain.setValueAtTime(0, now);
-  envelope.gain.linearRampToValueAtTime(0.5, now + attack);
-  envelope.gain.setValueAtTime(0.42, Math.max(now + attack, end - release));
+  envelope.gain.linearRampToValueAtTime(0.5 * level, now + attack);
+  envelope.gain.setValueAtTime(0.42 * level, Math.max(now + attack, end - release));
   envelope.gain.linearRampToValueAtTime(0, end);
 
   lfo.start(now);
@@ -101,7 +102,7 @@ function scheduleMelodyNote(audioContext: AudioContext, destination: AudioNode, 
   });
 }
 
-export default async function playMelody(midi: boolean, melody: MelodyPlayback, bpm: number, shouldStop?: () => boolean, mute?: boolean, acoustic = true, timing?: SequenceTiming): Promise<number> {
+export default async function playMelody(midi: boolean, melody: MelodyPlayback, bpm: number, shouldStop?: () => boolean, mute?: boolean, acoustic = true, timing?: SequenceTiming, realism?: () => boolean): Promise<number> {
   const beatDuration = 60 / bpm;
   const segments = melodySegments(melody);
   const getDuration = (i: number) => segments[i].length * beatDuration;
@@ -110,7 +111,9 @@ export default async function playMelody(midi: boolean, melody: MelodyPlayback, 
     const onSchedule = (i: number, time: number, _duration: number, register: Register) => {
       const { midi: note, sound } = segments[i];
       if (note === null || mute) return;
-      scheduleTimer(time, () => triggerMidi('melody', note, sound * beatDuration * 0.95, 90, 64), register);
+      const feel = feelFor('melody', realism);
+      const played = velocity(90, feel.level(time));
+      scheduleTimer(feel.at(time), () => triggerMidi('melody', note, sound * beatDuration * 0.95, played), register);
     };
     return runPreScheduledSequence(0, segments.length, getDuration, onSchedule, shouldStop, timing);
   }
@@ -123,8 +126,11 @@ export default async function playMelody(midi: boolean, melody: MelodyPlayback, 
   const onSchedule = (i: number, time: number, _duration: number, register: Register) => {
     const { midi: note, sound, syllable } = segments[i];
     if (note === null || mute) return;
-    if (acoustic && syllable) scheduleSungSyllable(audioContext, bus, syllable, note, time, sound * beatDuration * 0.95, register);
-    else scheduleMelodyNote(audioContext, bus, note, time, sound * beatDuration * 0.95, acoustic, register);
+    const feel = feelFor('melody', realism);
+    const at = feel.at(time);
+    const level = feel.level(time);
+    if (acoustic && syllable) scheduleSungSyllable(audioContext, bus, syllable, note, at, sound * beatDuration * 0.95, register, 0.5 * level);
+    else scheduleMelodyNote(audioContext, bus, note, at, sound * beatDuration * 0.95, acoustic, level, register);
   };
   const finalIndex = await runPreScheduledSequence(0, segments.length, getDuration, onSchedule, shouldStop, timing);
   const ringOut = Math.max(0, (timing?.endTime ?? 0) - audioContext.currentTime) + 1;

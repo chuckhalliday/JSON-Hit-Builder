@@ -41,7 +41,7 @@ export interface VersePlaybackResult {
 export async function playVerse(bpm: number, midi: boolean, drumBeat: number, bassBeat: number, chordBeat: number, verseDrumGroove: number[], verseDrums: DrumHit[][],
   verseBassGroove: number[], verseBass: NoteLocation[], verseChordGroove: number[], verseChords: string[], verseChordTones: ChordTones, onStep: (lampIndex: number) => void, shouldStop?: () => boolean,
   includeDrums = true, includeBass = true, includeChords = true, acoustic = true, key?: string, startAt?: number, ends: TrackEnds = {},
-  melody?: MelodyPlayback, includeMelody = true, drumMuted?: (voice: number) => boolean, click?: ClickTrack): Promise<VersePlaybackResult> {
+  melody?: MelodyPlayback, includeMelody = true, drumMuted?: (voice: number) => boolean, click?: ClickTrack, realism?: () => boolean): Promise<VersePlaybackResult> {
   // One start time for every track of the part (the previous part's end
   // when chaining), and each track resolves PART_LOOKAHEAD early.
   const audioContext = await ensureAudioRunning();
@@ -54,16 +54,17 @@ export async function playVerse(bpm: number, midi: boolean, drumBeat: number, ba
   };
   // Every drum row is scheduled (the synthesized voices cover toms and ride
   // too); only the first carries the lamp-stepping callback. A row's mute
-  // (`drumMuted`) is asked hit by hit, so it can change mid-part.
+  // (`drumMuted`) is asked hit by hit, so it can change mid-part, and so is
+  // `realism` note by note. The metronome stays on the grid regardless.
   const results = await Promise.all([
     ...verseDrums.map((pattern, voice) =>
-      playBeat(midi, drumBeat, pattern, verseDrumGroove, bpm, verseDrums, voice === 0 ? onStep : undefined, shouldStop, () => !includeDrums || !!drumMuted?.(voice), acoustic, key, timing(), ends.drum)),
+      playBeat(midi, drumBeat, pattern, verseDrumGroove, bpm, verseDrums, voice === 0 ? onStep : undefined, shouldStop, () => !includeDrums || !!drumMuted?.(voice), acoustic, key, timing(), ends.drum, realism)),
     // Bass and chord onsets always fall on drum steps, so the drums' step
     // callback already lights every lamp; passing it to these too only
     // tripled the per-step dispatches and re-renders.
-    playBass(midi, bassBeat, verseBass, verseBassGroove, bpm, shouldStop, undefined, verseDrumGroove, !includeBass, acoustic, timing(), ends.bass),
-    playChords(midi, chordBeat, verseChords, verseChordTones, verseChordGroove, bpm, shouldStop, undefined, verseDrumGroove, !includeChords, acoustic, timing(), ends.chord),
-    ...(melody ? [playMelody(midi, melody, bpm, shouldStop, !includeMelody, acoustic, timing())] : []),
+    playBass(midi, bassBeat, verseBass, verseBassGroove, bpm, shouldStop, undefined, verseDrumGroove, !includeBass, acoustic, timing(), ends.bass, realism),
+    playChords(midi, chordBeat, verseChords, verseChordTones, verseChordGroove, bpm, shouldStop, undefined, verseDrumGroove, !includeChords, acoustic, timing(), ends.chord, realism),
+    ...(melody ? [playMelody(midi, melody, bpm, shouldStop, !includeMelody, acoustic, timing(), realism)] : []),
     ...(click ? [playClickTrack(bpm, click.from, click.to, click.on, click.onClick, shouldStop, timing())] : []),
   ])
   const endTime = Math.max(start, ...timings.map(t => t.endTime ?? start));

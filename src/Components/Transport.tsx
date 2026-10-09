@@ -133,6 +133,9 @@ interface TransportProps {
   metronome: boolean;
   onToggleMetronome: () => void;
   metronomeRef: React.RefObject<HTMLButtonElement>;
+  // Realism: small fluctuations in each note's timing and velocity.
+  realism: boolean;
+  onToggleRealism: () => void;
   tracks: Record<Track, boolean>;
   onToggleTrack: (track: Track) => void;
   // The melody's toggle shows once the song has one.
@@ -293,6 +296,22 @@ function Transport(props: TransportProps) {
             title={props.hasLoop ? 'Cycle playback between the loop points' : 'Set loop points first: Set start, then click where it starts and where it ends - or click a bar number above the drum grid'}
           >
             ⟳
+          </button>
+          <button
+            className={`${styles.roundButton} ${styles.realismButton} ${props.realism ? styles.realismOn : ''}`}
+            onClick={props.onToggleRealism}
+            aria-pressed={props.realism}
+            aria-label="Realism"
+            title={props.realism ? 'Realism on: every note lands a hair off the grid and a touch harder or softer, the way a band plays' : 'Realism: play with the small fluctuations in timing and velocity of a live band'}
+          >
+            {/* A velocity lane, its notes uneven in strength and spacing. */}
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M3 20.5h18M5.5 20.5v-9M10 20.5v-13M14.5 20.5v-7M18.5 20.5v-10.5" />
+              <circle cx="5.5" cy="11.5" r="2" />
+              <circle cx="10" cy="7.5" r="2" />
+              <circle cx="14.5" cy="13.5" r="2" />
+              <circle cx="18.5" cy="10" r="2" />
+            </svg>
           </button>
           <button
             className={`${styles.playButton} ${props.isPlaying ? styles.playing : ''}`}

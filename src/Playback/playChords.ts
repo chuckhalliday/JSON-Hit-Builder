@@ -3,10 +3,11 @@ import { indexToLamp } from "../SongStructure/beatMapping";
 import { getAudioContext } from "./audioContext";
 import { runPreScheduledSequence, scheduleTimer, Register, SequenceTiming } from "./scheduler";
 import { ChordTones } from "../types";
+import { feelFor, velocity } from "./realism";
 
 // "Synth" voice: the original single sawtooth with a flat attack/decay/sustain/release envelope.
-function scheduleSynthChordNote(audioContext: AudioContext, gainNode: GainNode, tone: number, now: number, duration: number, register: Register) {
-  const sustainLevel = 0.4;
+function scheduleSynthChordNote(audioContext: AudioContext, gainNode: GainNode, tone: number, now: number, duration: number, level: number, register: Register) {
+  const sustainLevel = 0.4 * level;
   const minSegment = 0.001;
   const attackTime = Math.max(minSegment, Math.min(0.02, duration * 0.25));
   const decayTime = Math.max(minSegment, Math.min(0.02, duration * 0.25));
@@ -24,7 +25,7 @@ function scheduleSynthChordNote(audioContext: AudioContext, gainNode: GainNode, 
   envelope.connect(gainNode);
 
   envelope.gain.setValueAtTime(0, now);
-  envelope.gain.linearRampToValueAtTime(0.6, attackEnd);
+  envelope.gain.linearRampToValueAtTime(0.6 * level, attackEnd);
   envelope.gain.linearRampToValueAtTime(sustainLevel, decayEnd);
   envelope.gain.setValueAtTime(sustainLevel, releaseStart);
   envelope.gain.linearRampToValueAtTime(0, noteEnd);
@@ -42,7 +43,7 @@ function scheduleSynthChordNote(audioContext: AudioContext, gainNode: GainNode, 
 // slightly-detuned unison strings and inharmonic overtone shimmer, with a filter
 // envelope (bright hammer strike -> mellow decay) and a continuous exponential decay
 // instead of a held sustain.
-function scheduleAcousticChordNote(audioContext: AudioContext, gainNode: GainNode, tone: number, now: number, duration: number, register: Register) {
+function scheduleAcousticChordNote(audioContext: AudioContext, gainNode: GainNode, tone: number, now: number, duration: number, level: number, register: Register) {
   const minSegment = 0.001;
   const attackTime = Math.max(minSegment, Math.min(0.012, duration * 0.1));
   const releaseTime = Math.max(minSegment, Math.min(0.15, duration * 0.4));
@@ -84,7 +85,7 @@ function scheduleAcousticChordNote(audioContext: AudioContext, gainNode: GainNod
   noteFilter.connect(gainNode);
 
   envelope.gain.setValueAtTime(0, now);
-  envelope.gain.linearRampToValueAtTime(0.5, attackEnd);
+  envelope.gain.linearRampToValueAtTime(0.5 * level, attackEnd);
   envelope.gain.exponentialRampToValueAtTime(0.001, decayEnd);
   envelope.gain.linearRampToValueAtTime(0, noteEnd);
 
@@ -110,7 +111,9 @@ function scheduleAcousticChordNote(audioContext: AudioContext, gainNode: GainNod
   });
 }
 
-export default async function playChords(midi: boolean, beat: number, pattern: string[], chords: ChordTones, groove: number[], bpm: number, shouldStop?: () => boolean, onStep?: (lampIndex: number) => void, drumGroove?: number[], mute?: boolean, acoustic = true, timing?: SequenceTiming, end?: number) {
+// With `realism`, each tone of a chord has its own onset and level, as a
+// player's fingers do.
+export default async function playChords(midi: boolean, beat: number, pattern: string[], chords: ChordTones, groove: number[], bpm: number, shouldStop?: () => boolean, onStep?: (lampIndex: number) => void, drumGroove?: number[], mute?: boolean, acoustic = true, timing?: SequenceTiming, end?: number, realism?: () => boolean) {
     const beatDuration = 60 / bpm; // duration of one beat in seconds
     const audioContext = getAudioContext();
 
@@ -143,11 +146,9 @@ export default async function playChords(midi: boolean, beat: number, pattern: s
         scheduleLamp(index, time, register);
         if (pattern[index] === '-' || mute) return;
 
-        const chordTones = chords.oscTones[index];
-        const now = time;
-
-        for (const tone of chordTones) {
-          scheduleNote(audioContext, gainNode, tone, now, duration, register);
+        const feel = feelFor('chords', realism);
+        for (const tone of chords.oscTones[index]) {
+          scheduleNote(audioContext, gainNode, tone, feel.at(time), duration, feel.level(time), register);
         }
       };
 
@@ -161,15 +162,13 @@ export default async function playChords(midi: boolean, beat: number, pattern: s
       }, ringOut * 1000);
       return finalIndex;
     } else {
-      const velocity = Math.floor(Math.random() * (70 - 50 + 1) + 50);
-      const release = Math.floor(Math.random() * (70 - 50 + 1) + 50);
-
       const onSchedule = (index: number, time: number, duration: number, register: Register) => {
         scheduleLamp(index, time, register);
         if (pattern[index] === '-' || mute) return;
-        const chordTones = chords.midiTones[index];
-        for (const note of chordTones) {
-          scheduleTimer(time, () => triggerMidi('chords', note, duration, velocity, release), register);
+        const feel = feelFor('chords', realism);
+        for (const note of chords.midiTones[index]) {
+          const played = velocity(60, feel.level(time));
+          scheduleTimer(feel.at(time), () => triggerMidi('chords', note, duration, played), register);
         }
       };
 
