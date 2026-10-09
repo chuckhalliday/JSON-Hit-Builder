@@ -1,33 +1,19 @@
-export function lampToPositions(lampId: number, drumGroove: number[], bassGroove: number[], chordsGroove: number[]): [number, number, number] {
-  let drumPosition = 0
-  let bassPosition = 0
-  let chordPosition = 0
-  let drumSum = 0
-  let bassSum = bassGroove[0]
-  let chordSum = chordsGroove[0]
-  let bassIndex = 1
-  let chordIndex = 1
+import { beatsToTickPositions } from '../Core/time'
 
-  for (let i = 0; i < lampId; i++) {
-    drumSum += drumGroove[i]
-    drumSum = parseFloat(drumSum.toFixed(2))
-    if (drumSum === chordSum && bassSum === chordSum) {
-      drumPosition = i + 1
-      bassPosition = bassIndex
-      chordPosition = chordIndex
-    }
-    if (drumSum === chordSum) {
-      chordSum += chordsGroove[chordIndex]
-      chordSum = parseFloat(chordSum.toFixed(2))
-      chordIndex++
-    }
-    if (drumSum === bassSum) {
-      bassSum += bassGroove[bassIndex]
-      bassSum = parseFloat(bassSum.toFixed(2))
-      bassIndex++
-    }
+// The last place at or before drum step `lampId` where a drum step, a bass
+// note and a chord all start: their indices there. Compared as positions
+// snapped to whole ticks, so rounded triplets (0.16, 0.17) and a shuffle's
+// exact thirds of a beat both line up.
+export function lampToPositions(lampId: number, drumGroove: number[], bassGroove: number[], chordsGroove: number[]): [number, number, number] {
+  const drumAt = beatsToTickPositions(drumGroove)
+  const bassAt = beatsToTickPositions(bassGroove)
+  const chordAt = beatsToTickPositions(chordsGroove)
+  for (let step = Math.min(lampId, drumGroove.length); step > 0; step--) {
+    const bass = bassAt.indexOf(drumAt[step])
+    const chord = chordAt.indexOf(drumAt[step])
+    if (bass !== -1 && chord !== -1) return [step, bass, chord]
   }
-  return [drumPosition, bassPosition, chordPosition]
+  return [0, 0, 0]
 }
 
 export function indexToLamp(sourceGroove: number[], sourceIndex: number, drumGroove: number[]): number {

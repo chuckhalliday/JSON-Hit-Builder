@@ -4,8 +4,9 @@ import { bassPitch } from "./SongStructure/bassPitch";
 import { SongDoc, Layer, GenerateOptions, SectionLabel } from "./Core/doc";
 import { generateDoc, regenerateLayer, setLock, setInstanceEnergy, moveInstance, detachInstance, relinkInstance, duplicateInstance, deleteInstance, changeInstanceSection } from "./Core/generate";
 import { realizeSong, realizeSection, realizeInstance, assignStepIds } from "./Core/realize";
-import { editBass, editDrum, editDrums, editChordTone, editChord, simplifyChords, splitBassNote, joinBassNotes } from "./Core/edits";
+import { editBass, editDrum, editDrums, editChordTone, editChord, simplifyChords, splitBassNote, joinBassNotes, applyBassPattern } from "./Core/edits";
 import { Simplify } from "./Core/simplify";
+import { BassPatternId } from "./Core/bassPatterns";
 import { DrumCellEdit } from "./Core/drumBars";
 import { ChordEvent } from "./Core/theory";
 import { LyricTiming, withLyricMove } from "./Core/lyrics";
@@ -202,6 +203,15 @@ const song = createSlice({
         const target = docFor(state, part);
         if (!target) return;
         const next = op === 'split' ? splitBassNote(target.doc, part, note) : joinBassNotes(target.doc, part, note);
+        if (next !== target.doc) applyDoc(state, next, target.sectionId);
+      },
+      // The Rhythm menu: set the part's whole bass line to a common pattern.
+      // Lands on the part's section, like other bass edits.
+      setBassPattern: (state, action: PayloadAction<{ part: number, pattern: BassPatternId }>) => {
+        const { part, pattern } = action.payload;
+        const target = docFor(state, part);
+        if (!target) return;
+        const next = applyBassPattern(target.doc, part, pattern);
         if (next !== target.doc) applyDoc(state, next, target.sectionId);
       },
       setDrumState: (state, action: PayloadAction<{ index: number, drumPart: number, drumStep: number, drums: DrumHit }>) => {
@@ -490,7 +500,7 @@ const song = createSlice({
     },
   });
 
-export const { setIsPlaying, setMidi, setAcoustic, setSong, setBassState, setDrumState, setDrumCells, setChordState, setCurrentBeat, reorderParts, incrementByAmount, loadSong, rerollLayer, toggleLock, setPartEnergy, setLoop, setLoopPick, pickLoopSpan, extendLoop, toggleLoop, setSounds, editHarmony, simplifyHarmony, setPartLinked, setPartSection, setPartLyrics, setLyricTiming, editBassRhythm, setMelodyEnabled, setMelodyNote, rerollMelody, toggleMelodyLock, setMelodySplits, duplicatePart, deletePart } = song.actions;
+export const { setIsPlaying, setMidi, setAcoustic, setSong, setBassState, setDrumState, setDrumCells, setChordState, setCurrentBeat, reorderParts, incrementByAmount, loadSong, rerollLayer, toggleLock, setPartEnergy, setLoop, setLoopPick, pickLoopSpan, extendLoop, toggleLoop, setSounds, editHarmony, simplifyHarmony, setPartLinked, setPartSection, setPartLyrics, setLyricTiming, editBassRhythm, setBassPattern, setMelodyEnabled, setMelodyNote, rerollMelody, toggleMelodyLock, setMelodySplits, duplicatePart, deletePart } = song.actions;
 
 // Thunk: generate a fresh form-first song and load it into the store.
 // Dispatched on mount and by the song tabs. Pass a seed (or full options)
@@ -519,6 +529,7 @@ const UNDOABLE: Record<string, string> = {
   [song.actions.setDrumState.type]: 'drum edit',
   [song.actions.setDrumCells.type]: 'drum edit',
   [song.actions.editBassRhythm.type]: 'rhythm edit',
+  [song.actions.setBassPattern.type]: 'bass rhythm',
   [song.actions.setChordState.type]: 'voicing edit',
   [song.actions.editHarmony.type]: 'chord change',
   [song.actions.simplifyHarmony.type]: 'simplify',

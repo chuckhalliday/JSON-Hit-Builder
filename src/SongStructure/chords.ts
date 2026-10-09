@@ -107,7 +107,9 @@ export function chordLocation(bassLocation: NoteLocation[], bassGroove: number[]
   let chordIndex = 0
 
   for (let i = 0; i < bassGroove.length; i++){
-    if (bassSum === chordSum) {
+    // Near enough, not equal: a shuffle's thirds of a beat don't add up
+    // exactly in floating point.
+    if (Math.abs(bassSum - chordSum) < 0.01) {
       chordX.push(bassLocation[i].x)
       chordSum += chordGroove[chordIndex]
       chordIndex++

@@ -5,10 +5,11 @@
 // the section can't wipe it. A drum edit on a cell an instance's own
 // transition changed (a fill, a crash) stays local to that instance.
 
-import { Layer, SectionDef, SectionInstance, SongDoc } from './doc';
+import { DrumOverride, Layer, SectionDef, SectionInstance, SongDoc } from './doc';
 import { ChordEvent, BASS_MAX, BASS_MIN, chordBassPc, inversionCount, mod12 } from './theory';
 import { guideTones, refitVoicings, revoiceChord } from './voicing';
 import { Simplify, simplified, wouldSimplify } from './simplify';
+import { BassPatternId, bassPattern, patternGrid, patternRhythm, playsPattern } from './bassPatterns';
 import { generateBass } from './bassline';
 import { functionOf } from './chordOptions';
 import { streamFor } from './seeds';
@@ -288,4 +289,78 @@ export function joinBassNotes(doc: SongDoc, index: number, k: number): SongDoc {
     }
   }, 'rhythm');
   return steps === s.drumSteps ? next : { ...next, form: remapOverrides(next.form, inst.sectionId, s.drumSteps, steps) };
+}
+
+// ---- Bass rhythm: a common pattern through the whole part ------------------
+//
+// The Rhythm menu over the clef (bassPatterns.ts). The section's bass takes
+// the pattern, its pitches written fresh to fit it - or, when the bass is
+// locked, kept: each note takes the pitch sounding where it starts (the note
+// before, where that's a rest - the patterns are all notes). The drum grid
+// swings to triplets for a shuffle (and back again), gaining a step wherever
+// a note now starts off one; its hits and every part's overrides move with
+// their steps. Locks the rhythm, like the split and join edits. The same
+// document when the bass already plays the pattern.
+
+// For each note of a new rhythm, the old note whose pitch it takes.
+function pitchSources(oldRhythm: number[], oldBass: number[], newRhythm: number[]): number[] {
+  const oldOn = onsets(oldRhythm);
+  return onsets(newRhythm).map(t => {
+    let k = 0;
+    oldOn.forEach((at, i) => { if (at <= t) k = i; });
+    if (oldBass[k] > 0) return k;
+    for (let i = k - 1; i >= 0; i--) if (oldBass[i] > 0) return i;
+    for (let i = k + 1; i < oldBass.length; i++) if (oldBass[i] > 0) return i;
+    return k;
+  });
+}
+
+export function applyBassPattern(doc: SongDoc, index: number, id: BassPatternId): SongDoc {
+  const inst = doc.form[index];
+  const s = inst && doc.sections[inst.sectionId];
+  const pattern = bassPattern(id);
+  if (!s || !pattern || playsPattern(s.bassRhythm, pattern, s.bars, s.harmony)) return doc;
+  const rhythm = patternRhythm(pattern, s.bars, s.harmony);
+  const grid = patternGrid(s.drumSteps, !!pattern.swing);
+  const steps = onsets(rhythm).reduce((st, t) => stepsWithBoundaryAt(st, t), grid.steps);
+  const stepOn = onsets(steps);
+  // Where each old step's hits land (-1: nowhere, its step is gone).
+  const target = grid.moved.map(t => stepOn.indexOf(t));
+  const regridded = steps.length !== s.drumSteps.length || target.some((k, i) => k !== i);
+  const sources = pitchSources(s.bassRhythm, s.bass, rhythm);
+  const fresh = s.locks.bass ? null : generateBass(rhythm, s.harmony, doc.key, s.energy, streamFor(doc.seed, s.id, 'bass', s.rolls.bass));
+  const next = withSection(doc, inst.sectionId, sec => {
+    sec.bassRhythm = rhythm;
+    if (fresh) {
+      sec.bass = fresh;
+      delete sec.bassStrings;
+    } else {
+      sec.bass = sources.map(k => s.bass[k] ?? 0);
+      if (s.bassStrings) sec.bassStrings = sources.map(k => s.bassStrings![k] ?? null);
+    }
+    if (regridded) {
+      sec.drumSteps = steps;
+      sec.drums = s.drums.map(row => {
+        const cells = steps.map(() => ({ checked: false, accent: false }));
+        row.forEach((cell, i) => {
+          const k = target[i];
+          if (k !== -1 && cell.checked) cells[k] = { checked: true, accent: cells[k].accent || cell.accent };
+        });
+        return cells;
+      });
+    }
+  }, 'rhythm');
+  if (!regridded) return next;
+  // Two overrides moved onto one cell: the first stands.
+  const moveOverrides = (overrides: DrumOverride[]) => {
+    const taken = new Set<string>();
+    return overrides.flatMap(o => {
+      const step = target[o.step] ?? -1;
+      const cell = `${o.voice}:${step}`;
+      if (step === -1 || taken.has(cell)) return [];
+      taken.add(cell);
+      return [{ ...o, step }];
+    });
+  };
+  return { ...next, form: next.form.map(f => (f.sectionId !== inst.sectionId ? f : { ...f, drumOverrides: moveOverrides(f.drumOverrides) })) };
 }

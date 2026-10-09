@@ -1,7 +1,7 @@
 import React, { forwardRef, useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import playBass from '../Playback/playBass';
-import { editBassRhythm, setBassState, setCurrentBeat, setLyricTiming, setMelodyNote, setMelodySplits, SongState } from '../reducers';
+import { editBassRhythm, setBassPattern, setBassState, setCurrentBeat, setLyricTiming, setMelodyNote, setMelodySplits, SongState } from '../reducers';
 import { PlayHandle } from './Piano';
 import SectionToggle from './SectionToggle';
 import { useLampStep } from '../Playback/useLampStep';
@@ -14,9 +14,11 @@ import { useTheme } from '../theme';
 import { partLyrics, placeLyrics } from '../Core/lyrics';
 import { stepXs } from '../SongStructure/bass';
 import { canJoinBassNotes, canSplitBassNote } from '../Core/edits';
-import { beatsToTicks } from '../Core/time';
+import { PPQ, SIXTEENTH, beatsToTicks } from '../Core/time';
 import { canSplitMelodyNote, diatonicStep, melodyFor, noteValue, pitchAtStep } from '../Core/melody';
 import { transposedKey } from '../Core/realize';
+import { BASS_PATTERNS, TRIPLET_EIGHTH, playsPattern } from '../Core/bassPatterns';
+import BassPatternMenu from './BassPatternMenu';
 
 // Standard 4-string bass tuning (E1 A1 D2 G2), lowest to highest, expressed as
 // the real MIDI note number of each open string - matches the `midi` values
@@ -101,6 +103,10 @@ function lyricTextWidth(text: string): number {
   measureContext.font = LYRIC_FONT;
   return measureContext.measureText(text).width;
 }
+// Where the bass clef (and the treble clef, over it) is centered, and how
+// far over the staff's (or tab's) top line the Rhythm button sits above it.
+const CLEF_X = 45;
+const RHYTHM_BUTTON_GAP = 10;
 // How far a fitted canvas may be squeezed or stretched (vertically only).
 const FIT_MIN = 0.5;
 const FIT_MAX = 1.2;
@@ -151,6 +157,11 @@ const STRIP_BOTTOM = 209;
 const STRIP_HEAD_Y = 201;
 const STRIP_MIDDLE = 192;
 const STRIP_SCALE = 0.55;
+// The value a note's glyph is drawn as. A shuffle's swung pair - two thirds
+// of a beat, then a third - is written as a quarter and an eighth, under a
+// triplet "3" (drawTripletMarks).
+const glyphValue = (groove: number) =>
+  Math.abs(groove - 2 / 3) < 0.01 ? 1 : Math.abs(groove - 1 / 3) < 0.01 ? 0.5 : groove;
 // Pitch-space y of the 5 main staff lines (A2 F2 D2 B1 G1, top to bottom),
 // of the 3 extra ledger lines above them (reachable via frets further up the
 // neck), and of the single ledger line below (the open low E string).
@@ -435,6 +446,11 @@ const BassStaff = forwardRef<PlayHandle, BassStaffProps>(function BassStaff({ re
   const doc = song.doc;
   const rhythmEditable = !!doc && doc.form.length === song.songStructure.length && doc.form[part]?.sectionId === song.songStructure[part].sectionId;
   const rhythmTicks = useMemo(() => bassGroove.map(beatsToTicks), [bassGroove]);
+  // The common rhythm (Rhythm menu) the part's bass plays now, if any.
+  const section = rhythmEditable ? doc!.sections[doc!.form[part].sectionId] : null;
+  const currentPattern = useMemo(() => (section
+    ? BASS_PATTERNS.find((p) => playsPattern(section.bassRhythm, p, section.bars, section.harmony))?.id ?? null
+    : null), [section]);
   // The note to keep selected once a split or join lands (by index - its
   // column moves).
   const refocusRef = useRef<number | null>(null);
@@ -582,7 +598,7 @@ const BassStaff = forwardRef<PlayHandle, BassStaffProps>(function BassStaff({ re
       ctx.fillStyle = lit ? colors.hover : colors.ink;
       ctx.strokeStyle = ctx.fillStyle;
       ctx.lineWidth = 1.5;
-      const groove = bassGroove[k];
+      const groove = glyphValue(bassGroove[k]);
       if (isStaffPitch(bassNoteGrid[k].y)) {
         ctx.translate(x, STRIP_HEAD_Y);
         ctx.scale(STRIP_SCALE, STRIP_SCALE);
@@ -613,8 +629,9 @@ const BassStaff = forwardRef<PlayHandle, BassStaffProps>(function BassStaff({ re
   }
 
   function drawRestOption(ctx: CanvasRenderingContext2D, location: { x: number, y: number }) {
-    const groove = bassGroove[bassGrid.indexOf(location.x, 1) - 1];
-    if (groove === undefined) return;
+    const value = bassGroove[bassGrid.indexOf(location.x, 1) - 1];
+    if (value === undefined) return;
+    const groove = glyphValue(value);
     const opt = getRestOptionLayout(location);
     ctx.save();
     drawOptionChip(ctx, opt.x - 12, opt.y - 18, 24, 36);
@@ -846,7 +863,7 @@ const BassStaff = forwardRef<PlayHandle, BassStaffProps>(function BassStaff({ re
     }
     if (CANVAS && match) {
       const spacing = SPACING;
-      const groove = bassGroove[index];
+      const groove = glyphValue(bassGroove[index]);
       ctx.fillStyle = colors.ink;
       ctx.strokeStyle = colors.ink;
       ctx.lineWidth = 1;
@@ -876,6 +893,39 @@ const BassStaff = forwardRef<PlayHandle, BassStaffProps>(function BassStaff({ re
         ctx.stroke();
       }
     }
+  }
+
+  // A "3" over each beat a shuffle splits into triplets (notes a third or
+  // two thirds of a beat long), clear of the highest stem among them.
+  function drawTripletMarks(ctx: CanvasRenderingContext2D) {
+    const triplet = (ticks: number) => ticks % TRIPLET_EIGHTH === 0 && ticks % SIXTEENTH !== 0;
+    ctx.save();
+    ctx.fillStyle = colors.ink;
+    ctx.font = 'italic 13px serif';
+    ctx.textAlign = 'center';
+    let first = -1;
+    let from = 0;
+    let pos = 0;
+    rhythmTicks.forEach((ticks, k) => {
+      if (!triplet(ticks)) {
+        first = -1;
+        pos += ticks;
+        return;
+      }
+      if (first === -1) {
+        first = k;
+        from = pos;
+      }
+      pos += ticks;
+      if ((pos - from) % PPQ !== 0) return;
+      const group = bassNoteGrid.slice(first, k + 1);
+      first = -1;
+      if (group.some((n) => !bassGrid.includes(n.x))) return;
+      const tips = group.filter((n) => isStaffPitch(n.y)).map((n) => n.y - (n.y < 0 ? SPACING : SPACING * 5));
+      const y = Math.max(12 - STAFF_Y_OFFSET, Math.min(MAIN_LINES_Y[0], ...tips) - 6);
+      ctx.fillText('3', (group[0].x + group[group.length - 1].x) / 2 + SPACING, y + STAFF_Y_OFFSET);
+    });
+    ctx.restore();
   }
 
   function displayChord(ctx: CanvasRenderingContext2D, location: number, bassGrid: number[], chordName: string) {
@@ -1150,7 +1200,7 @@ const BassStaff = forwardRef<PlayHandle, BassStaffProps>(function BassStaff({ re
       ctx.lineTo(x, MELODY_TOP + SPACING * 8);
       ctx.stroke();
     });
-    drawTrebleClef(ctx, 45, melodyY(32), SPACING * 2);
+    drawTrebleClef(ctx, CLEF_X, melodyY(32), SPACING * 2);
 
     ctx.font = '20px serif';
     melodyNotes.forEach((n, k) => {
@@ -1310,11 +1360,12 @@ const BassStaff = forwardRef<PlayHandle, BassStaffProps>(function BassStaff({ re
           // Centered on the staff's actual middle line (D2), not the canvas's
           // geometric center - the canvas isn't vertically symmetric around
           // the staff since it has 3 ledger lines above but only 1 below.
-          drawClef(ctx, { x: 45, y: MAIN_LINES_Y[2] + STAFF_Y_OFFSET, acc:'none' });
+          drawClef(ctx, { x: CLEF_X, y: MAIN_LINES_Y[2] + STAFF_Y_OFFSET, acc:'none' });
 
           bassNoteGrid.forEach((note) => {
             drawNote(ctx, note);
           });
+          drawTripletMarks(ctx);
           if (pendingNote) {
             const note = bassNoteGrid.find((n) => n.x === pendingNote.x && n.y === pendingNote.y);
             if (note) {
@@ -1913,6 +1964,19 @@ const BassStaff = forwardRef<PlayHandle, BassStaffProps>(function BassStaff({ re
           id="myCanvas"
           style={fitScale !== 1 ? { width: renderWidth || undefined, height: canvasHeight * fitScale } : undefined}
         />
+        {showBass && section && (
+          // Over the clef (in tab, over the TAB letters): its bottom a little
+          // above the staff's or tab's top line.
+          <BassPatternMenu
+            key={part}
+            current={currentPattern}
+            onPick={(pattern) => dispatch(setBassPattern({ part, pattern }))}
+            style={{
+              left: CLEF_X,
+              top: (offset + (viewMode === 'staff' ? STAFF_Y_OFFSET + MAIN_LINES_Y[0] : TAB_LINE_Y[0]) - RHYTHM_BUTTON_GAP) * fitScale,
+            }}
+          />
+        )}
         {syllableArrows && pickedSyllable !== null && syllableArrowButtons(pickedSyllable)}
         {headers && bassHeaderInGap && (
           <div className={appStyles.canvasHeaderGap} style={{ top: wordsBottom * fitScale, height: BASS_HEADER * fitScale }}>
