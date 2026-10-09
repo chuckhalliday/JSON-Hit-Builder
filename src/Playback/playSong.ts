@@ -7,19 +7,20 @@ import { SongState } from '../reducers.js';
 import { DrumHit, NoteLocation, ChordTones } from '../types';
 import { ensureAudioRunning } from './audioContext';
 import { resolveStart, SequenceTiming } from './scheduler';
+import { OnClick, playClickTrack } from './metronome';
 
 // How early a part hands off to the next one during song playback: enough
 // time to render the next part and schedule all of its notes before the
 // current one runs out, so parts join with no gap.
 const PART_LOOKAHEAD = 0.5;
 
-export async function countIn(bpm: number, midi: boolean, beat: number, initDrums: number[],
-  stepsRef: DrumHit[][]) {
-  for (let i = 0; i < 1; i++) {
-    await Promise.all([
-    playBeat(midi, beat, stepsRef[2], initDrums, bpm, stepsRef),
-  ])
-  }
+// The metronome's clicks for the stretch of the part being played, beats
+// [from, to); `on` says, click by click, whether the metronome is on.
+export interface ClickTrack {
+  from: number;
+  to: number;
+  on: () => boolean;
+  onClick?: OnClick;
 }
 
 // Where each track stops, exclusive (a loop's end bar); omitted = part end.
@@ -40,7 +41,7 @@ export interface VersePlaybackResult {
 export async function playVerse(bpm: number, midi: boolean, drumBeat: number, bassBeat: number, chordBeat: number, verseDrumGroove: number[], verseDrums: DrumHit[][],
   verseBassGroove: number[], verseBass: NoteLocation[], verseChordGroove: number[], verseChords: string[], verseChordTones: ChordTones, onStep: (lampIndex: number) => void, shouldStop?: () => boolean,
   includeDrums = true, includeBass = true, includeChords = true, acoustic = true, key?: string, startAt?: number, ends: TrackEnds = {},
-  melody?: MelodyPlayback, includeMelody = true, drumMuted?: (voice: number) => boolean): Promise<VersePlaybackResult> {
+  melody?: MelodyPlayback, includeMelody = true, drumMuted?: (voice: number) => boolean, click?: ClickTrack): Promise<VersePlaybackResult> {
   // One start time for every track of the part (the previous part's end
   // when chaining), and each track resolves PART_LOOKAHEAD early.
   const audioContext = await ensureAudioRunning();
@@ -63,6 +64,7 @@ export async function playVerse(bpm: number, midi: boolean, drumBeat: number, ba
     playBass(midi, bassBeat, verseBass, verseBassGroove, bpm, shouldStop, undefined, verseDrumGroove, !includeBass, acoustic, timing(), ends.bass),
     playChords(midi, chordBeat, verseChords, verseChordTones, verseChordGroove, bpm, shouldStop, undefined, verseDrumGroove, !includeChords, acoustic, timing(), ends.chord),
     ...(melody ? [playMelody(midi, melody, bpm, shouldStop, !includeMelody, acoustic, timing())] : []),
+    ...(click ? [playClickTrack(bpm, click.from, click.to, click.on, click.onClick, shouldStop, timing())] : []),
   ])
   const endTime = Math.max(start, ...timings.map(t => t.endTime ?? start));
   return { drumBeat: results[0], bassBeat: results[verseDrums.length], chordBeat: results[verseDrums.length + 1], endTime }

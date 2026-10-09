@@ -111,6 +111,14 @@ function BpmControl({ bpm, onChange }: { bpm: number, onChange: (bpm: number) =>
   );
 }
 
+// Swings the metronome button's arm over to the other side, taking a beat
+// to get there - called as each click sounds (`beat` in its bar).
+export function swingMetronome(button: HTMLElement | null, beat: number, bpm: number) {
+  if (!button) return;
+  button.style.setProperty('--beat', `${60 / bpm}s`);
+  button.dataset.swing = beat % 2 === 0 ? 'left' : 'right';
+}
+
 interface TransportProps {
   songKey: string;
   onKeyClick: () => void;
@@ -120,6 +128,11 @@ interface TransportProps {
   onPlay: () => void;
   bpm: number;
   onBpmChange: (bpm: number) => void;
+  // The metronome (a bar's count-in, then a click on every beat), and its
+  // button, whose arm playback swings in time (swingMetronome).
+  metronome: boolean;
+  onToggleMetronome: () => void;
+  metronomeRef: React.RefObject<HTMLButtonElement>;
   tracks: Record<Track, boolean>;
   onToggleTrack: (track: Track) => void;
   // The melody's toggle shows once the song has one.
@@ -206,6 +219,12 @@ function Transport(props: TransportProps) {
 
   const menuAction = (fn: () => void) => () => { setMenuOpen(false); fn(); };
 
+  // The metronome's arm comes back to rest when the clicks stop.
+  const { metronomeRef } = props;
+  useEffect(() => {
+    if (!props.isPlaying || !props.metronome) delete metronomeRef.current?.dataset.swing;
+  }, [props.isPlaying, props.metronome, metronomeRef]);
+
   return (
     <div className={styles.transport}>
       <div className={styles.transportSide}>
@@ -288,6 +307,23 @@ function Transport(props: TransportProps) {
             )}
           </button>
           <BpmControl bpm={props.bpm} onChange={props.onBpmChange} />
+          <button
+            ref={metronomeRef}
+            className={`${styles.roundButton} ${styles.metronomeButton} ${props.metronome ? styles.metronomeOn : ''}`}
+            onClick={props.onToggleMetronome}
+            aria-pressed={props.metronome}
+            aria-label="Metronome"
+            title={props.metronome ? 'Metronome on: a bar of count-in, then a click on every beat' : 'Metronome: count in a bar before playing, and click every beat'}
+          >
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M9.5 3h5l4.5 18h-14z" />
+              <path d="M6.5 16h11" />
+              <g className={styles.metronomeArm}>
+                <path d="M12 16V5" />
+                <rect x="10.5" y="7.5" width="3" height="2.5" rx="0.5" />
+              </g>
+            </svg>
+          </button>
         </div>
         <div className={styles.loopStrip}>
           <button
