@@ -6,7 +6,7 @@ import Sounds from './Sounds';
 import SectionPanel from './SectionPanel';
 import SectionTypeMenu from './SectionTypeMenu';
 import LyricsSheet from './LyricsSheet';
-import Transport, { SoundSource, Track } from './Transport';
+import Transport, { SoundSource, Track, swingMetronome } from './Transport';
 import { SHORT_LABELS } from '../Core/form';
 import { downloadMidi } from '../Core/exportMidi';
 import { PaletteInput, SoundPick } from '../Core/timbre';
@@ -21,6 +21,7 @@ import BassStaff from "./BassStaff";
 import Piano, { PlayHandle } from './Piano';
 import { useSelector, useDispatch } from "react-redux"
 import { playVerse } from '../Playback/playSong';
+import { countIn } from '../Playback/metronome';
 import { getAudioContext } from '../Playback/audioContext';
 import { useLampStep } from '../Playback/useLampStep';
 import { incrementByAmount, setIsPlaying, setMidi, setAcoustic, SongState, setCurrentBeat, newSong, reorderParts, loadSong, setLoopPick, toggleLoop, setPartLinked, setPartSection, duplicatePart, deletePart, setSounds, undo } from '../reducers';
@@ -251,6 +252,14 @@ function App() {
       return next;
     });
   }, []);
+  // The metronome: a bar of count-in when playback starts (countInRef arms
+  // it), then a click on every beat. Playback asks the ref click by click,
+  // so it can be switched on or off mid-song.
+  const [metronome, setMetronome] = useState(false);
+  const metronomeRef = React.useRef(metronome);
+  metronomeRef.current = metronome;
+  const countInRef = React.useRef(false);
+  const metronomeButtonRef = React.useRef<HTMLButtonElement>(null);
   // Lifted above BassStaff (rather than local state there) because each part's
   // BassStaff only mounts while its part is open - a local toggle would reset
   // to "staff" every time the user switched parts.
@@ -267,8 +276,15 @@ function App() {
 
   async function playSong(song: SongState, verse: number, drumBeat: number, bassBeat: number, chordBeat: number) {
     const seekEpochAtStart = manualSeekEpochRef.current;
-    const startAt = nextStartRef.current;
+    let startAt = nextStartRef.current;
     nextStartRef.current = undefined;
+    const swing = (beat: number) => swingMetronome(metronomeButtonRef.current, beat, song.bpm);
+    // Starting with the metronome on: a bar of clicks first, and the music
+    // comes in where that bar ends.
+    if (countInRef.current) {
+      countInRef.current = false;
+      startAt = await countIn(song.bpm, swing, () => stopRef.current);
+    }
     activeVerseRef.current = verse;
     const step = (lampIndex: number) => {
       if (activeVerseRef.current === verse) handleStep(lampIndex);
@@ -280,7 +296,6 @@ function App() {
     //Start recording
 
     //output.sendMessage([144, 16, 1])
-    //await countIn(song.bpm, song.songStructure[0].drumGroove, song.songStructure[0].drums)
     //output.sendMessage([176, 50, tempo]);
       //Drop locators
       //output.sendMessage([144, 17, 1])
@@ -327,6 +342,7 @@ function App() {
         melodyNotes ? { notes: melodyNotes, from: fromBeat, to: toBeat } : undefined,
         includeMelody,
         voice => !!mutedDrumsRef.current[voice],
+        { from: fromBeat, to: toBeat, on: () => metronomeRef.current, onClick: swing },
       );
 
       if (stopRef.current) {
@@ -609,6 +625,7 @@ function App() {
       stopRef.current = false;
       nextStartRef.current = undefined;
       nextEntryRef.current = undefined;
+      countInRef.current = metronome;
       // With the loop on and the playhead outside it, start at the loop.
       // Judged from the stored playhead - where playback actually resumes -
       // not from whichever part happens to be open.
@@ -1021,6 +1038,9 @@ function App() {
           onPlay={handleStartClick}
           bpm={bpm}
           onBpmChange={(value) => dispatch(incrementByAmount(`${value}`))}
+          metronome={metronome}
+          onToggleMetronome={() => setMetronome(on => !on)}
+          metronomeRef={metronomeButtonRef}
           tracks={{ chords: includeChords, bass: includeBass, drums: includeDrums, melody: includeMelody }}
           hasMelody={!!song.doc?.melody}
           onToggleTrack={handleToggleTrack}
