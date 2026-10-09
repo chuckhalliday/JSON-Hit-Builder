@@ -79,6 +79,10 @@ const MELODY_ZONE_BOTTOM = melodyY(MELODY_LOW_STEP) + SPACING;
 // With the melody and words shown over the bass, the Bass section's header
 // sits in a gap this tall between them, which moves the staff/tab down.
 const BASS_HEADER = 32;
+// A finger that travels further than this (px) is swiping, not tapping; two
+// taps on a syllable this close together (ms) are a double tap.
+const TAP_SLOP = 10;
+const DOUBLE_TAP_MS = 400;
 // How far a fitted canvas may be squeezed or stretched (vertically only).
 const FIT_MIN = 0.5;
 const FIT_MAX = 1.2;
@@ -330,6 +334,11 @@ const BassStaff = forwardRef<PlayHandle, BassStaffProps>(function BassStaff({ re
   // A syllable being dragged: which one, the step it started on and the one
   // it's over now. And where each syllable was last drawn, to pick one up.
   const lyricDrag = useRef<{ index: number, from: number, step: number } | null>(null);
+  // The finger on the canvas: where it came down, and the syllable it's
+  // dragging if it came down on one. And the last tap on a syllable, to
+  // tell a double tap.
+  const touchRef = useRef<{ x: number, y: number, syllable: number, drag: { moveTo: (clientX: number) => void, finish: () => boolean } | null } | null>(null);
+  const lastSyllableTapRef = useRef<{ index: number, time: number } | null>(null);
   const lyricBoxes = useRef<Array<{ left: number, right: number }>>([]);
   // The part's melody (its own, or the tune a repeat sings), if the song has
   // one; it opens the treble staff over everything else.
@@ -1302,18 +1311,24 @@ const BassStaff = forwardRef<PlayHandle, BassStaffProps>(function BassStaff({ re
     // Event Listener Setup
     const CANVAS = canvasRef.current;
 
-    function onMouseMove(event: React.MouseEvent<HTMLCanvasElement, MouseEvent>) {
+    // Point MOUSE at a spot in the window. Both the event's and the canvas's
+    // positions are measured from the window, so the page's own scroll never
+    // enters into it (subtracting it put every touch above the finger on
+    // phones, where the page could scroll a little).
+    function pointAt(clientX: number, clientY: number) {
+      const CANVAS = canvasRef.current;
+      if (!CANVAS) return;
+      const rect = CANVAS.getBoundingClientRect();
+      MOUSE.x = clientX - rect.left;
+      // Back to canvas pixels when it's shown squeezed or stretched.
+      const scaleY = rect.height ? CANVAS.height / rect.height : 1;
+      MOUSE.y = (clientY - rect.top) * scaleY - bandRef.current;
+    }
+
+    function onMouseMove(event: MouseEvent) {
       const CANVAS = canvasRef.current;
       if (CANVAS) {
-        // Both the event's and the canvas's positions are measured from the
-        // window, so the page's own scroll never enters into it (subtracting
-        // it put every touch above the finger on phones, where the page can
-        // scroll a little).
-        const rect = CANVAS.getBoundingClientRect();
-        MOUSE.x = event.clientX - rect.left;
-        // Back to canvas pixels when it's shown squeezed or stretched.
-        const scaleY = rect.height ? CANVAS.height / rect.height : 1;
-        MOUSE.y = (event.clientY - rect.top) * scaleY - bandRef.current;
+        pointAt(event.clientX, event.clientY);
         CANVAS.style.cursor = lyricDrag.current ? 'grabbing' : lyricAtMouse() !== -1 ? 'grab'
           : inMelodyRows() && melodyNoteAtMouse() !== -1 ? 'pointer' : '';
         requestDraw();
@@ -1321,43 +1336,60 @@ const BassStaff = forwardRef<PlayHandle, BassStaffProps>(function BassStaff({ re
     }
 
     // Drag a syllable along the columns between its neighbours; it's moved
-    // (one undo step) where it's let go, if that's somewhere new.
-    function startLyricDrag(i: number) {
+    // (one undo step) where it's let go, if that's somewhere new. Driven by
+    // the mouse or a finger: `moveTo` follows it, `finish` drops the
+    // syllable and says whether it moved.
+    function beginLyricDrag(i: number) {
       const range = lyricRange(i);
       const from = lyrics.syllables[i].step;
       lyricDrag.current = { index: i, from, step: from };
-      const onMove = (e: MouseEvent) => {
-        const rect = CANVAS!.getBoundingClientRect();
-        const x = e.clientX - rect.left;
-        const step = range.reduce((best, s) => (Math.abs(lyricXs[s] - x) < Math.abs(lyricXs[best] - x) ? s : best), from);
-        if (lyricDrag.current && step !== lyricDrag.current.step) {
-          lyricDrag.current = { ...lyricDrag.current, step };
+      CANVAS!.style.cursor = 'grabbing';
+      requestDraw();
+      return {
+        moveTo(clientX: number) {
+          const rect = CANVAS!.getBoundingClientRect();
+          const x = clientX - rect.left;
+          const step = range.reduce((best, s) => (Math.abs(lyricXs[s] - x) < Math.abs(lyricXs[best] - x) ? s : best), from);
+          if (lyricDrag.current && step !== lyricDrag.current.step) {
+            lyricDrag.current = { ...lyricDrag.current, step };
+            requestDraw();
+          }
+        },
+        finish(): boolean {
+          const drag = lyricDrag.current;
+          lyricDrag.current = null;
+          if (CANVAS) CANVAS.style.cursor = '';
           requestDraw();
-        }
+          if (!drag || drag.step === drag.from) return false;
+          const { line, at } = lyrics.syllables[drag.index];
+          dispatch(setLyricTiming({ part: lyricOwner, line, at, beat: lyricOnsets[drag.step] }));
+          return true;
+        },
       };
+    }
+
+    function startLyricDrag(i: number) {
+      const drag = beginLyricDrag(i);
+      const onMove = (e: MouseEvent) => drag.moveTo(e.clientX);
       const onUp = () => {
         window.removeEventListener('mousemove', onMove);
         window.removeEventListener('mouseup', onUp);
-        const drag = lyricDrag.current;
-        lyricDrag.current = null;
-        if (CANVAS) CANVAS.style.cursor = '';
-        requestDraw();
-        if (drag && drag.step !== drag.from) {
-          const { line, at } = lyrics.syllables[drag.index];
-          dispatch(setLyricTiming({ part: lyricOwner, line, at, beat: lyricOnsets[drag.step] }));
-        }
+        drag.finish();
       };
       window.addEventListener('mousemove', onMove);
       window.addEventListener('mouseup', onUp);
-      CANVAS!.style.cursor = 'grabbing';
     }
 
-    // Double-click a moved syllable to put it back where it lands by itself.
-    function onDoubleClick() {
-      const i = lyricAtMouse();
-      if (i === -1 || !lyrics.syllables[i].moved) return;
+    // Put a moved syllable back where it lands by itself.
+    function resetSyllable(i: number) {
+      if (i === -1 || !lyrics.syllables[i]?.moved) return;
       const { line, at } = lyrics.syllables[i];
       dispatch(setLyricTiming({ part: lyricOwner, line, at, beat: null }));
+    }
+
+    // Double-click a moved syllable to put it back.
+    function onDoubleClick() {
+      resetSyllable(lyricAtMouse());
     }
 
     // Whether the mouse is on one of the selected note's accidental or rest
@@ -1372,12 +1404,18 @@ const BassStaff = forwardRef<PlayHandle, BassStaffProps>(function BassStaff({ re
 
     function onMouseDown(event: MouseEvent) {
       MOUSE.isDown = true;
+      press(() => event.preventDefault());
+    }
+
+    // A click or tap at MOUSE. `preventDefault` stops the mouse's own
+    // follow-up (focus moving off an editor this opens, text selection).
+    function press(preventDefault: () => void) {
       // The melody staff: a note's offered accidental, a note moved to the
       // row clicked in its column, or a click on a note to offer its
       // accidentals.
       const melodyPick = melodyChoiceAtMouse();
       if (melodyPick && melodyChoice !== null && melodyKey) {
-        event.preventDefault();
+        preventDefault();
         const n = melodyNotes[melodyChoice];
         setMelodyPitch(melodyChoice, pitchAtStep(diatonicStep(n.midi, n.spelled), melodyKey, melodyPick.acc).midi);
         setMelodyChoice(null);
@@ -1387,13 +1425,13 @@ const BassStaff = forwardRef<PlayHandle, BassStaffProps>(function BassStaff({ re
       // last split (the note keeps its syllable; the rest goes).
       const stripPick = melodyStripHit();
       if (stripPick && melody) {
-        event.preventDefault();
+        preventDefault();
         const n = melodyNotes[stripPick.k];
         dispatch(setMelodySplits({ part: melody.owner, line: n.line, at: n.at, splits: n.splits + (stripPick.op === 'split' ? 1 : -1) }));
         return;
       }
       if (inMelodyRows()) {
-        event.preventDefault();
+        preventDefault();
         setPendingNote(null);
         const k = melodyNoteAtMouse();
         if (k === -1 || !melodyKey) {
@@ -1415,7 +1453,7 @@ const BassStaff = forwardRef<PlayHandle, BassStaffProps>(function BassStaff({ re
       // note's choice sits on top of it.
       const syllable = lyricAtMouse();
       if (syllable !== -1 && !choiceAtMouse()) {
-        event.preventDefault();
+        preventDefault();
         setPendingNote(null);
         startLyricDrag(syllable);
         return;
@@ -1431,7 +1469,7 @@ const BassStaff = forwardRef<PlayHandle, BassStaffProps>(function BassStaff({ re
       if (viewMode === 'tab') {
         const cell = tabCellAtMouse();
         if (cell) {
-          event.preventDefault();
+          preventDefault();
           openTabEdit(cell.note.x, cell.stringIndex);
         }
         return;
@@ -1510,22 +1548,106 @@ const BassStaff = forwardRef<PlayHandle, BassStaffProps>(function BassStaff({ re
       }
     }
 
-    function onMouseUp(event: React.MouseEvent<HTMLCanvasElement, MouseEvent>) {
+    function onMouseUp() {
       MOUSE.isDown = false;
     }
 
+    // ---- Touch -----------------------------------------------------------
+    // Fingers get the mouse's edits, read straight from the touches rather
+    // than from the mouse events a browser makes up after a tap - which iOS
+    // holds back or drops (taking a tap for a hover, or for half of a
+    // double-tap zoom) and which never come at all while a finger drags. A
+    // tap is a click; a drag that starts on a syllable moves it, and a
+    // second quick tap on a moved one puts it back; any other swipe is left
+    // to scroll the part.
+    function onTouchStart(event: TouchEvent) {
+      if (event.touches.length !== 1) {
+        touchRef.current = null;
+        return;
+      }
+      const t = event.touches[0];
+      pointAt(t.clientX, t.clientY);
+      const syllable = lyricAtMouse();
+      if (syllable !== -1 && !choiceAtMouse()) {
+        // This finger moves the syllable, so the part mustn't scroll.
+        event.preventDefault();
+        setPendingNote(null);
+        touchRef.current = { x: t.clientX, y: t.clientY, syllable, drag: beginLyricDrag(syllable) };
+        return;
+      }
+      touchRef.current = { x: t.clientX, y: t.clientY, syllable: -1, drag: null };
+    }
+
+    function onTouchMove(event: TouchEvent) {
+      const touch = touchRef.current;
+      if (!touch) return;
+      const t = event.touches[0];
+      if (touch.drag) {
+        event.preventDefault();
+        touch.drag.moveTo(t.clientX);
+      } else if (Math.hypot(t.clientX - touch.x, t.clientY - touch.y) > TAP_SLOP) {
+        // A swipe: the part scrolls, and it's no tap.
+        touchRef.current = null;
+      }
+    }
+
+    function onTouchEnd(event: TouchEvent) {
+      const touch = touchRef.current;
+      touchRef.current = null;
+      if (!touch) return;
+      // Handled here, so no made-up mouse events (or zoom) follow.
+      event.preventDefault();
+      const now = performance.now();
+      if (touch.drag) {
+        if (!touch.drag.finish()) {
+          const last = lastSyllableTapRef.current;
+          if (last && last.index === touch.syllable && now - last.time < DOUBLE_TAP_MS) {
+            resetSyllable(touch.syllable);
+            lastSyllableTapRef.current = null;
+          } else {
+            lastSyllableTapRef.current = { index: touch.syllable, time: now };
+          }
+        }
+        return;
+      }
+      const t = event.changedTouches[0];
+      pointAt(t.clientX, t.clientY);
+      press(() => {});
+      // A touchscreen has no hover: leave no ghost note where the finger was.
+      MOUSE.x = -10;
+      MOUSE.y = -10;
+      requestDraw();
+    }
+
+    function onTouchCancel() {
+      const touch = touchRef.current;
+      touchRef.current = null;
+      if (touch?.drag) {
+        lyricDrag.current = null;
+        requestDraw();
+      }
+    }
+
     if (CANVAS) {
-      CANVAS.addEventListener('mousemove', onMouseMove as any);
-      CANVAS.addEventListener('mousedown', onMouseDown as any);
-      CANVAS.addEventListener('mouseup', onMouseUp as any);
+      CANVAS.addEventListener('mousemove', onMouseMove);
+      CANVAS.addEventListener('mousedown', onMouseDown);
+      CANVAS.addEventListener('mouseup', onMouseUp);
       CANVAS.addEventListener('dblclick', onDoubleClick);
+      CANVAS.addEventListener('touchstart', onTouchStart, { passive: false });
+      CANVAS.addEventListener('touchmove', onTouchMove, { passive: false });
+      CANVAS.addEventListener('touchend', onTouchEnd, { passive: false });
+      CANVAS.addEventListener('touchcancel', onTouchCancel);
     }
     return () => {
       if (CANVAS) {
-        CANVAS.removeEventListener('mousemove', onMouseMove as any);
-        CANVAS.removeEventListener('mousedown', onMouseDown as any);
-        CANVAS.removeEventListener('mouseup', onMouseUp as any);
+        CANVAS.removeEventListener('mousemove', onMouseMove);
+        CANVAS.removeEventListener('mousedown', onMouseDown);
+        CANVAS.removeEventListener('mouseup', onMouseUp);
         CANVAS.removeEventListener('dblclick', onDoubleClick);
+        CANVAS.removeEventListener('touchstart', onTouchStart);
+        CANVAS.removeEventListener('touchmove', onTouchMove);
+        CANVAS.removeEventListener('touchend', onTouchEnd);
+        CANVAS.removeEventListener('touchcancel', onTouchCancel);
       }
     };
     // Re-bound only when something the handlers read changes - not on every

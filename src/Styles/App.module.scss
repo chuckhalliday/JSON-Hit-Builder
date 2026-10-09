@@ -1372,9 +1372,16 @@ $phone-stage-top: 192px;
 .canvasWrap {
     position: relative;
 
-    // A block, so no line-box gap is left under it.
+    // A block, so no line-box gap is left under it. Its touches are edits
+    // (see BassStaff): no double-tap zoom, selection or long-press callout,
+    // while swipes still scroll the part.
     canvas {
       display: block;
+      touch-action: manipulation;
+      user-select: none;
+      -webkit-user-select: none;
+      -webkit-touch-callout: none;
+      -webkit-tap-highlight-color: transparent;
     }
 }
 
