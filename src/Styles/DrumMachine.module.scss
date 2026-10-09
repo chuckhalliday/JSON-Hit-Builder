@@ -43,6 +43,34 @@ $rowGap: 8px;
   }
 }
 
+// A drum's title: click to mute it, double-click to fill or clear its row.
+// No double-tap zoom or text selection, so double-clicks reach the grid.
+.drumTitle {
+  border: none;
+  background: none;
+  padding: 0;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: manipulation;
+
+  &:hover {
+    color: var(--c-info);
+  }
+
+  &[drum-muted=true] {
+    color: var(--c-text-subtle);
+    text-decoration: line-through;
+  }
+}
+
+// A muted drum's steps fade.
+.row[drum-muted=true] .cell__content {
+  opacity: 0.35;
+}
+
 .grid {
   display: flex;
   flex-direction: column;
@@ -115,6 +143,9 @@ $rowGap: 8px;
 .cell {
   $cell: &;
   cursor: pointer;
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: manipulation;
 
   &__input {
     @include invisibleInput;
@@ -210,6 +241,58 @@ $rowGap: 8px;
   &:hover {
     background: var(--c-loop-soft);
   }
+}
+
+// Fill or clear a drum's part or bar: the part menu's look. Placed by
+// DrumMachine against the window.
+.drumMenu {
+  position: fixed;
+  z-index: 1100;
+  display: flex;
+  flex-direction: column;
+  min-width: 140px;
+  padding: 6px;
+  background: var(--c-surface);
+  border: 1px solid var(--c-border-strong);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-pop);
+
+  button {
+    border: none;
+    background: none;
+    color: var(--c-text);
+    padding: 6px 8px;
+    border-radius: 4px;
+    text-align: left;
+    font: inherit;
+    font-size: 13px;
+    cursor: pointer;
+
+    &:hover:not(:disabled) {
+      background: var(--c-info-soft);
+    }
+
+    &:disabled {
+      color: var(--c-text-subtle);
+      cursor: not-allowed;
+    }
+  }
+}
+
+// Between filling/clearing and copying bars.
+.drumMenuRule {
+  height: 1px;
+  margin: 4px 2px;
+  background: var(--c-border-strong);
+}
+
+.drumMenuTitle {
+  padding: 2px 8px 6px;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--c-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
 }
 
 // While Set Start / Set End is armed, lamps and bar numbers are targets.

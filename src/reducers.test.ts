@@ -1,6 +1,7 @@
 import { configureStore } from '@reduxjs/toolkit';
-import song, { newSong, setDrumState, setBassState, setChordState, rerollLayer, toggleLock, setPartEnergy, reorderParts, setSong, SongState } from './reducers';
+import song, { newSong, setDrumState, setDrumCells, setBassState, setChordState, rerollLayer, toggleLock, setPartEnergy, reorderParts, setSong, SongState } from './reducers';
 import { createRandomSong } from './SongStructure/createSong';
+import { barCopyEdits, stepBarsOf } from './Core/drumBars';
 
 const makeStore = () => configureStore({ reducer: { song: song.reducer } });
 const state = (store: ReturnType<typeof makeStore>): SongState => store.getState().song;
@@ -26,6 +27,67 @@ describe('song reducer with a sculpted document', () => {
     store.dispatch(setDrumState({ index: verses[0], drumPart: 1, drumStep: 2, drums: { index: 2, checked: !was } }));
     verses.forEach(i => expect(state(store).songStructure[i].drums[1][2].checked).toBe(!was));
     expect(state(store).doc!.sections.verse.locks.drums).toBe(true);
+  });
+
+  const cells = (voice: number, steps: number[], checked: boolean) => steps.map(step => ({ voice, step, checked }));
+
+  it('fills and clears a drum across the part or one bar', () => {
+    const { store, verses } = setup();
+    const v = verses[0];
+    const all = state(store).songStructure[v].drums[2].map((_, i) => i);
+    store.dispatch(setDrumCells({ index: v, cells: cells(2, all, true) }));
+    // The whole part, through its transition fill, and (on the section) the
+    // other verses' bars outside their own transitions.
+    expect(state(store).songStructure[v].drums[2].every(c => c.checked)).toBe(true);
+    const other = state(store).songStructure[verses[1]];
+    const firstBar = stepBarsOf(other.drumGroove).filter(bar => bar === 0).length;
+    expect(other.drums[2].slice(0, firstBar).every(c => c.checked)).toBe(true);
+    expect(state(store).doc!.sections.verse.locks.drums).toBe(true);
+    store.dispatch(setDrumCells({ index: v, cells: cells(0, all, true) }));
+    expect(state(store).songStructure[v].drums[0].every(c => c.checked)).toBe(true);
+    store.dispatch(setDrumCells({ index: v, cells: cells(0, all, false) }));
+    expect(state(store).songStructure[v].drums[0].some(c => c.checked)).toBe(false);
+
+    store.dispatch(setDrumCells({ index: v, cells: cells(2, [0, 1, 2], false) }));
+    const row = state(store).songStructure[v].drums[2];
+    expect(row.slice(0, 3).some(c => c.checked)).toBe(false);
+    expect(row.slice(3).every(c => c.checked)).toBe(true);
+  });
+
+  it('copies the first bar of every drum to the later bars, through the transition fill', () => {
+    const { store, verses } = setup();
+    const v = verses[0];
+    const voices = [...Array(9).keys()];
+    const copy = () => {
+      const { drums, drumGroove } = state(store).songStructure[v];
+      const later = [...new Set(stepBarsOf(drumGroove))].filter(bar => bar > 0);
+      return barCopyEdits(drums, drumGroove, voices, 0, later);
+    };
+    expect(copy().length).toBeGreaterThan(0);
+    store.dispatch(setDrumCells({ index: v, cells: copy() }));
+    expect(copy()).toEqual([]);
+  });
+
+  it('keeps a step edit under a transition fill local to its part', () => {
+    const { store, verses } = setup();
+    const v = verses[0];
+    const kick = () => state(store).songStructure[v].drums[0];
+    // The verse's last steps lead into the chorus with a fill, which clears
+    // the kick under it whatever the section has there.
+    const step = kick().length - 2;
+    expect(kick()[step].checked).toBe(false);
+    store.dispatch(setDrumState({ index: v, drumPart: 0, drumStep: step, drums: { index: step, checked: true } }));
+    expect(kick()[step].checked).toBe(true);
+    expect(state(store).doc!.form[v].drumOverrides).toContainEqual({ voice: 0, step, checked: true });
+    expect(state(store).doc!.sections.verse.drums[0][step].checked).toBe(false);
+  });
+
+  it('leaves the song alone when a drum fill changes nothing', () => {
+    const { store, verses } = setup();
+    const before = state(store);
+    const off = before.songStructure[verses[0]].drums[0].map((c, i) => (c.checked ? -1 : i)).filter(i => i >= 0);
+    store.dispatch(setDrumCells({ index: verses[0], cells: cells(0, off, false) }));
+    expect(state(store)).toBe(before);
   });
 
   it('propagates bass and chord edits', () => {
@@ -82,5 +144,9 @@ describe('song reducer with a sculpted document', () => {
     const was = state(store).songStructure[0].drums[1][1].checked;
     store.dispatch(setDrumState({ index: 0, drumPart: 1, drumStep: 1, drums: { index: 1, checked: !was } }));
     expect(state(store).songStructure[0].drums[1][1].checked).toBe(!was);
+    const steps = state(store).songStructure[0].drums[1].map((_, i) => i);
+    store.dispatch(setDrumCells({ index: 0, cells: cells(1, steps, true) }));
+    expect(state(store).songStructure[0].drums[1].every(c => c.checked)).toBe(true);
+    expect(state(store).songStructure[1].drums[1].every(c => c.checked)).toBe(false);
   });
 });

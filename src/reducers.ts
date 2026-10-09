@@ -4,7 +4,8 @@ import { bassPitch } from "./SongStructure/bassPitch";
 import { SongDoc, Layer, GenerateOptions, SectionLabel } from "./Core/doc";
 import { generateDoc, regenerateLayer, setLock, setInstanceEnergy, moveInstance, detachInstance, relinkInstance, duplicateInstance, deleteInstance, changeInstanceSection } from "./Core/generate";
 import { realizeSong, realizeSection, realizeInstance, assignStepIds } from "./Core/realize";
-import { editBass, editDrum, editChordTone, editChord, splitBassNote, joinBassNotes } from "./Core/edits";
+import { editBass, editDrum, editDrums, editChordTone, editChord, splitBassNote, joinBassNotes } from "./Core/edits";
+import { DrumCellEdit } from "./Core/drumBars";
 import { ChordEvent } from "./Core/theory";
 import { LyricTiming, withLyricMove } from "./Core/lyrics";
 import { frozenMelody, melodyWithSplits } from "./Core/melody";
@@ -210,6 +211,22 @@ const song = createSlice({
           return;
         }
         state.songStructure[action.payload.index].drums[action.payload.drumPart][action.payload.drumStep] = action.payload.drums;
+      },
+      // Turn several drum steps on or off together (filling or clearing a
+      // bar or the whole part, copying a bar). Steps already that way are
+      // left alone.
+      setDrumCells: (state, action: PayloadAction<{ index: number, cells: DrumCellEdit[] }>) => {
+        const { index, cells } = action.payload;
+        const drums = state.songStructure[index]?.drums;
+        if (!drums) return;
+        const changing = cells.filter(c => drums[c.voice]?.[c.step] && !!drums[c.voice][c.step].checked !== c.checked);
+        if (changing.length === 0) return;
+        const sculpted = docFor(state, index);
+        if (sculpted) {
+          applyDoc(state, editDrums(sculpted.doc, index, changing), sculpted.sectionId);
+          return;
+        }
+        changing.forEach(c => { drums[c.voice][c.step].checked = c.checked; });
       },
       setChordState: (state, action: PayloadAction<{ part: number, beat: number, midi: number, osc: number, checked: boolean }>) => {
         const sculpted = docFor(state, action.payload.part);
@@ -464,7 +481,7 @@ const song = createSlice({
     },
   });
 
-export const { setIsPlaying, setMidi, setAcoustic, setSong, setBassState, setDrumState, setChordState, setCurrentBeat, reorderParts, incrementByAmount, loadSong, rerollLayer, toggleLock, setPartEnergy, setLoop, setLoopPick, pickLoopSpan, extendLoop, toggleLoop, setSounds, editHarmony, setPartLinked, setPartSection, setPartLyrics, setLyricTiming, editBassRhythm, setMelodyEnabled, setMelodyNote, rerollMelody, toggleMelodyLock, setMelodySplits, duplicatePart, deletePart } = song.actions;
+export const { setIsPlaying, setMidi, setAcoustic, setSong, setBassState, setDrumState, setDrumCells, setChordState, setCurrentBeat, reorderParts, incrementByAmount, loadSong, rerollLayer, toggleLock, setPartEnergy, setLoop, setLoopPick, pickLoopSpan, extendLoop, toggleLoop, setSounds, editHarmony, setPartLinked, setPartSection, setPartLyrics, setLyricTiming, editBassRhythm, setMelodyEnabled, setMelodyNote, rerollMelody, toggleMelodyLock, setMelodySplits, duplicatePart, deletePart } = song.actions;
 
 // Thunk: generate a fresh form-first song and load it into the store.
 // Dispatched on mount and by the song tabs. Pass a seed (or full options)
@@ -478,12 +495,20 @@ export const newSong = (options?: number | GenerateOptions) => (dispatch: Dispat
 
 export const undo = createAction('song/undo');
 
+// Takes back one drum step toggle together with its undo entry, leaving
+// playback and the playhead alone (unlike undo): the first click of a
+// double-click toggles the step before the double-click is recognized.
+// `before` and `after` are the song either side of that toggle; if anything
+// has changed since, this does nothing.
+export const retractDrumEdit = createAction<{ before: SongStructure, after: SongStructure }>('song/retractDrumEdit');
+
 const HISTORY_LIMIT = 50;
 
 // The changes Undo can take back, and how its button names them.
 const UNDOABLE: Record<string, string> = {
   [song.actions.setBassState.type]: 'bass edit',
   [song.actions.setDrumState.type]: 'drum edit',
+  [song.actions.setDrumCells.type]: 'drum edit',
   [song.actions.editBassRhythm.type]: 'rhythm edit',
   [song.actions.setChordState.type]: 'voicing edit',
   [song.actions.editHarmony.type]: 'chord change',
@@ -531,6 +556,12 @@ export function songReducer(state: SongState | undefined, action: AnyAction): So
     // the old song's choice, while undoing an edit keeps the current one.
     const keepSounds = label !== UNDOABLE[song.actions.setSong.type];
     return { ...state, ...restore, sounds: keepSounds ? state.sounds ?? null : sounds, past: past.slice(0, -1), isPlaying: false, loopPick: null, loopAnchor: null };
+  }
+  if (retractDrumEdit.match(action)) {
+    const past = state?.past ?? [];
+    const last = past[past.length - 1];
+    if (!state || state.songStructure !== action.payload.after || last?.songStructure !== action.payload.before) return state ?? song.reducer(undefined, action);
+    return { ...state, songStructure: last.songStructure, doc: last.doc, past: past.slice(0, -1) };
   }
   const next = song.reducer(state, action);
   const label = UNDOABLE[action.type];

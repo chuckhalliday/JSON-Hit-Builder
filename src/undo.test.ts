@@ -1,5 +1,5 @@
 import { configureStore } from '@reduxjs/toolkit';
-import { songReducer, newSong, undo, editHarmony, deletePart, duplicatePart, setDrumState, setCurrentBeat, rerollLayer, setSong, setSounds, SongState } from './reducers';
+import { songReducer, newSong, undo, retractDrumEdit, editHarmony, deletePart, duplicatePart, setDrumState, setCurrentBeat, setIsPlaying, rerollLayer, setSong, setSounds, SongState } from './reducers';
 import { SoundPick } from './Core/timbre';
 
 const makeStore = () => configureStore({ reducer: { song: songReducer }, middleware: d => d({ serializableCheck: false, immutableCheck: false }) });
@@ -49,6 +49,37 @@ describe('undo', () => {
     const was = st(store).songStructure[v].drums[1][2].checked;
     store.dispatch(setDrumState({ index: v, drumPart: 1, drumStep: 2, drums: { index: 2, checked: !was } }));
     expect(st(store).songStructure[v].chords).toEqual(st(store).past![0].songStructure[v].chords);
+  });
+
+  it('retracts a drum toggle and its undo entry without stopping playback', () => {
+    const store = setup();
+    store.dispatch(duplicatePart(0));
+    store.dispatch(setIsPlaying({ isPlaying: true }));
+    store.dispatch(setCurrentBeat([1, 3, 0, 0]));
+    const before = st(store).songStructure;
+    const doc = st(store).doc;
+    const was = before[1].drums[1][2].checked;
+    store.dispatch(setDrumState({ index: 1, drumPart: 1, drumStep: 2, drums: { index: 2, checked: !was } }));
+    const after = st(store).songStructure;
+    store.dispatch(retractDrumEdit({ before, after }));
+    expect(st(store).songStructure).toBe(before);
+    expect(st(store).doc).toBe(doc);
+    expect(st(store).past!.map(p => p.label)).toEqual(['duplicate']);
+    expect(st(store).isPlaying).toBe(true);
+    expect(st(store).selectedBeat).toEqual([1, 3, 0, 0]);
+  });
+
+  it('leaves the song alone if it changed since the drum toggle', () => {
+    const store = setup();
+    const before = st(store).songStructure;
+    const was = before[0].drums[1][2].checked;
+    store.dispatch(setDrumState({ index: 0, drumPart: 1, drumStep: 2, drums: { index: 2, checked: !was } }));
+    const after = st(store).songStructure;
+    store.dispatch(duplicatePart(0));
+    const now = st(store).songStructure;
+    store.dispatch(retractDrumEdit({ before, after }));
+    expect(st(store).songStructure).toBe(now);
+    expect(st(store).past!.map(p => p.label)).toEqual(['drum edit', 'duplicate']);
   });
 
   it('ignores playback and no-op actions', () => {
