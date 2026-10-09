@@ -1,6 +1,7 @@
 import { useCallback, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { SongState, rerollLayer, toggleLock, setPartEnergy, setLoop, editHarmony, rerollMelody, toggleMelodyLock } from "../reducers";
+import { SongState, rerollLayer, toggleLock, setPartEnergy, setLoop, editHarmony, simplifyHarmony, rerollMelody, toggleMelodyLock } from "../reducers";
+import { Simplify, distinctChords, wouldSimplify } from "../Core/simplify";
 import { melodyFor } from "../Core/melody";
 import ChordMenu, { ChordMenuKind } from "./ChordMenu";
 import { inversionOptions } from "../Core/chordOptions";
@@ -45,6 +46,11 @@ export default function SectionPanel({ part }: SectionPanelProps) {
   // The tune this part sings - its own, or a repeat's earlier part's.
   const melody = melodyFor(doc, song.songStructure, part);
   const melodyOwner = melody ? song.songStructure[melody.owner] : null;
+  const distinct = distinctChords(section.harmony);
+  const simplify = (how: Simplify) => {
+    setMenu(null);
+    dispatch(simplifyHarmony({ part, how }));
+  };
 
   return (
     <div className={styles.sectionPanel}>
@@ -96,6 +102,43 @@ export default function SectionPanel({ part }: SectionPanelProps) {
             </span>
           );
         })}
+      </div>
+      <div className={styles.simplifyRow}>
+        <span>Simplify</span>
+        <span className={styles.simplifyCount} title="How many different chords the progression uses. Pick fewer: the others change to the closest chord kept - the tonic and the cadence stay.">
+          Different chords
+          <span className={styles.segmented} role="group" aria-label="Different chords">
+            {[1, 2, 3, 4, 5, 6].map(n => (
+              <button
+                key={n}
+                className={n === distinct ? styles.segmentOn : ''}
+                aria-pressed={n === distinct}
+                disabled={n >= distinct}
+                onClick={() => simplify({ kind: 'limit', count: n })}
+                title={n === distinct ? `Uses ${n} now` : `Use only ${n}`}
+              >
+                {n}
+              </button>
+            ))}
+          </span>
+          {distinct > 6 && <span>now {distinct}</span>}
+        </span>
+        <button
+          className={styles.rerollButton}
+          disabled={!wouldSimplify(section.harmony, { kind: 'perBar' }, section.bars, doc.key.mode)}
+          onClick={() => simplify({ kind: 'perBar' })}
+          title="One chord per bar, held through it: its downbeat chord, or the cadence chord in a bar that ends a phrase"
+        >
+          One chord per bar
+        </button>
+        <button
+          className={styles.rerollButton}
+          disabled={!wouldSimplify(section.harmony, { kind: 'triads' }, section.bars, doc.key.mode)}
+          onClick={() => simplify({ kind: 'triads' })}
+          title="Sevenths, ninths, sixths and sus chords become the key's triad on their root (Cmaj7 → C, Dm7 → Dm, G7 → G)"
+        >
+          Diatonic triads
+        </button>
       </div>
       <div className={styles.layerRow}>
         {LAYERS.map(layer => {
@@ -149,7 +192,7 @@ export default function SectionPanel({ part }: SectionPanelProps) {
         )}
       </div>
       <p className={styles.sectionNote}>
-        Click a chord, its numeral or its bass note to change it. {isDetached(doc, part)
+        Click a chord, its numeral or its bass note to change it, or simplify the progression. {isDetached(doc, part)
           ? <>This part is detached: edits and re-rolls change only it, and lock that layer. Switch to All linked to copy its state to every linked {section.label.toLowerCase()}.</>
           : <>Edits here apply to every {section.label.toLowerCase()}{plays > 1 ? ` (${plays} parts)` : ''} and lock that layer.</>} Drum edits inside a fill or crash stay on this instance.
       </p>

@@ -5,9 +5,10 @@
 // the section can't wipe it. A drum edit on a cell an instance's own
 // transition changed (a fill, a crash) stays local to that instance.
 
-import { Layer, SectionInstance, SongDoc } from './doc';
+import { Layer, SectionDef, SectionInstance, SongDoc } from './doc';
 import { ChordEvent, BASS_MAX, BASS_MIN, chordBassPc, inversionCount, mod12 } from './theory';
-import { guideTones, revoiceChord } from './voicing';
+import { guideTones, refitVoicings, revoiceChord } from './voicing';
+import { Simplify, simplified, wouldSimplify } from './simplify';
 import { generateBass } from './bassline';
 import { functionOf } from './chordOptions';
 import { streamFor } from './seeds';
@@ -109,33 +110,57 @@ export function editChord(doc: SongDoc, index: number, chordIndex: number, chang
     sec.harmony[chordIndex] = next;
     sec.guideTones = guideTones(sec.harmony, doc.key);
     sec.voicing[chordIndex] = revoiceChord(sec.harmony, sec.voicing, chordIndex, doc.key, sec.energy);
+    fitBass(doc, sec, [chordIndex]);
+  }, 'harmony');
+}
 
-    // Bass notes sounding under this chord.
-    const onsets: number[] = [];
-    sec.bassRhythm.reduce((pos: number, d: number) => (onsets.push(pos), pos + d), 0);
-    const under = onsets.map((t, k) => (t >= next.start && t < next.start + next.dur ? k : -1)).filter((k: number) => k >= 0);
-    if (!sec.locks.bass) {
-      const fresh = generateBass(sec.bassRhythm, sec.harmony, doc.key, sec.energy, streamFor(doc.seed, sec.id, 'bass', sec.rolls.bass));
-      under.forEach((k: number) => {
+// The bass under chords that changed: rewritten to fit them unless the bass
+// is locked, and each chord's downbeat on its bass note (its inversion), in
+// the octave nearest the note it replaces.
+function fitBass(doc: SongDoc, sec: SectionDef, changed: number[]) {
+  const on = onsets(sec.bassRhythm);
+  const fresh = sec.locks.bass ? null : generateBass(sec.bassRhythm, sec.harmony, doc.key, sec.energy, streamFor(doc.seed, sec.id, 'bass', sec.rolls.bass));
+  for (const i of changed) {
+    const chord = sec.harmony[i];
+    if (fresh) {
+      on.forEach((t, k) => {
+        if (t < chord.start || t >= chord.start + chord.dur) return;
         sec.bass[k] = fresh[k];
         if (sec.bassStrings) sec.bassStrings[k] = null;
       });
     }
-    // The downbeat always takes the chord's bass note (its inversion), in
-    // the octave nearest the note it replaces.
-    const downbeat = onsets.indexOf(next.start);
-    if (downbeat !== -1) {
-      const pc = chordBassPc(next);
-      const around = sec.bass[downbeat] > 0 ? sec.bass[downbeat] : 40;
-      let best = 0;
-      for (let m = BASS_MIN; m <= BASS_MAX; m++) {
-        if (mod12(m - 24 - doc.key.tonic) === pc && (best === 0 || Math.abs(m - around) < Math.abs(best - around))) best = m;
-      }
-      if (best) {
-        sec.bass[downbeat] = best;
-        if (sec.bassStrings) sec.bassStrings[downbeat] = null;
-      }
+    const downbeat = on.indexOf(chord.start);
+    if (downbeat === -1) continue;
+    const pc = chordBassPc(chord);
+    const around = sec.bass[downbeat] > 0 ? sec.bass[downbeat] : 40;
+    let best = 0;
+    for (let m = BASS_MIN; m <= BASS_MAX; m++) {
+      if (mod12(m - 24 - doc.key.tonic) === pc && (best === 0 || Math.abs(m - around) < Math.abs(best - around))) best = m;
     }
+    if (best) {
+      sec.bass[downbeat] = best;
+      if (sec.bassStrings) sec.bassStrings[downbeat] = null;
+    }
+  }
+}
+
+// Simplify a part's progression (simplify.ts): fewer different chords, one
+// per bar, or plain triads. The chords that changed are re-voiced and the
+// bass fitted under them, as for a single chord change; the rest keep their
+// voicings. Like other edits it applies to every instance of the section
+// and locks the harmony. The same document when there's nothing to simplify.
+export function simplifyChords(doc: SongDoc, index: number, how: Simplify): SongDoc {
+  const inst = doc.form[index];
+  const s = inst && doc.sections[inst.sectionId];
+  if (!s || !wouldSimplify(s.harmony, how, s.bars, doc.key.mode)) return doc;
+  const harmony = simplified(s.harmony, how, s.bars, doc.key.mode);
+  const kept = (c: ChordEvent) => s.harmony.some(o =>
+    o.start === c.start && o.dur === c.dur && mod12(o.root) === mod12(c.root) && o.quality === c.quality && o.inversion === c.inversion);
+  return withSection(doc, inst.sectionId, sec => {
+    sec.harmony = harmony;
+    sec.guideTones = guideTones(harmony, doc.key);
+    sec.voicing = refitVoicings(s.harmony, s.voicing, harmony, doc.key, sec.energy);
+    fitBass(doc, sec, harmony.flatMap((c, i) => (kept(c) ? [] : [i])));
   }, 'harmony');
 }
 
