@@ -1,12 +1,25 @@
-import React, { forwardRef, useEffect, useImperativeHandle, useRef } from "react";
+import React, { forwardRef, useEffect, useImperativeHandle, useLayoutEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { playDrums } from "../Playback/playSong";
-import { setDrumState, SongState, setCurrentBeat, setLoop, extendLoop, pickLoopSpan } from "../reducers";
+import { setDrumState, setDrumCells, retractDrumEdit, SongState, setCurrentBeat, setLoop, extendLoop, pickLoopSpan } from "../reducers";
 import { barSpan, clampRegion, overlapsRegion, stepSpan, sum } from "../Playback/loop";
-import { useDispatch, useSelector } from "react-redux";
+import { useDispatch, useSelector, useStore } from "react-redux";
 import { PlayHandle } from "./Piano";
 import styles from "../Styles/DrumMachine.module.scss";
-import { DrumHit } from "../types";
+import { DrumHit, SongStructure } from "../types";
 import { useLampStep } from "../Playback/useLampStep";
+import { barCopyEdits, DrumCellEdit, stepBarsOf } from "../Core/drumBars";
+
+// The drums in the store's row order (by voice), named as their titles
+// show them.
+const DRUM_NAMES = ["Kick", "Snare", "Low Tom", "Mid Tom", "High Tom", "Closed Hat", "Open Hat", "Ride", "Crash"];
+const VOICES = [...DRUM_NAMES.keys()];
+// The top row: its bar-opening steps also offer to copy every drum.
+const CRASH = 8;
+
+// Two clicks on the same title or step within this many ms make a
+// double-click, also on phones, where the browser may not count taps.
+const DOUBLE_CLICK_MS = 400;
 
 // Whether the step ending at `step` (1-based count) closes a bar or a beat;
 // the columns of the ruler, lamps and grid space out after those.
@@ -78,17 +91,8 @@ export function StepTracker({ onRenderWidthChange, part, lampsRef, manualSeekEpo
 
   // Bar of each step, and which steps open a bar (they carry the bar number
   // in the ruler above the lamps).
-  const stepBars: number[] = [];
-  const barStart: boolean[] = [];
-  {
-    let beats = 0;
-    drumGroove.forEach((d, i) => {
-      const bar = Math.floor((beats + 0.02) / 4);
-      barStart.push(i === 0 || bar !== stepBars[i - 1]);
-      stepBars.push(bar);
-      beats += d;
-    });
-  }
+  const stepBars = stepBarsOf(drumGroove);
+  const barStart = stepBars.map((bar, i) => i === 0 || bar !== stepBars[i - 1]);
   const loopRegion = clampRegion(song.loop, song.songStructure);
   const partBeats = sum(drumGroove);
   const stepInLoop = (step: number) => {
@@ -207,6 +211,25 @@ interface DrumMachineProps {
   // Stretch the rows to share its parent's height (phones), rather than
   // keeping their fixed size.
   fill?: boolean;
+  // Which drums are muted (by voice), and muting or unmuting one - by
+  // clicking its title.
+  muted?: boolean[];
+  onToggleMute?: (voice: number) => void;
+}
+
+// The menu a double-click opens: on a title (`step` null) it fills or
+// clears the drum's whole part, on a step that step's bar. A bar's first
+// step can also copy bars - see menuItems.
+interface DrumMenu {
+  voice: number;
+  step: number | null;
+  anchor: DOMRect;
+}
+
+// One of its options, with the edits it makes.
+interface MenuItem {
+  label: string;
+  edits: DrumCellEdit[];
 }
 
 // The drum step grid. Its bar ruler and lamps are the StepTracker above.
@@ -215,10 +238,15 @@ const DrumMachine = forwardRef<PlayHandle, DrumMachineProps>(function DrumMachin
   lampsRef,
   onPlayingChange,
   fill,
+  muted,
+  onToggleMute,
 }, ref) {
   const [isPlaying, setIsPlaying] = React.useState(false);
   const stopRef = useRef(false);
   const dispatch = useDispatch()
+  const store = useStore<{ song: SongState }>();
+  const mutedRef = useRef(muted);
+  mutedRef.current = muted;
 
   const song = useSelector((state: { song: SongState }) => state.song);
   const bpm = song.bpm
@@ -252,21 +280,120 @@ const DrumMachine = forwardRef<PlayHandle, DrumMachineProps>(function DrumMachin
     }, [drums]);
   
 
+  // The step toggled last and the song either side of it, so the second
+  // click of a double-click can take the first one's toggle back.
+  const lastToggleRef = useRef<{ voice: number, step: number, time: number, before: SongStructure, after: SongStructure } | null>(null);
+
   function updateDrumState(trackId: number, stepId: number) {
     const drumHits = {
       index: stepId,
       checked: stepsRef.current[trackId][stepId].checked
     }
+    const before = store.getState().song.songStructure;
     dispatch(setDrumState({ index: part, drumPart: trackId, drumStep: stepId, drums: drumHits }));
+    const after = store.getState().song.songStructure;
+    lastToggleRef.current = after === before ? null : { voice: trackId, step: stepId, time: performance.now(), before, after };
   }
 
-
-  const tracks: string[] = ["Kick", "Snare", "Low", "Mid", "High", "HiHatC", "HiHatO", "Ride", "Crash"]
-
-  //Array of different sounds
-  const trackIds = [...Array(tracks.length).keys()];
+  //Rows top to bottom: crash down to kick
+  const trackIds = [...DRUM_NAMES.keys()].reverse();
   //Array of beats
   const stepIds = [...steps.keys()]
+  const stepBars = stepBarsOf(drumGroove);
+
+  const [menu, setMenu] = useState<DrumMenu | null>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
+  const openMenu = (anchor: HTMLElement, voice: number, step: number | null) =>
+    setMenu({ voice, step, anchor: anchor.getBoundingClientRect() });
+
+  // A part switch (playback moving on) takes the menu's part away.
+  useEffect(() => setMenu(null), [part]);
+
+  useEffect(() => {
+    if (!menu) return;
+    const onDown = (e: MouseEvent) => {
+      if (!menuRef.current?.contains(e.target as Node)) setMenu(null);
+    };
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setMenu(null); };
+    document.addEventListener('mousedown', onDown);
+    window.addEventListener('keydown', onKey);
+    return () => {
+      document.removeEventListener('mousedown', onDown);
+      window.removeEventListener('keydown', onKey);
+    };
+  }, [menu]);
+
+  // Under what was double-clicked, kept inside the window and clear of the
+  // transport footer (above it instead when there's no room below).
+  useLayoutEffect(() => {
+    const el = menuRef.current;
+    if (!menu || !el) return;
+    const { width, height } = el.getBoundingClientRect();
+    const footer = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--footer-height')) || 0;
+    const below = menu.anchor.bottom + 4;
+    const top = below + height <= window.innerHeight - footer - 8 ? below : Math.max(8, menu.anchor.top - height - 4);
+    el.style.left = `${Math.max(8, Math.min(menu.anchor.left, window.innerWidth - width - 8))}px`;
+    el.style.top = `${top}px`;
+  }, [menu]);
+
+  // Every click on a title mutes or unmutes its drum (so a double-click
+  // leaves it as it was); a double-click also opens the menu.
+  const lastTitleClickRef = useRef<{ voice: number, time: number } | null>(null);
+  const handleTitleClick = (event: React.MouseEvent<HTMLElement>, voice: number) => {
+    onToggleMute?.(voice);
+    const last = lastTitleClickRef.current;
+    const now = performance.now();
+    if (last?.voice === voice && (event.detail === 2 || now - last.time < DOUBLE_CLICK_MS)) {
+      lastTitleClickRef.current = null;
+      openMenu(event.currentTarget, voice, null);
+    } else {
+      lastTitleClickRef.current = { voice, time: now };
+    }
+  };
+
+  // The second click of a double-click on a step doesn't toggle it again:
+  // it takes the first click's toggle back (undo history and all) and opens
+  // the step's menu.
+  const handleStepClick = (event: React.MouseEvent<HTMLElement>, voice: number, step: number) => {
+    const last = lastToggleRef.current;
+    if (!last || last.voice !== voice || last.step !== step) return;
+    if (event.detail !== 2 && performance.now() - last.time >= DOUBLE_CLICK_MS) return;
+    event.preventDefault();
+    lastToggleRef.current = null;
+    dispatch(retractDrumEdit({ before: last.before, after: last.after }));
+    openMenu(event.currentTarget, voice, step);
+  };
+
+  // The menu's options, each with the edits it makes: fill and clear; then,
+  // on a bar's first step, copying this drum's bar (and on the crash's,
+  // every drum's) - from the first bar to every later one, or into a later
+  // bar from the one before it.
+  const menuBar = menu?.step != null ? stepBars[menu.step] : null;
+  const fillItems: MenuItem[] = [];
+  const copyItems: MenuItem[] = [];
+  if (menu) {
+    const { voice } = menu;
+    const steps = stepIds.filter(step => menuBar === null || stepBars[step] === menuBar);
+    const where = menuBar === null ? 'every step' : 'this bar';
+    fillItems.push(
+      { label: `Fill ${where}`, edits: steps.map(step => ({ voice, step, checked: true })) },
+      { label: `Clear ${where}`, edits: steps.map(step => ({ voice, step, checked: false })) },
+    );
+    if (menuBar !== null && menu.step === steps[0]) {
+      const from = menuBar === 0 ? 0 : menuBar - 1;
+      const to = menuBar === 0 ? [...new Set(stepBars)].filter(bar => bar > 0) : [menuBar];
+      const how = menuBar === 0 ? 'to every later bar' : `from bar ${menuBar}`;
+      copyItems.push({ label: `Copy ${how}`, edits: barCopyEdits(drums, drumGroove, [voice], from, to) });
+      if (voice === CRASH) {
+        copyItems.push({ label: `Copy all drums ${how}`, edits: barCopyEdits(drums, drumGroove, VOICES, from, to) });
+      }
+    }
+  }
+  const changesSomething = (edits: DrumCellEdit[]) => edits.some(e => !!drums[e.voice]?.[e.step]?.checked !== e.checked);
+  const applyMenuItem = (edits: DrumCellEdit[]) => {
+    dispatch(setDrumCells({ index: part, cells: edits }));
+    setMenu(null);
+  };
 
   const handleStartClick = async () => {
     if (isPlaying) {
@@ -282,7 +409,7 @@ const DrumMachine = forwardRef<PlayHandle, DrumMachineProps>(function DrumMachin
     stopRef.current = false;
     setIsPlaying(true);
     onPlayingChange?.(true);
-    const endBeat = await playDrums(bpm, midi, start, drumGroove, drumHits, handleStep, () => stopRef.current, acoustic, song.key);
+    const endBeat = await playDrums(bpm, midi, start, drumGroove, drumHits, handleStep, () => stopRef.current, acoustic, song.key, voice => !!mutedRef.current?.[voice]);
     setIsPlaying(false);
     onPlayingChange?.(false);
     const nextBeat = endBeat >= drumGroove.length ? 0 : endBeat;
@@ -295,24 +422,28 @@ const DrumMachine = forwardRef<PlayHandle, DrumMachineProps>(function DrumMachin
 
   return (
     <div className={fill ? `${styles.machine} ${styles.fill}` : styles.machine}>
-      {/* Renders titles */}
+      {/* Renders titles: click to mute, double-click to fill or clear */}
       <div className={styles.labelList}>
-        <div>Crash</div>
-        <div>Ride</div>
-        <div>Open Hat</div>
-        <div>Closed Hat</div>
-        <div>High Tom</div>
-        <div>Mid Tom</div>
-        <div>Low Tom</div>
-        <div>Snare</div>
-        <div>Kick</div>
+        {trackIds.map((trackId) => (
+          <button
+            key={trackId}
+            type="button"
+            className={styles.drumTitle}
+            drum-muted={muted?.[trackId] ? 'true' : undefined}
+            aria-pressed={!muted?.[trackId]}
+            title={`${muted?.[trackId] ? 'Unmute' : 'Mute'} ${DRUM_NAMES[trackId].toLowerCase()} (double-click to fill or clear every step)`}
+            onClick={(e) => handleTitleClick(e, trackId)}
+          >
+            {DRUM_NAMES[trackId]}
+          </button>
+        ))}
       </div>
-  
+
       <div className={styles.grid}>
         {/* Renders buttons */}
         <div className={styles.cellList}>
-          {trackIds.reverse().map((trackId) => (
-            <div key={trackId} className={styles.row}>
+          {trackIds.map((trackId) => (
+            <div key={trackId} className={styles.row} drum-muted={muted?.[trackId] ? 'true' : undefined}>
               {stepIds.map((stepId) => {
                 const id = trackId + '-' + stepId;
                 const { measure, beat } = stepSpacing(drumGroove, stepId + 1)
@@ -332,7 +463,7 @@ const DrumMachine = forwardRef<PlayHandle, DrumMachineProps>(function DrumMachin
                       className={styles.cell__input}
                       onChange={() => updateDrumState(trackId, stepId)}
                     />
-                    <div className={styles.cell__content} />
+                    <div className={styles.cell__content} onClick={(e) => handleStepClick(e, trackId, stepId)} />
                   </label>
                 );
               })}
@@ -340,6 +471,26 @@ const DrumMachine = forwardRef<PlayHandle, DrumMachineProps>(function DrumMachin
           ))}
         </div>
       </div>
+
+      {/* In the body, clear of the scrolling part's clipping. */}
+      {menu && createPortal(
+        <div ref={menuRef} className={styles.drumMenu} role="menu">
+          <div className={styles.drumMenuTitle}>
+            {DRUM_NAMES[menu.voice]}{menuBar !== null && ` · bar ${menuBar + 1}`}
+          </div>
+          {[fillItems, copyItems].map((items, group) => items.length > 0 && (
+            <React.Fragment key={group}>
+              {group > 0 && <div role="separator" className={styles.drumMenuRule} />}
+              {items.map(item => (
+                <button key={item.label} role="menuitem" disabled={!changesSomething(item.edits)} onClick={() => applyMenuItem(item.edits)}>
+                  {item.label}
+                </button>
+              ))}
+            </React.Fragment>
+          ))}
+        </div>,
+        document.body,
+      )}
     </div>
   );
 });

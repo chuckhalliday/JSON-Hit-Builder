@@ -239,6 +239,18 @@ function App() {
   const [includeBass, setIncludeBass] = useState(true);
   const [includeDrums, setIncludeDrums] = useState(true);
   const [includeMelody, setIncludeMelody] = useState(true);
+  // Drums muted from their titles in the drum grid, by voice. Playback asks
+  // the ref hit by hit, so a mute takes effect during the part being played.
+  const [mutedDrums, setMutedDrums] = useState<boolean[]>([]);
+  const mutedDrumsRef = React.useRef(mutedDrums);
+  mutedDrumsRef.current = mutedDrums;
+  const toggleDrumMute = useCallback((voice: number) => {
+    setMutedDrums(prev => {
+      const next = [...prev];
+      next[voice] = !next[voice];
+      return next;
+    });
+  }, []);
   // Lifted above BassStaff (rather than local state there) because each part's
   // BassStaff only mounts while its part is open - a local toggle would reset
   // to "staff" every time the user switched parts.
@@ -314,6 +326,7 @@ function App() {
         { drum: windowed.drum.end, bass: windowed.bass.end, chord: windowed.chord.end },
         melodyNotes ? { notes: melodyNotes, from: fromBeat, to: toBeat } : undefined,
         includeMelody,
+        voice => !!mutedDrumsRef.current[voice],
       );
 
       if (stopRef.current) {
@@ -906,6 +919,8 @@ function App() {
                           part={index}
                           lampsRef={lampsRef}
                           fill={isPhone}
+                          muted={mutedDrums}
+                          onToggleMute={toggleDrumMute}
                         />
                       </div>
                     </div>

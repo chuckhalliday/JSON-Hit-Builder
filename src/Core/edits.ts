@@ -13,6 +13,7 @@ import { functionOf } from './chordOptions';
 import { streamFor } from './seeds';
 import { instancePattern } from './realize';
 import { remapDrums } from './drums';
+import { DrumCellEdit } from './drumBars';
 import { BAR, EIGHTH, HALF, PPQ, SIXTEENTH } from './time';
 import { bassPitch } from '../SongStructure/bassPitch';
 import { NoteLocation } from '../types';
@@ -25,19 +26,35 @@ function withSection(doc: SongDoc, id: string, update: (s: SongDoc['sections'][s
 }
 
 export function editDrum(doc: SongDoc, index: number, voice: number, step: number, checked: boolean): SongDoc {
+  return editDrums(doc, index, [{ voice, step, checked }]);
+}
+
+// Drum steps of one part, set together (one, or a bar's worth when filling,
+// clearing or copying). Decided as a batch, so the part is realized twice
+// however many cells change.
+export function editDrums(doc: SongDoc, index: number, cells: DrumCellEdit[]): SongDoc {
   const inst = doc.form[index];
   if (!inst) return doc;
   const s = doc.sections[inst.sectionId];
-  const sectionCell = s.drums[voice]?.[step];
-  if (!sectionCell) return doc;
-  const playedWithoutOverride = instancePattern({ ...doc, form: doc.form.map((f, i) => (i === index ? { ...f, drumOverrides: f.drumOverrides.filter(o => o.voice !== voice || o.step !== step) } : f)) }, index)[voice][step];
-  if (playedWithoutOverride.checked !== sectionCell.checked) {
-    const drumOverrides = [...inst.drumOverrides.filter(o => o.voice !== voice || o.step !== step), { voice, step, checked }];
-    return { ...doc, form: doc.form.map((f, i) => (i === index ? { ...f, drumOverrides } : f)) };
-  }
-  return withSection(doc, inst.sectionId, sec => {
-    sec.drums[voice][step] = { checked, accent: sectionCell.accent };
-  }, 'drums');
+  cells = cells.filter(c => s.drums[c.voice]?.[c.step]);
+  if (cells.length === 0) return doc;
+  const key = (c: { voice: number, step: number }) => `${c.voice}:${c.step}`;
+  const touched = new Set(cells.map(key));
+  const others = inst.drumOverrides.filter(o => !touched.has(key(o)));
+  const withOverrides = (d: SongDoc, local: DrumCellEdit[]) =>
+    ({ ...d, form: d.form.map((f, i) => (i === index ? { ...f, drumOverrides: [...others, ...local] } : f)) });
+  const withEdits = (onSection: DrumCellEdit[]) => (onSection.length === 0 ? doc : withSection(doc, inst.sectionId, sec => {
+    onSection.forEach(c => { sec.drums[c.voice][c.step] = { checked: c.checked, accent: s.drums[c.voice][c.step].accent }; });
+  }, 'drums'));
+  // Cells the part's transitions change stay local to it, and so do cells a
+  // transition sets whatever the section has there (a fill clears the beat
+  // under it): editing the section wouldn't be heard in this part.
+  const played = instancePattern(withOverrides(doc, []), index);
+  const tried = cells.filter(c => played[c.voice][c.step].checked === s.drums[c.voice][c.step].checked);
+  const heard = instancePattern(withOverrides(withEdits(tried), []), index);
+  const onSection = new Set(tried.filter(c => heard[c.voice][c.step].checked === c.checked));
+  const local = cells.filter(c => !onSection.has(c)).map(({ voice, step, checked }) => ({ voice, step, checked }));
+  return withOverrides(withEdits([...onSection]), local);
 }
 
 export function editBass(doc: SongDoc, index: number, locations: NoteLocation[]): SongDoc {

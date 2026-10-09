@@ -40,7 +40,7 @@ export interface VersePlaybackResult {
 export async function playVerse(bpm: number, midi: boolean, drumBeat: number, bassBeat: number, chordBeat: number, verseDrumGroove: number[], verseDrums: DrumHit[][],
   verseBassGroove: number[], verseBass: NoteLocation[], verseChordGroove: number[], verseChords: string[], verseChordTones: ChordTones, onStep: (lampIndex: number) => void, shouldStop?: () => boolean,
   includeDrums = true, includeBass = true, includeChords = true, acoustic = true, key?: string, startAt?: number, ends: TrackEnds = {},
-  melody?: MelodyPlayback, includeMelody = true): Promise<VersePlaybackResult> {
+  melody?: MelodyPlayback, includeMelody = true, drumMuted?: (voice: number) => boolean): Promise<VersePlaybackResult> {
   // One start time for every track of the part (the previous part's end
   // when chaining), and each track resolves PART_LOOKAHEAD early.
   const audioContext = await ensureAudioRunning();
@@ -52,10 +52,11 @@ export async function playVerse(bpm: number, midi: boolean, drumBeat: number, ba
     return t;
   };
   // Every drum row is scheduled (the synthesized voices cover toms and ride
-  // too); only the first carries the lamp-stepping callback.
+  // too); only the first carries the lamp-stepping callback. A row's mute
+  // (`drumMuted`) is asked hit by hit, so it can change mid-part.
   const results = await Promise.all([
     ...verseDrums.map((pattern, voice) =>
-      playBeat(midi, drumBeat, pattern, verseDrumGroove, bpm, verseDrums, voice === 0 ? onStep : undefined, shouldStop, !includeDrums, acoustic, key, timing(), ends.drum)),
+      playBeat(midi, drumBeat, pattern, verseDrumGroove, bpm, verseDrums, voice === 0 ? onStep : undefined, shouldStop, () => !includeDrums || !!drumMuted?.(voice), acoustic, key, timing(), ends.drum)),
     // Bass and chord onsets always fall on drum steps, so the drums' step
     // callback already lights every lamp; passing it to these too only
     // tripled the per-step dispatches and re-renders.
@@ -67,10 +68,10 @@ export async function playVerse(bpm: number, midi: boolean, drumBeat: number, ba
   return { drumBeat: results[0], bassBeat: results[verseDrums.length], chordBeat: results[verseDrums.length + 1], endTime }
 }
 
-export async function playDrums(bpm: number, midi: boolean, beat: number, partDrumGroove: number[], partDrums: DrumHit[][], onStep: (lampIndex: number) => void, shouldStop?: () => boolean, acoustic = true, key?: string): Promise<number> {
+export async function playDrums(bpm: number, midi: boolean, beat: number, partDrumGroove: number[], partDrums: DrumHit[][], onStep: (lampIndex: number) => void, shouldStop?: () => boolean, acoustic = true, key?: string, drumMuted?: (voice: number) => boolean): Promise<number> {
   const ends = await Promise.all(
     partDrums.map((pattern, voice) =>
-      playBeat(midi, beat, pattern, partDrumGroove, bpm, partDrums, voice === 0 ? onStep : undefined, shouldStop, undefined, acoustic, key)),
+      playBeat(midi, beat, pattern, partDrumGroove, bpm, partDrums, voice === 0 ? onStep : undefined, shouldStop, () => !!drumMuted?.(voice), acoustic, key)),
   )
   return ends[0]
 }

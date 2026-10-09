@@ -10,7 +10,9 @@ const MIDI_NOTES: Record<number, number> = {
   0: 36, 1: 38, 2: 45, 3: 47, 4: 50, 5: 42, 6: 46, 7: 51, 8: 49,
 };
 
-export default function playBeat(midi: boolean, beat: number, pattern: DrumHit[], groove: number[], bpm: number, stepsRef: DrumHit[][], onStep?: (index: number) => void, shouldStop?: () => boolean, mute?: boolean, acoustic = true, key?: string, timing?: SequenceTiming, end?: number) {
+// `mute` may be a function, asked as each hit is scheduled (half a second
+// ahead), so muting a drum mid-part takes effect almost at once.
+export default function playBeat(midi: boolean, beat: number, pattern: DrumHit[], groove: number[], bpm: number, stepsRef: DrumHit[][], onStep?: (index: number) => void, shouldStop?: () => boolean, mute?: boolean | (() => boolean), acoustic = true, key?: string, timing?: SequenceTiming, end?: number) {
     const beatDuration = 60 / bpm // duration of one beat in seconds
     const swingRatio = 3/3; // adjust as needed
 
@@ -42,7 +44,8 @@ export default function playBeat(midi: boolean, beat: number, pattern: DrumHit[]
         scheduleTimer(time, () => onStep(index), register);
       }
 
-      if (midiNote === undefined || !pattern[index].checked || mute) return;
+      if (midiNote === undefined || !pattern[index].checked) return;
+      if (typeof mute === 'function' ? mute() : mute) return;
 
       if (!midi) {
         const audioContext = getAudioContext();
