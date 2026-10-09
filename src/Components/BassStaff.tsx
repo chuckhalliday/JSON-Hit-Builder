@@ -59,11 +59,12 @@ const NOTE_ZONE_TOP = LYRIC_ZONE_BOTTOM + LYRIC_GAP;
 // rest, this far right of the notehead's center - past its stem, flag and dot.
 const REST_OPTION_SCALE = 0.6;
 const REST_OPTION_REACH = 31;
-// The melody's treble staff, when the part sings one: it sits between the
-// chord names and the words, which (with the bass staff) move down by
-// MELODY_BLOCK. Its lines are diatonic steps 38 (F5, at MELODY_TOP) down to
-// 30 (E4); clicks set pitches from B3 to B5. Under it, while a note is
-// selected, its rhythm strip (split a note in half; "+" undoes a split).
+// The melody's treble staff, when the part sings one: it sits under the
+// chord names (and under its words, when it has them), and the bass staff
+// moves down by MELODY_BLOCK. Its lines are diatonic steps 38 (F5, at
+// MELODY_TOP) down to 30 (E4); clicks set pitches from B3 to B5. Under it,
+// while a note is selected, its rhythm strip (split a note in half; "+"
+// undoes a split).
 const MELODY_BLOCK = 158;
 const MELODY_STRIP_TOP = 160;
 const MELODY_STRIP_BOTTOM = 192;
@@ -76,6 +77,9 @@ const MELODY_HIGH_STEP = 41;
 const melodyY = (step: number) => MELODY_TOP + (MELODY_TOP_STEP - step) * SPACING;
 const MELODY_ZONE_TOP = melodyY(MELODY_HIGH_STEP) - SPACING;
 const MELODY_ZONE_BOTTOM = melodyY(MELODY_LOW_STEP) + SPACING;
+// Words with a melody sit above its staff (under the chord names), which
+// moves the melody's whole block down by this much.
+const LYRIC_SHIFT = 30;
 // With the melody and words shown over the bass, the Bass section's header
 // sits in a gap this tall between them, which moves the staff/tab down.
 const BASS_HEADER = 32;
@@ -83,6 +87,20 @@ const BASS_HEADER = 32;
 // taps on a syllable this close together (ms) are a double tap.
 const TAP_SLOP = 10;
 const DOUBLE_TAP_MS = 400;
+// How much wider (canvas px) a syllable's target is for a fingertip, and
+// the size of the arrow buttons that move a picked one (phones).
+const TOUCH_SLOP = 8;
+const ARROW_SIZE = 30;
+
+// Measures words in the lyric font outside of a draw (for placing the
+// arrows beside a picked syllable).
+let measureContext: CanvasRenderingContext2D | null = null;
+function lyricTextWidth(text: string): number {
+  measureContext = measureContext ?? document.createElement('canvas').getContext('2d');
+  if (!measureContext) return text.length * 7;
+  measureContext.font = LYRIC_FONT;
+  return measureContext.measureText(text).width;
+}
 // How far a fitted canvas may be squeezed or stretched (vertically only).
 const FIT_MIN = 0.5;
 const FIT_MAX = 1.2;
@@ -251,6 +269,9 @@ interface BassStaffProps {
   // it vertically - its columns have to stay in line with the lamps'.
   headers?: boolean;
   fitHeight?: number;
+  // Phones: a tapped syllable is picked, with arrow buttons to step it
+  // along (fingers can't drag one reliably).
+  syllableArrows?: boolean;
 }
 
 
@@ -291,7 +312,7 @@ function readCanvasColors() {
   };
 }
 
-const BassStaff = forwardRef<PlayHandle, BassStaffProps>(function BassStaff({ renderWidth, part, lampsRef, onPlayingChange, viewMode, onViewModeChange, showWords, showBass, onToggleWords, onToggleBass, headers = true, fitHeight }, ref) {
+const BassStaff = forwardRef<PlayHandle, BassStaffProps>(function BassStaff({ renderWidth, part, lampsRef, onPlayingChange, viewMode, onViewModeChange, showWords, showBass, onToggleWords, onToggleBass, headers = true, fitHeight, syllableArrows = false }, ref) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const dispatch = useDispatch()
 
@@ -339,6 +360,8 @@ const BassStaff = forwardRef<PlayHandle, BassStaffProps>(function BassStaff({ re
   // tell a double tap.
   const touchRef = useRef<{ x: number, y: number, syllable: number, drag: { moveTo: (clientX: number) => void, finish: () => boolean } | null } | null>(null);
   const lastSyllableTapRef = useRef<{ index: number, time: number } | null>(null);
+  // The syllable picked to move with the arrows (phones).
+  const [selectedSyllable, setSelectedSyllable] = useState<number | null>(null);
   const lyricBoxes = useRef<Array<{ left: number, right: number }>>([]);
   // The part's melody (its own, or the tune a repeat sings), if the song has
   // one; it opens the treble staff over everything else.
@@ -351,12 +374,15 @@ const BassStaff = forwardRef<PlayHandle, BassStaffProps>(function BassStaff({ re
   const lyrics = wordsShown ? placedLyrics : NO_LYRICS;
   const melody = wordsShown ? partMelody : null;
   const melodyNotes = melody?.notes ?? [];
-  const lift = melodyNotes.length > 0 ? MELODY_BLOCK : 0;
-  const lyricY = LYRIC_BASELINE + lift;
+  // The words always sit under the chord names - above the melody's staff
+  // when there is one, which moves down a row (melodyShift) to make room.
+  const melodyShift = melodyNotes.length > 0 && lyrics.syllables.length > 0 ? LYRIC_SHIFT : 0;
+  const lift = melodyNotes.length > 0 ? MELODY_BLOCK + melodyShift : 0;
+  const lyricY = LYRIC_BASELINE;
   // Where the melody and words end (canvas y): the Bass header's gap when
   // both sections are open, or the canvas's foot when the bass is collapsed.
-  const wordsBottom = lyrics.syllables.length > 0 ? lift + LYRIC_ZONE_BOTTOM + 3
-    : melodyNotes.length > 0 ? MELODY_STRIP_BOTTOM + 2
+  const wordsBottom = melodyNotes.length > 0 ? MELODY_STRIP_BOTTOM + melodyShift + 2
+    : lyrics.syllables.length > 0 ? LYRIC_ZONE_BOTTOM + 3
     : 0;
   const bassHeaderInGap = wordsShown && showBass;
   const melodyKey = song.doc?.form[part] ? transposedKey(song.doc.key, song.doc.form[part].transpose) : null;
@@ -370,7 +396,8 @@ const BassStaff = forwardRef<PlayHandle, BassStaffProps>(function BassStaff({ re
     : Infinity;
   // On the staff it's deep enough to start every pitch row - the highest
   // included - and every stem a clear gap under the words.
-  const band = lyrics.syllables.length === 0 ? 0
+  // (Only words straight over the bass need it: a melody comes between.)
+  const band = lyrics.syllables.length === 0 || melodyNotes.length > 0 ? 0
     : viewMode !== 'staff' || !showBass ? LYRIC_BAND
     : Math.max(
       Math.ceil(NOTE_ZONE_TOP + SPACING / 2 - (NOTE_MIN_Y + STAFF_Y_OFFSET)),
@@ -380,7 +407,7 @@ const BassStaff = forwardRef<PlayHandle, BassStaffProps>(function BassStaff({ re
   // How far the staff/tab sits below the canvas top: the melody's block, the
   // lyric band, and the Bass header's gap (which clears the melody's rhythm
   // strip too when there are no words under it).
-  const headerGap = bassHeaderInGap ? BASS_HEADER + (lyrics.syllables.length > 0 ? 0 : wordsBottom - lift) : 0;
+  const headerGap = bassHeaderInGap ? BASS_HEADER + (melodyNotes.length > 0 ? wordsBottom - lift : 0) : 0;
   const offset = band + lift + headerGap;
   const canvasHeight = showBass ? CANVAS_HEIGHT + offset : wordsBottom + 4;
   // Drawn at its own height and shown at the fitted one; the mouse handlers
@@ -398,7 +425,9 @@ const BassStaff = forwardRef<PlayHandle, BassStaffProps>(function BassStaff({ re
     setPendingNote(null);
     setTabEdit(null);
     setMelodyChoice(null);
+    setSelectedSyllable(null);
   }, [part, viewMode, showWords, showBass]);
+  const pickedSyllable = selectedSyllable !== null && lyrics.syllables[selectedSyllable] ? selectedSyllable : null;
 
   // The rhythm strip (sculpted songs): while a note is selected, the part's
   // rhythm shows under the staff, where a note splits in half on a click
@@ -934,21 +963,33 @@ const BassStaff = forwardRef<PlayHandle, BassStaffProps>(function BassStaff({ re
   // Syllables centered over the steps they land on, squeezed to fit between
   // their neighbours, with a hyphen where a word carries on.
   // The syllable under the mouse (by where it was last drawn), or -1.
-  function lyricAtMouse(): number {
+  // `slop` widens the target all round (for a fingertip); the nearest
+  // syllable wins where widened targets overlap.
+  function lyricAtMouse(slop = 0): number {
     const y = MOUSE.y + bandRef.current;
-    if (y < LYRIC_ZONE_TOP + lift || y > LYRIC_ZONE_BOTTOM + lift) return -1;
-    return lyricBoxes.current.findIndex((box) => MOUSE.x >= box.left && MOUSE.x <= box.right);
+    if (y < LYRIC_ZONE_TOP - slop || y > LYRIC_ZONE_BOTTOM + slop) return -1;
+    let best = -1;
+    let distance = Infinity;
+    lyricBoxes.current.forEach((box, k) => {
+      if (MOUSE.x < box.left - slop || MOUSE.x > box.right + slop) return;
+      const d = Math.abs((box.left + box.right) / 2 - MOUSE.x);
+      if (d < distance) { distance = d; best = k; }
+    });
+    return best;
   }
 
   // Whether the mouse is up among the words or the gap under them, where
   // the staff takes no clicks.
-  const inLyricRows = () => bandRef.current > 0 && MOUSE.y + bandRef.current < NOTE_ZONE_TOP + lift;
+  const inLyricRows = () => (melodyNotes.length > 0 || lyrics.syllables.length > 0)
+    && MOUSE.y + bandRef.current < (melodyNotes.length > 0 ? wordsBottom + LYRIC_GAP : NOTE_ZONE_TOP);
 
   // ---- Melody staff -------------------------------------------------------
-  // (Canvas coordinates: the melody sits above the staff's translation.)
+  // (Canvas coordinates: the melody sits above the staff's translation, and
+  // is drawn moved down by melodyShift - so the mouse is moved up by it.)
+  const melodyMouseY = () => MOUSE.y + bandRef.current - melodyShift;
 
   const inMelodyRows = () => {
-    const y = MOUSE.y + bandRef.current;
+    const y = melodyMouseY();
     return melodyNotes.length > 0 && y >= MELODY_ZONE_TOP && y <= MELODY_ZONE_BOTTOM;
   };
 
@@ -964,7 +1005,7 @@ const BassStaff = forwardRef<PlayHandle, BassStaffProps>(function BassStaff({ re
   }
 
   const melodyStepAtMouse = () => Math.min(MELODY_HIGH_STEP, Math.max(MELODY_LOW_STEP,
-    Math.round(MELODY_TOP_STEP - (MOUSE.y + bandRef.current - MELODY_TOP) / SPACING)));
+    Math.round(MELODY_TOP_STEP - (melodyMouseY() - MELODY_TOP) / SPACING)));
 
   // A selected melody note's other two accidentals, offered to its left as
   // the bass's are.
@@ -978,7 +1019,7 @@ const BassStaff = forwardRef<PlayHandle, BassStaffProps>(function BassStaff({ re
 
   function melodyChoiceAtMouse() {
     if (melodyChoice === null || !melodyNotes[melodyChoice]) return null;
-    const y = MOUSE.y + bandRef.current;
+    const y = melodyMouseY();
     return melodyChoiceLayout(melodyChoice).find((opt) =>
       MOUSE.x >= opt.x - 10 && MOUSE.x <= opt.x + 20 && y >= opt.y - 20 && y <= opt.y + 6) ?? null;
   }
@@ -1015,7 +1056,7 @@ const BassStaff = forwardRef<PlayHandle, BassStaffProps>(function BassStaff({ re
   }
 
   function melodyStripHit(): { op: 'split' | 'join', k: number } | null {
-    const y = MOUSE.y + bandRef.current;
+    const y = melodyMouseY();
     if (melodyChoice === null || y < MELODY_STRIP_TOP || y > MELODY_STRIP_BOTTOM) return null;
     const strip = melodyStrip();
     const join = strip.find((item) => item.join !== null && Math.abs(MOUSE.x - item.join) <= 8);
@@ -1093,6 +1134,7 @@ const BassStaff = forwardRef<PlayHandle, BassStaffProps>(function BassStaff({ re
   function drawMelody(ctx: CanvasRenderingContext2D) {
     if (melodyNotes.length === 0) return;
     ctx.save();
+    ctx.translate(0, melodyShift);
     ctx.strokeStyle = colors.ink;
     ctx.fillStyle = colors.ink;
     ctx.lineWidth = 1;
@@ -1170,16 +1212,18 @@ const BassStaff = forwardRef<PlayHandle, BassStaffProps>(function BassStaff({ re
     const syllables = lyrics.syllables;
     const drag = lyricDrag.current;
     // Read before this draw replaces the boxes it's found by.
-    const hovered = drag ? drag.index : lyricAtMouse();
+    const hovered = drag ? drag.index : pickedSyllable ?? lyricAtMouse();
+    // The syllable being moved, by dragging or with the arrows.
+    const moving = drag ? drag.index : pickedSyllable;
     lyricBoxes.current = [];
     if (syllables.length === 0) return;
     ctx.save();
     ctx.font = LYRIC_FONT;
     ctx.textAlign = 'center';
     const xs = syllables.map((syl, k) => lyricXs[drag && drag.index === k ? drag.step : syl.step]);
-    // While dragging, the columns the syllable can land on, under the words.
-    if (drag) {
-      const range = lyricRange(drag.index).map((step) => lyricXs[step]);
+    // While moving one, the columns it can land on, under the words.
+    if (moving !== null) {
+      const range = lyricRange(moving).map((step) => lyricXs[step]);
       ctx.strokeStyle = colors.hover;
       ctx.fillStyle = colors.hover;
       ctx.lineWidth = 1;
@@ -1567,7 +1611,7 @@ const BassStaff = forwardRef<PlayHandle, BassStaffProps>(function BassStaff({ re
       }
       const t = event.touches[0];
       pointAt(t.clientX, t.clientY);
-      const syllable = lyricAtMouse();
+      const syllable = lyricAtMouse(TOUCH_SLOP);
       if (syllable !== -1 && !choiceAtMouse()) {
         // This finger moves the syllable, so the part mustn't scroll.
         event.preventDefault();
@@ -1599,7 +1643,12 @@ const BassStaff = forwardRef<PlayHandle, BassStaffProps>(function BassStaff({ re
       event.preventDefault();
       const now = performance.now();
       if (touch.drag) {
-        if (!touch.drag.finish()) {
+        // Dragged somewhere new: done. Otherwise it was a tap on it.
+        if (touch.drag.finish()) return;
+        if (syllableArrows) {
+          // Picks it for the arrows (or lets it go).
+          setSelectedSyllable((picked) => (picked === touch.syllable ? null : touch.syllable));
+        } else {
           const last = lastSyllableTapRef.current;
           if (last && last.index === touch.syllable && now - last.time < DOUBLE_TAP_MS) {
             resetSyllable(touch.syllable);
@@ -1612,6 +1661,7 @@ const BassStaff = forwardRef<PlayHandle, BassStaffProps>(function BassStaff({ re
       }
       const t = event.changedTouches[0];
       pointAt(t.clientX, t.clientY);
+      setSelectedSyllable(null);
       press(() => {});
       // A touchscreen has no hover: leave no ghost note where the finger was.
       MOUSE.x = -10;
@@ -1652,7 +1702,7 @@ const BassStaff = forwardRef<PlayHandle, BassStaffProps>(function BassStaff({ re
     };
     // Re-bound only when something the handlers read changes - not on every
     // playback step.
-  }, [MOUSE, viewMode, pendingNote, bassNoteGrid, bassGrid, part, dispatch, requestDraw, tabEdit, rhythmEditable, rhythmTicks, lyrics, lyricXs, lyricOnsets, lyricOwner, melody, melodyNotes, melodyChoice, melodyKey, lift, showBass]);
+  }, [MOUSE, viewMode, pendingNote, bassNoteGrid, bassGrid, part, dispatch, requestDraw, tabEdit, rhythmEditable, rhythmTicks, lyrics, lyricXs, lyricOnsets, lyricOwner, melody, melodyNotes, melodyChoice, melodyKey, lift, showBass, syllableArrows]);
 
   // ---- Tab fret editor -----------------------------------------------------
 
@@ -1761,7 +1811,7 @@ const BassStaff = forwardRef<PlayHandle, BassStaffProps>(function BassStaff({ re
   // Draw when what the staff shows changes, and once the clef image loads.
   useEffect(() => {
     requestDraw();
-  }, [requestDraw, renderWidth, bassNoteGrid, bassGroove, chords, chordGrid, bassGrid, measureLines, pendingNote, viewMode, tabEdit, colors, lyrics, lyricXs, melody, melodyChoice, showBass, canvasHeight]);
+  }, [requestDraw, renderWidth, bassNoteGrid, bassGroove, chords, chordGrid, bassGrid, measureLines, pendingNote, viewMode, tabEdit, colors, lyrics, lyricXs, melody, melodyChoice, showBass, canvasHeight, pickedSyllable]);
 
   useEffect(() => {
     if (!CLEF_IMAGE.complete) CLEF_IMAGE.addEventListener('load', requestDraw);
@@ -1773,6 +1823,56 @@ const BassStaff = forwardRef<PlayHandle, BassStaffProps>(function BassStaff({ re
       }
     };
   }, [requestDraw]);
+
+  // Phones: ◀ ▶ either side of the picked syllable step it to the next
+  // column it can land on (one undo step each), and ↺ puts a moved one back
+  // where it lands by itself.
+  function syllableArrowButtons(k: number) {
+    const syllables = lyrics.syllables;
+    const syl = syllables[k];
+    const range = lyricRange(k);
+    const earlier = range.filter((step) => step < syl.step).pop();
+    const later = range.find((step) => step > syl.step);
+    // Its box as drawn: its width, squeezed to fit between its neighbours.
+    const x = lyricXs[syl.step];
+    const room = Math.min(
+      k > 0 ? x - lyricXs[syllables[k - 1].step] : Infinity,
+      k < syllables.length - 1 ? lyricXs[syllables[k + 1].step] - x : Infinity,
+    ) - 6;
+    const half = Math.max(Math.min(lyricTextWidth(syl.text), room) / 2, 8) + 2;
+    const top = (lyricY - 5) * fitScale - ARROW_SIZE / 2;
+    const moveTo = (beat: number | null) => dispatch(setLyricTiming({ part: lyricOwner, line: syl.line, at: syl.at, beat }));
+    return (
+      <>
+        <button
+          type="button"
+          className={appStyles.syllableArrow}
+          style={{ left: x - half - ARROW_SIZE - 2, top, width: ARROW_SIZE, height: ARROW_SIZE }}
+          disabled={earlier === undefined}
+          onClick={() => earlier !== undefined && moveTo(lyricOnsets[earlier])}
+          aria-label={`Move "${syl.text}" earlier`}
+        >◀</button>
+        <button
+          type="button"
+          className={appStyles.syllableArrow}
+          style={{ left: x + half + 2, top, width: ARROW_SIZE, height: ARROW_SIZE }}
+          disabled={later === undefined}
+          onClick={() => later !== undefined && moveTo(lyricOnsets[later])}
+          aria-label={`Move "${syl.text}" later`}
+        >▶</button>
+        {syl.moved && (
+          <button
+            type="button"
+            className={appStyles.syllableArrow}
+            style={{ left: x + half + ARROW_SIZE + 6, top, width: ARROW_SIZE, height: ARROW_SIZE }}
+            onClick={() => moveTo(null)}
+            aria-label={`Put "${syl.text}" back`}
+            title="Put it back where it lands by itself"
+          >↺</button>
+        )}
+      </>
+    );
+  }
 
   // The Bass section's header, with the Staff/Tab switch while it's open:
   // above the canvas, in a gap under the words, or (collapsed) below them.
@@ -1813,6 +1913,7 @@ const BassStaff = forwardRef<PlayHandle, BassStaffProps>(function BassStaff({ re
           id="myCanvas"
           style={fitScale !== 1 ? { width: renderWidth || undefined, height: canvasHeight * fitScale } : undefined}
         />
+        {syllableArrows && pickedSyllable !== null && syllableArrowButtons(pickedSyllable)}
         {headers && bassHeaderInGap && (
           <div className={appStyles.canvasHeaderGap} style={{ top: wordsBottom * fitScale, height: BASS_HEADER * fitScale }}>
             {bassHeader}
