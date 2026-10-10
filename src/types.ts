@@ -1,4 +1,4 @@
-import type { LyricTiming } from './Core/lyrics';
+import type { LyricMeter, LyricTiming } from './Core/lyrics';
 
 // Shared domain types for the song model.
 //
@@ -108,6 +108,8 @@ export interface Part {
   lyrics?: string;
   // Syllables dragged off their automatic spots on the staff.
   lyricTiming?: LyricTiming;
+  // The meter the words are set in (absent: Even).
+  lyricMeter?: LyricMeter;
 }
 
 export type SongStructure = Part[];

@@ -1,6 +1,7 @@
 import { configureStore } from '@reduxjs/toolkit';
-import { songReducer, newSong, setPartLyrics, setLyricTiming, setPartSection, editHarmony, reorderParts, duplicatePart, rerollLayer, setSong, undo, SongState } from './reducers';
+import { songReducer, newSong, setPartLyrics, setLyricTiming, moveSyllables, setPartSection, editHarmony, reorderParts, duplicatePart, rerollLayer, setSong, undo, SongState } from './reducers';
 import { createRandomSong } from './SongStructure/createSong';
+import { placeLyrics } from './Core/lyrics';
 
 const makeStore = () => configureStore({ reducer: { song: songReducer }, middleware: d => d({ serializableCheck: false, immutableCheck: false }) });
 const st = (store: ReturnType<typeof makeStore>): SongState => store.getState().song;
@@ -92,6 +93,35 @@ describe('part lyrics', () => {
     expect(st(store).songStructure[c].lyricTiming![0]!.beats[1]).toBe(2.5);
     store.dispatch(undo()); // the chord change
     store.dispatch(undo()); // the drag
+    expect(st(store).songStructure[c].lyricTiming).toBeUndefined();
+  });
+
+  it('keeps a drag that pushed others along as one undo step', () => {
+    const store = setup();
+    const c = st(store).songStructure.findIndex(p => p.type === 'Chorus');
+    store.dispatch(setPartLyrics({ part: c, text: 'carry me home\nhold on' }));
+    const beats = () => placeLyrics(st(store).songStructure[c].lyrics!, st(store).songStructure[c].drumGroove, st(store).songStructure[c].lyricTiming).syllables.map(s => s.beat);
+    const before = beats();
+    const pastBefore = st(store).past!.length;
+    // "car" dragged a beat later, pushing the rest of its line a beat on;
+    // the next line, further off, stays.
+    store.dispatch(moveSyllables({ part: c, moves: [0, 1, 2, 3].map(at => ({ line: 0, at, beat: before[at] + 1 })) }));
+    expect(beats()).toEqual(before.map((b, k) => (k < 4 ? b + 1 : b)));
+    expect(st(store).doc!.form[c].lyricTiming).toEqual(st(store).songStructure[c].lyricTiming);
+    expect(st(store).past!.length).toBe(pastBefore + 1);
+    expect(st(store).past!.at(-1)!.label).toBe('syllable move');
+    store.dispatch(undo());
+    expect(beats()).toEqual(before);
+    expect(st(store).songStructure[c].lyricTiming).toBeUndefined();
+  });
+
+  it("doesn't keep a syllable as moved once it's back where it lands by itself", () => {
+    const store = setup();
+    const c = st(store).songStructure.findIndex(p => p.type === 'Chorus');
+    store.dispatch(setPartLyrics({ part: c, text: 'carry me home\nhold on' }));
+    const home = placeLyrics('carry me home\nhold on', st(store).songStructure[c].drumGroove).syllables;
+    store.dispatch(moveSyllables({ part: c, moves: [{ line: 0, at: 2, beat: home[2].beat + 0.5 }, { line: 0, at: 3, beat: home[3].beat + 0.5 }] }));
+    store.dispatch(moveSyllables({ part: c, moves: [{ line: 0, at: 2, beat: home[2].beat }, { line: 0, at: 3, beat: home[3].beat }] }));
     expect(st(store).songStructure[c].lyricTiming).toBeUndefined();
   });
 });

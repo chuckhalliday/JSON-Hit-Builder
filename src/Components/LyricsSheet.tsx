@@ -41,7 +41,7 @@ export default function LyricsSheet({ parts, openPart, onOpenPart, onClose }: Ly
         One line per phrase; lines share out the part's bars and land on the beat.
         Hyphenate to split syllables your way (<i>beau-ti-ful</i>). A repeated chorus left
         blank sings the earlier words; write <b>{NO_WORDS}</b> for none. Drag a syllable on the
-        staff to move it between its neighbours; double-click it to put it back.
+        staff to move it; past a neighbour, it pushes the rest along. Double-click it to put it back.
       </p>
       <div className={styles.melodyToggle}>
         <button
@@ -56,7 +56,7 @@ export default function LyricsSheet({ parts, openPart, onOpenPart, onClose }: Ly
           {!doc
             ? 'A melody needs a song from the form-first engine.'
             : melodyOn
-              ? 'Each part sings its words on the treble staff. Click the staff to change a note; lock or re-roll it in the section panel.'
+              ? 'Each part sings its words on the treble staff. Click the staff to change a note (a rest a split left is sung, slurred to); set the rhythm (iambic, trochaic...) with Rhythm over its clef; lock or re-roll it in the section panel.'
               : 'Sets the words to a tune on a staff above the bass, following the chords and answering the bass line.'}
         </span>
       </div>

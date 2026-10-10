@@ -1,25 +1,25 @@
 import React, { forwardRef, useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import playBass from '../Playback/playBass';
-import { editBassRhythm, setBassPattern, setBassState, setCurrentBeat, setLyricTiming, setMelodyNote, setMelodySplits, SongState } from '../reducers';
+import { editBassRhythm, moveSyllables, setBassPattern, setBassState, setCurrentBeat, setLyricMeter, setLyricTiming, setMelodyNote, setMelodySplits, setMelodyTurn, SongState } from '../reducers';
 import { PlayHandle } from './Piano';
 import SectionToggle, { SectionCaption } from './SectionToggle';
 import { useLampStep } from '../Playback/useLampStep';
 import appStyles from '../Styles/App.module.scss';
 import { NoteLocation } from '../types';
 import { bassPitch, isStaffPitch, PITCH_MAX_Y, PITCH_MIN_Y, STAFF_STEP } from '../SongStructure/bassPitch';
-import { keySignature, spellPc, staffY } from '../Core/theory';
+import { keySignature, Spelled, spellPc, staffY } from '../Core/theory';
 import { partKey, shownAccidentals, signaturePlaces, StaffNote } from '../Core/keySignature';
 import { useTheme } from '../theme';
-import { partLyrics, placeLyrics } from '../Core/lyrics';
+import { partLyrics, placeLyrics, pushedSteps } from '../Core/lyrics';
 import { stepXs } from '../SongStructure/bass';
 import { BarFit } from './barFit';
 import { canJoinBassNotes, canSplitBassNote } from '../Core/edits';
-import { PPQ, SIXTEENTH, beatsToTicks } from '../Core/time';
-import { canSplitMelodyNote, diatonicStep, melodyFor, noteValue, pitchAtStep } from '../Core/melody';
+import { BEATS_PER_BAR, PPQ, SIXTEENTH, beatsToTicks } from '../Core/time';
+import { canSplitMelodyNote, diatonicStep, melodyFor, MelodyTurn, noteValue, pitchAtStep, restsBetween } from '../Core/melody';
 import { transposedKey } from '../Core/realize';
 import { BASS_PATTERNS, TRIPLET_EIGHTH, playsPattern } from '../Core/bassPatterns';
-import BassPatternMenu from './BassPatternMenu';
+import RhythmMenu, { BASS_RHYTHMS, MELODY_RHYTHMS } from './RhythmMenu';
 
 // Standard 4-string bass tuning (E1 A1 D2 G2), lowest to highest, expressed as
 // the real MIDI note number of each open string - matches the `midi` values
@@ -105,9 +105,11 @@ function lyricTextWidth(text: string): number {
   return measureContext.measureText(text).width;
 }
 // Where the bass clef (and the treble clef, over it) is centered, and how
-// far over the staff's (or tab's) top line the Rhythm button sits above it.
+// far over the staff's (or tab's) top line the Rhythm button sits above it
+// - or, over the melody, above the treble clef's top (TREBLE_CLEF_TOP).
 const CLEF_X = 45;
 const RHYTHM_BUTTON_GAP = 10;
+const MELODY_RHYTHM_GAP = 4;
 // How far a fitted canvas may be squeezed or stretched (vertically only).
 const FIT_MIN = 0.5;
 const FIT_MAX = 1.2;
@@ -142,6 +144,8 @@ const TREBLE_CLEF: Array<{ c: [Point, Point, Point, Point], w: [number, number, 
   { c: [[0.36, 2.05], [0.42, 2.72], [-0.20, 2.88], [-0.45, 2.40]], w: [0.21, 0.24, 0.30] },
 ];
 const TREBLE_BALL = { at: [-0.40, 2.22] as Point, r: 0.44 };
+// Where the clef's loop tops out on the melody staff: 4.5 spaces over its G.
+const TREBLE_CLEF_TOP = melodyY(32) - 4.5 * SPACING * 2;
 
 // x is the curl's center, g the y of the G line it curls around, u the
 // staff space. Fills in the context's fill style.
@@ -483,10 +487,11 @@ const BassStaff = forwardRef<PlayHandle, BassStaffProps>(function BassStaff({ re
   const words = partLyrics(song.songStructure, part);
   const lyricText = words.text;
   const lyricTiming = words.timing;
+  const lyricMeter = words.meter;
   // Dragging a syllable moves it in the timing of whoever owns the words:
   // this part, or the earlier part a repeat sings.
   const lyricOwner = words.from ?? part;
-  const placedLyrics = useMemo(() => placeLyrics(lyricText, drumGrooveForLyrics, lyricTiming), [lyricText, drumGrooveForLyrics, lyricTiming]);
+  const placedLyrics = useMemo(() => placeLyrics(lyricText, drumGrooveForLyrics, lyricTiming, lyricMeter), [lyricText, drumGrooveForLyrics, lyricTiming, lyricMeter]);
   const lyricXs = useMemo(() => {
     const xs = stepXs(drumGrooveForLyrics);
     return fit ? xs.map(fit.x) : xs;
@@ -497,8 +502,9 @@ const BassStaff = forwardRef<PlayHandle, BassStaffProps>(function BassStaff({ re
     return onsets;
   }, [drumGrooveForLyrics]);
   // A syllable being dragged: which one, the step it started on and the one
-  // it's over now. And where each syllable was last drawn, to pick one up.
-  const lyricDrag = useRef<{ index: number, from: number, step: number } | null>(null);
+  // it's over now, and the step every syllable is then on (those it pushes
+  // along included). And where each syllable was last drawn, to pick one up.
+  const lyricDrag = useRef<{ index: number, from: number, step: number, steps: number[] } | null>(null);
   // The finger on the canvas: where it came down, and the syllable it's
   // dragging if it came down on one. And the last tap on a syllable, to
   // tell a double tap.
@@ -547,12 +553,20 @@ const BassStaff = forwardRef<PlayHandle, BassStaffProps>(function BassStaff({ re
     // E (letter 2) on the bottom place, as bassPitch reads it.
     return { bar: barAt(n.x), place, letter: (place + 2) % 7, alteration: bassPitch(n.y, n.acc).midi - bassPitch(n.y, 'none').midi };
   }), signature), [bassNoteGrid, barAt, signature]);
-  const melodyMarks = useMemo(() => shownAccidentals(melodyNotes.map((n): StaffNote => {
-    const place = diatonicStep(n.midi, n.spelled);
-    return { bar: barAt(lyricXs[n.step]), place, letter: place % 7, alteration: n.spelled.acc };
-  }), signature), [melodyNotes, lyricXs, barAt, signature]);
-  // The melody note whose accidentals are on offer.
-  const [melodyChoice, setMelodyChoice] = useState<number | null>(null);
+  // Per note, per written piece of it: a piece tied over shows none (and
+  // leaves the bar's accidentals as they were).
+  const melodyMarks = useMemo(() => {
+    const marks = shownAccidentals(melodyNotes.flatMap((n) => n.pieces.map((p): StaffNote | null => {
+      if (p.join === 'tie') return null;
+      const place = diatonicStep(p.midi, p.spelled);
+      return { bar: Math.floor(p.beat / BEATS_PER_BAR + 1e-6), place, letter: place % 7, alteration: p.spelled.acc };
+    })), signature);
+    let i = 0;
+    return melodyNotes.map((n) => n.pieces.map(() => marks[i++]));
+  }, [melodyNotes, signature]);
+  // The melody note whose accidentals are on offer: a syllable's, or a
+  // stretch of it sung on past its first pitch (`turn`).
+  const [melodyChoice, setMelodyChoice] = useState<{ k: number, turn?: MelodyTurn } | null>(null);
 
   // On the staff, the band grows to clear the part's highest stem (or, for
   // notes high enough to take their stems down, notehead) under the words.
@@ -605,6 +619,11 @@ const BassStaff = forwardRef<PlayHandle, BassStaffProps>(function BassStaff({ re
   const currentPattern = useMemo(() => (section
     ? BASS_PATTERNS.find((p) => playsPattern(section.bassRhythm, p, section.bars, section.harmony))?.id ?? null
     : null), [section]);
+  // The meter (Rhythm menu over the treble clef) the words sit in now, if
+  // they sit just as it sets them: no syllable dragged, no note split.
+  const currentMeter = placedLyrics.syllables.some((s) => s.moved) || partMelody?.notes.some((n) => n.splits > 0)
+    ? null
+    : lyricMeter ?? 'even';
   // The note to keep selected once a split or join lands (by index - its
   // column moves).
   const refocusRef = useRef<number | null>(null);
@@ -848,6 +867,10 @@ const BassStaff = forwardRef<PlayHandle, BassStaffProps>(function BassStaff({ re
   function drawRest(ctx: CanvasRenderingContext2D, x: number, groove: number) {
     const REST_Y = STAFF_Y_OFFSET;
     const spacing = SPACING;
+    //whole rest: hangs from the line over the middle one
+    if (groove >= 4) {
+      ctx.fillRect(x - spacing, REST_Y + 60, spacing * 2, 7);
+    }
     //half rest
     if (groove <= 2) {
       if (groove === 2) {
@@ -1193,34 +1216,53 @@ const BassStaff = forwardRef<PlayHandle, BassStaffProps>(function BassStaff({ re
     return melodyNotes.length > 0 && y >= MELODY_ZONE_TOP && y <= MELODY_ZONE_BOTTOM;
   };
 
-  // The melody note whose column the mouse is in, or -1.
-  function melodyNoteAtMouse(): number {
-    let best = -1;
+  // What a click on the melody staff sets the pitch of, column by column:
+  // each written piece of a syllable's note - its first pitch, or a stretch
+  // it's sung on past it (`turn`: over a bar line, or in a rest sung) - and
+  // the first rest its splits left, to sing instead (no pitch yet).
+  type MelodyTarget = { k: number, turn?: MelodyTurn, x: number, step: number | null, spelled: Spelled | null };
+  const sameTurn = (a?: MelodyTurn, b?: MelodyTurn) => a?.kind === b?.kind && a?.index === b?.index;
+  function melodyTargets(): MelodyTarget[] {
+    return melodyNotes.flatMap((n, k) => {
+      const heads: MelodyTarget[] = n.pieces.map((p, j) => ({ k, turn: p.turn, x: j === 0 ? lyricXs[n.step] : xAtBeat(p.beat), step: diatonicStep(p.midi, p.spelled), spelled: p.spelled }));
+      const rest = n.rests.findIndex((r) => r.midi === undefined);
+      return rest === -1 ? heads : [...heads, { k, turn: { kind: 'fill', index: rest }, x: xAtBeat(n.rests[rest].beat), step: null, spelled: null }];
+    });
+  }
+
+  // The one whose column the mouse is in, or null.
+  function melodyTargetAtMouse(): MelodyTarget | null {
+    let best: MelodyTarget | null = null;
     let distance = 20;
-    melodyNotes.forEach((n, k) => {
-      const d = Math.abs(lyricXs[n.step] - MOUSE.x);
-      if (d < distance) { distance = d; best = k; }
+    melodyTargets().forEach((t) => {
+      const d = Math.abs(t.x - MOUSE.x);
+      if (d < distance) { distance = d; best = t; }
     });
     return best;
   }
+
+  // The selected one, where it's drawn first.
+  const chosenMelodyTarget = () => (melodyChoice
+    ? melodyTargets().find((t) => t.k === melodyChoice.k && sameTurn(t.turn, melodyChoice.turn) && t.step !== null) ?? null
+    : null);
 
   const melodyStepAtMouse = () => Math.min(MELODY_HIGH_STEP, Math.max(MELODY_LOW_STEP,
     Math.round(MELODY_TOP_STEP - (melodyMouseY() - MELODY_TOP) / SPACING)));
 
   // A selected melody note's other two accidentals, offered to its left as
   // the bass's are.
-  function melodyChoiceLayout(k: number) {
-    const n = melodyNotes[k];
-    const x = lyricXs[n.step] - SPACING * 3.5;
-    const y = melodyY(diatonicStep(n.midi, n.spelled)) - SPACING * 2 + 20;
-    return [-1, 0, 1].filter((acc) => acc !== n.spelled.acc)
+  function melodyChoiceLayout(t: MelodyTarget) {
+    const x = t.x - SPACING * 3.5;
+    const y = melodyY(t.step!) - SPACING * 2 + 20;
+    return [-1, 0, 1].filter((acc) => acc !== t.spelled!.acc)
       .map((acc, i) => ({ acc, symbol: acc < 0 ? '♭' : acc > 0 ? '#' : '♮', x, y: y + (i === 0 ? -26 : 26) }));
   }
 
   function melodyChoiceAtMouse() {
-    if (melodyChoice === null || !melodyNotes[melodyChoice]) return null;
+    const chosen = chosenMelodyTarget();
+    if (!chosen) return null;
     const y = melodyMouseY();
-    return melodyChoiceLayout(melodyChoice).find((opt) =>
+    return melodyChoiceLayout(chosen).find((opt) =>
       MOUSE.x >= opt.x - 10 && MOUSE.x <= opt.x + 20 && y >= opt.y - 20 && y <= opt.y + 6) ?? null;
   }
 
@@ -1245,8 +1287,18 @@ const BassStaff = forwardRef<PlayHandle, BassStaffProps>(function BassStaff({ re
     ctx.restore();
   }
 
-  // The melody's rhythm strip: each note (and any rests split off it) at
-  // its place, and a "+" between a note and the rest its last split left.
+  // A rest of `beats` on the melody's staff, at its place there: drawRest
+  // lays rests out on the bass staff, so its middle line moves to B4.
+  function drawMelodyRest(ctx: CanvasRenderingContext2D, x: number, beats: number) {
+    ctx.save();
+    ctx.translate(x, melodyY(34) - (STAFF_Y_OFFSET + MAIN_LINES_Y[2]));
+    drawRest(ctx, 0, noteValue(beats));
+    ctx.restore();
+  }
+
+  // The melody's rhythm strip: each note (and any rests split off it - a
+  // note where one's sung) at its place, and a "+" between a note and the
+  // rest its last split left.
   function melodyStrip() {
     return melodyNotes.map((n, k) => {
       const x = lyricXs[n.step];
@@ -1255,12 +1307,17 @@ const BassStaff = forwardRef<PlayHandle, BassStaffProps>(function BassStaff({ re
     });
   }
 
-  function melodyStripHit(): { op: 'split' | 'join', k: number } | null {
+  // A strip click: split a note, join its last split, or rest a rest sung.
+  function melodyStripHit(): { op: 'split' | 'join' | 'rest', k: number, index?: number } | null {
     const y = melodyMouseY();
     if (melodyChoice === null || y < MELODY_STRIP_TOP || y > MELODY_STRIP_BOTTOM) return null;
     const strip = melodyStrip();
     const join = strip.find((item) => item.join !== null && Math.abs(MOUSE.x - item.join) <= 8);
     if (join) return { op: 'join', k: join.k };
+    for (const item of strip) {
+      const index = melodyNotes[item.k].rests.findIndex((r, i) => r.midi !== undefined && MOUSE.x >= item.restX[i] - 8 && MOUSE.x <= item.restX[i] + 12);
+      if (index !== -1) return { op: 'rest', k: item.k, index };
+    }
     const note = strip.find((item) => item.splittable && MOUSE.x >= item.x - 8 && MOUSE.x <= item.x + 12);
     return note ? { op: 'split', k: note.k } : null;
   }
@@ -1277,7 +1334,7 @@ const BassStaff = forwardRef<PlayHandle, BassStaffProps>(function BassStaff({ re
     ctx.fillText('RHYTHM', 14 - lead, MELODY_STRIP_MIDDLE + 4);
     melodyStrip().forEach(({ k, x, restX, splittable, join }) => {
       const n = melodyNotes[k];
-      const lit = k === melodyChoice || (hover?.op === 'split' && hover.k === k);
+      const lit = k === melodyChoice?.k || (hover?.op === 'split' && hover.k === k);
       ctx.save();
       ctx.globalAlpha = splittable || lit ? 1 : 0.5;
       ctx.fillStyle = lit ? colors.hover : colors.ink;
@@ -1287,12 +1344,20 @@ const BassStaff = forwardRef<PlayHandle, BassStaffProps>(function BassStaff({ re
       ctx.scale(STRIP_SCALE, STRIP_SCALE);
       drawNoteGlyph(ctx, 0, 0, noteValue(n.dur), false);
       ctx.restore();
-      ctx.save();
-      ctx.fillStyle = colors.ink;
-      ctx.strokeStyle = colors.ink;
-      ctx.lineWidth = 1.5;
-      n.rests.forEach((r, i) => drawRestAt(ctx, restX[i], MELODY_STRIP_MIDDLE, r.dur, STRIP_SCALE));
-      ctx.restore();
+      n.rests.forEach((r, i) => {
+        ctx.save();
+        ctx.fillStyle = hover?.op === 'rest' && hover.k === k && hover.index === i ? colors.hover : colors.ink;
+        ctx.strokeStyle = ctx.fillStyle;
+        ctx.lineWidth = 1.5;
+        if (r.midi === undefined) {
+          drawRestAt(ctx, restX[i], MELODY_STRIP_MIDDLE, r.dur, STRIP_SCALE);
+        } else {
+          ctx.translate(restX[i], MELODY_STRIP_HEAD);
+          ctx.scale(STRIP_SCALE, STRIP_SCALE);
+          drawNoteGlyph(ctx, 0, 0, noteValue(r.dur), false);
+        }
+        ctx.restore();
+      });
       if (join !== null) {
         const on = hover?.op === 'join' && hover.k === k;
         if (on) {
@@ -1313,11 +1378,30 @@ const BassStaff = forwardRef<PlayHandle, BassStaffProps>(function BassStaff({ re
     ctx.restore();
   }
 
-  // Edits land on the part that owns the words, below any key lift.
-  function setMelodyPitch(k: number, midi: number) {
-    const n = melodyNotes[k];
+  // Edits land on the part that owns the words, below any key lift: a
+  // syllable's pitch, or a stretch it's sung on (a rest given one is sung).
+  function setMelodyPitch(t: { k: number, turn?: MelodyTurn }, midi: number) {
+    const n = melodyNotes[t.k];
     if (!melody || !n) return;
-    dispatch(setMelodyNote({ part: melody.owner, line: n.line, at: n.at, midi: midi - melody.shift }));
+    if (t.turn) dispatch(setMelodyTurn({ part: melody.owner, line: n.line, at: n.at, turn: t.turn, midi: midi - melody.shift }));
+    else dispatch(setMelodyNote({ part: melody.owner, line: n.line, at: n.at, midi: midi - melody.shift }));
+  }
+
+  // A tie from one notehead to the next (or, between two pitches, a slur),
+  // curved away from the stems: below heads whose stems go up, else above.
+  // Drawn as a crescent, thickest in the middle, in the current fill.
+  function drawTie(ctx: CanvasRenderingContext2D, x1: number, y1: number, x2: number, y2: number, below: boolean) {
+    const side = below ? 1 : -1;
+    const from = Math.min(x1 + SPACING, (x1 + x2) / 2 - 1);
+    const to = Math.max(x2 - SPACING, (x1 + x2) / 2 + 1);
+    const [a, b] = [y1 + side * SPACING * 0.9, y2 + side * SPACING * 0.9];
+    const bow = side * Math.min(SPACING * 1.4, 3 + (to - from) * 0.08);
+    const mid = (from + to) / 2;
+    ctx.beginPath();
+    ctx.moveTo(from, a);
+    ctx.quadraticCurveTo(mid, (a + b) / 2 + 2 * bow, to, b);
+    ctx.quadraticCurveTo(mid, (a + b) / 2 + 2 * bow - side * 2.6, from, a);
+    ctx.fill();
   }
 
   function drawMelodyLedgers(ctx: CanvasRenderingContext2D, x: number, step: number) {
@@ -1355,43 +1439,50 @@ const BassStaff = forwardRef<PlayHandle, BassStaffProps>(function BassStaff({ re
 
     ctx.font = '20px serif';
     melodyNotes.forEach((n, k) => {
-      const x = lyricXs[n.step];
-      const step = diatonicStep(n.midi, n.spelled);
-      const y = melodyY(step);
-      ctx.fillStyle = k === melodyChoice ? colors.hover : colors.ink;
-      ctx.strokeStyle = ctx.fillStyle;
-      ctx.lineWidth = 1;
-      drawMelodyLedgers(ctx, x, step);
-      const mark = melodyMarks[k];
-      if (mark !== null) drawAccidental(ctx, mark, accidentalLeft(mark, x), y, STAFF_SPACE);
-      // Stems up below the middle line (B4), down from it, as printed.
-      drawNoteGlyph(ctx, x, y, noteValue(n.dur), step >= 34);
+      // Each written piece of it (cut at the bar lines), tied or slurred to
+      // the one before.
+      let before: { x: number, step: number } | null = null;
+      n.pieces.forEach((p, j) => {
+        const x = j === 0 ? lyricXs[n.step] : xAtBeat(p.beat);
+        const step = diatonicStep(p.midi, p.spelled);
+        const y = melodyY(step);
+        ctx.fillStyle = melodyChoice?.k === k && sameTurn(melodyChoice.turn, p.turn) ? colors.hover : colors.ink;
+        ctx.strokeStyle = ctx.fillStyle;
+        ctx.lineWidth = 1;
+        drawMelodyLedgers(ctx, x, step);
+        const mark = melodyMarks[k]?.[j] ?? null;
+        if (mark !== null) drawAccidental(ctx, mark, accidentalLeft(mark, x), y, STAFF_SPACE);
+        // Stems up below the middle line (B4), down from it, as printed.
+        drawNoteGlyph(ctx, x, y, noteValue(p.dur), step >= 34);
+        if (before && p.join) drawTie(ctx, before.x, melodyY(before.step), x, y, before.step < 34 && step < 34);
+        before = { x, step };
+      });
       ctx.fillStyle = colors.ink;
       ctx.strokeStyle = colors.ink;
-      n.rests.forEach((r) => drawRestAt(ctx, xAtBeat(r.beat), melodyY(34), r.dur));
+      // The rests its splits left (those sung are pieces of it, above).
+      n.rests.filter((r) => r.midi === undefined).flatMap((r) => restsBetween(r.beat, r.beat + r.dur)).forEach((r) => drawMelodyRest(ctx, xAtBeat(r.beat), r.dur));
     });
-    if (melodyChoice !== null && melodyNotes[melodyChoice]) drawMelodyStrip(ctx);
+    // The silences between notes; a whole bar's rest centered in it.
+    (melody?.rests ?? []).forEach((r) => drawMelodyRest(ctx, r.dur >= 4 ? (xAtBeat(r.beat) + xAtBeat(r.beat + r.dur)) / 2 : xAtBeat(r.beat), r.dur));
+    if (melodyChoice !== null && melodyNotes[melodyChoice.k]) drawMelodyStrip(ctx);
 
-    // Where a click would move the note under the mouse.
-    const hovered = !lyricDrag.current && inMelodyRows() && !melodyChoiceAtMouse() ? melodyNoteAtMouse() : -1;
-    if (hovered !== -1) {
-      const n = melodyNotes[hovered];
-      const step = melodyStepAtMouse();
-      if (step !== diatonicStep(n.midi, n.spelled)) {
-        const x = lyricXs[n.step];
-        ctx.globalAlpha = 0.6;
-        ctx.fillStyle = colors.hover;
-        ctx.strokeStyle = colors.hover;
-        drawMelodyLedgers(ctx, x, step);
-        ctx.beginPath();
-        ctx.ellipse(x, melodyY(step), SPACING * 1.05, SPACING * 0.8, -0.2, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.globalAlpha = 1;
-      }
+    // Where a click would put the note (or a rest sung) under the mouse.
+    const hovered = !lyricDrag.current && inMelodyRows() && !melodyChoiceAtMouse() ? melodyTargetAtMouse() : null;
+    const step = melodyStepAtMouse();
+    if (hovered && step !== hovered.step) {
+      ctx.globalAlpha = 0.6;
+      ctx.fillStyle = colors.hover;
+      ctx.strokeStyle = colors.hover;
+      drawMelodyLedgers(ctx, hovered.x, step);
+      ctx.beginPath();
+      ctx.ellipse(hovered.x, melodyY(step), SPACING * 1.05, SPACING * 0.8, -0.2, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.globalAlpha = 1;
     }
 
-    if (melodyChoice !== null && melodyNotes[melodyChoice]) {
-      melodyChoiceLayout(melodyChoice).forEach((opt) => {
+    const chosen = chosenMelodyTarget();
+    if (chosen) {
+      melodyChoiceLayout(chosen).forEach((opt) => {
         const width = ctx.measureText(opt.symbol).width;
         drawOptionChip(ctx, opt.x - 4, opt.y - 18, width + 8, 23);
         ctx.fillStyle = colors.hover;
@@ -1401,12 +1492,22 @@ const BassStaff = forwardRef<PlayHandle, BassStaffProps>(function BassStaff({ re
     ctx.restore();
   }
 
-  // The steps syllable i can be dragged to: any strictly between the
-  // syllables before and after it.
+  // The step each syllable is on with syllable i moved to `to` (past a
+  // neighbour, pushing it and those beyond along), or null if they can't go.
+  const syllablesWith = (i: number, to: number) => pushedSteps(lyrics.syllables.map((s) => s.step), i, to, lyricOnsets);
+
+  // The steps syllable i can be moved to: anywhere the syllables it pushes
+  // along still fit in the part.
   function lyricRange(i: number): number[] {
-    const after = lyrics.syllables[i - 1]?.beat ?? -Infinity;
-    const before = lyrics.syllables[i + 1]?.beat ?? Infinity;
-    return lyricOnsets.flatMap((t, step) => (t > after + 0.02 && t < before - 0.02 ? [step] : []));
+    return lyricOnsets.flatMap((_, step) => (syllablesWith(i, step) ? [step] : []));
+  }
+
+  // Syllable i moved to step `to`, with any it pushes along: one undo step.
+  function moveSyllable(i: number, to: number) {
+    const steps = syllablesWith(i, to);
+    if (!steps) return;
+    const moves = lyrics.syllables.flatMap((s, k) => (steps[k] === s.step ? [] : [{ line: s.line, at: s.at, beat: lyricOnsets[steps[k]] }]));
+    if (moves.length) dispatch(moveSyllables({ part: lyricOwner, moves }));
   }
 
   function drawLyrics(ctx: CanvasRenderingContext2D) {
@@ -1421,7 +1522,7 @@ const BassStaff = forwardRef<PlayHandle, BassStaffProps>(function BassStaff({ re
     ctx.save();
     ctx.font = LYRIC_FONT;
     ctx.textAlign = 'center';
-    const xs = syllables.map((syl, k) => lyricXs[drag && drag.index === k ? drag.step : syl.step]);
+    const xs = syllables.map((syl, k) => lyricXs[drag ? drag.steps[k] : syl.step]);
     // While moving one, the columns it can land on, under the words.
     if (moving !== null) {
       const range = lyricRange(moving).map((step) => lyricXs[step]);
@@ -1584,19 +1685,20 @@ const BassStaff = forwardRef<PlayHandle, BassStaffProps>(function BassStaff({ re
       if (CANVAS) {
         pointAt(event.clientX, event.clientY);
         CANVAS.style.cursor = lyricDrag.current ? 'grabbing' : lyricAtMouse() !== -1 ? 'grab'
-          : inMelodyRows() && melodyNoteAtMouse() !== -1 ? 'pointer' : '';
+          : inMelodyRows() && melodyTargetAtMouse() ? 'pointer' : '';
         requestDraw();
       }
     }
 
-    // Drag a syllable along the columns between its neighbours; it's moved
-    // (one undo step) where it's let go, if that's somewhere new. Driven by
-    // the mouse or a finger: `moveTo` follows it, `finish` drops the
-    // syllable and says whether it moved.
+    // Drag a syllable along the columns; past a neighbour, it pushes that
+    // one and those beyond along, as far as the part's ends. It's moved (one
+    // undo step, with those it pushed) where it's let go, if that's
+    // somewhere new. Driven by the mouse or a finger: `moveTo` follows it,
+    // `finish` drops the syllable and says whether it moved.
     function beginLyricDrag(i: number) {
       const range = lyricRange(i);
       const from = lyrics.syllables[i].step;
-      lyricDrag.current = { index: i, from, step: from };
+      lyricDrag.current = { index: i, from, step: from, steps: lyrics.syllables.map((s) => s.step) };
       CANVAS!.style.cursor = 'grabbing';
       requestDraw();
       return {
@@ -1604,8 +1706,9 @@ const BassStaff = forwardRef<PlayHandle, BassStaffProps>(function BassStaff({ re
           const rect = CANVAS!.getBoundingClientRect();
           const x = clientX - rect.left - leadRef.current;
           const step = range.reduce((best, s) => (Math.abs(lyricXs[s] - x) < Math.abs(lyricXs[best] - x) ? s : best), from);
-          if (lyricDrag.current && step !== lyricDrag.current.step) {
-            lyricDrag.current = { ...lyricDrag.current, step };
+          const steps = syllablesWith(i, step);
+          if (lyricDrag.current && steps && step !== lyricDrag.current.step) {
+            lyricDrag.current = { ...lyricDrag.current, step, steps };
             requestDraw();
           }
         },
@@ -1615,8 +1718,7 @@ const BassStaff = forwardRef<PlayHandle, BassStaffProps>(function BassStaff({ re
           if (CANVAS) CANVAS.style.cursor = '';
           requestDraw();
           if (!drag || drag.step === drag.from) return false;
-          const { line, at } = lyrics.syllables[drag.index];
-          dispatch(setLyricTiming({ part: lyricOwner, line, at, beat: lyricOnsets[drag.step] }));
+          moveSyllable(drag.index, drag.step);
           return true;
         },
       };
@@ -1665,39 +1767,41 @@ const BassStaff = forwardRef<PlayHandle, BassStaffProps>(function BassStaff({ re
     // follow-up (focus moving off an editor this opens, text selection).
     function press(preventDefault: () => void) {
       // The melody staff: a note's offered accidental, a note moved to the
-      // row clicked in its column, or a click on a note to offer its
+      // row clicked in its column (a slurred one too, and a rest a split
+      // left - sung then, slurred to), or a click on a note to offer its
       // accidentals.
       const melodyPick = melodyChoiceAtMouse();
-      if (melodyPick && melodyChoice !== null && melodyKey) {
+      const chosen = chosenMelodyTarget();
+      if (melodyPick && chosen && melodyKey) {
         preventDefault();
-        const n = melodyNotes[melodyChoice];
-        setMelodyPitch(melodyChoice, pitchAtStep(diatonicStep(n.midi, n.spelled), melodyKey, melodyPick.acc).midi);
+        setMelodyPitch(chosen, pitchAtStep(chosen.step!, melodyKey, melodyPick.acc).midi);
         setMelodyChoice(null);
         return;
       }
-      // The selected note's rhythm strip: split a note, or "+" to undo the
-      // last split (the note keeps its syllable; the rest goes).
+      // The selected note's rhythm strip: split a note, "+" to undo the
+      // last split (the note keeps its syllable; the rest goes), or a rest
+      // sung to rest again.
       const stripPick = melodyStripHit();
       if (stripPick && melody) {
         preventDefault();
         const n = melodyNotes[stripPick.k];
-        dispatch(setMelodySplits({ part: melody.owner, line: n.line, at: n.at, splits: n.splits + (stripPick.op === 'split' ? 1 : -1) }));
+        if (stripPick.op === 'rest') dispatch(setMelodyTurn({ part: melody.owner, line: n.line, at: n.at, turn: { kind: 'fill', index: stripPick.index! }, midi: null }));
+        else dispatch(setMelodySplits({ part: melody.owner, line: n.line, at: n.at, splits: n.splits + (stripPick.op === 'split' ? 1 : -1) }));
         return;
       }
       if (inMelodyRows()) {
         preventDefault();
         setPendingNote(null);
-        const k = melodyNoteAtMouse();
-        if (k === -1 || !melodyKey) {
+        const t = melodyTargetAtMouse();
+        if (!t || !melodyKey) {
           setMelodyChoice(null);
           return;
         }
-        const n = melodyNotes[k];
         const step = melodyStepAtMouse();
-        if (step === diatonicStep(n.midi, n.spelled)) {
-          setMelodyChoice(k === melodyChoice ? null : k);
+        if (step === t.step) {
+          setMelodyChoice(melodyChoice?.k === t.k && sameTurn(melodyChoice.turn, t.turn) ? null : { k: t.k, turn: t.turn });
         } else {
-          setMelodyPitch(k, pitchAtStep(step, melodyKey).midi);
+          setMelodyPitch(t, pitchAtStep(step, melodyKey).midi);
           setMelodyChoice(null);
         }
         return;
@@ -2034,8 +2138,9 @@ const BassStaff = forwardRef<PlayHandle, BassStaffProps>(function BassStaff({ re
   }, [requestDraw]);
 
   // Phones: ◀ ▶ either side of the picked syllable step it to the next
-  // column it can land on (one undo step each), and ↺ puts a moved one back
-  // where it lands by itself.
+  // column it can land on (one undo step each), pushing a neighbour it meets
+  // along as a drag does, and ↺ puts a moved one back where it lands by
+  // itself.
   function syllableArrowButtons(k: number) {
     const syllables = lyrics.syllables;
     const syl = syllables[k];
@@ -2052,7 +2157,6 @@ const BassStaff = forwardRef<PlayHandle, BassStaffProps>(function BassStaff({ re
     const x = at + lead;
     const half = Math.max(Math.min(lyricTextWidth(syl.text), room) / 2, 8) + 2;
     const top = (lyricY - 5) * fitScale - ARROW_SIZE / 2;
-    const moveTo = (beat: number | null) => dispatch(setLyricTiming({ part: lyricOwner, line: syl.line, at: syl.at, beat }));
     return (
       <>
         <button
@@ -2060,7 +2164,7 @@ const BassStaff = forwardRef<PlayHandle, BassStaffProps>(function BassStaff({ re
           className={appStyles.syllableArrow}
           style={{ left: x - half - ARROW_SIZE - 2, top, width: ARROW_SIZE, height: ARROW_SIZE }}
           disabled={earlier === undefined}
-          onClick={() => earlier !== undefined && moveTo(lyricOnsets[earlier])}
+          onClick={() => earlier !== undefined && moveSyllable(k, earlier)}
           aria-label={`Move "${syl.text}" earlier`}
         >◀</button>
         <button
@@ -2068,7 +2172,7 @@ const BassStaff = forwardRef<PlayHandle, BassStaffProps>(function BassStaff({ re
           className={appStyles.syllableArrow}
           style={{ left: x + half + 2, top, width: ARROW_SIZE, height: ARROW_SIZE }}
           disabled={later === undefined}
-          onClick={() => later !== undefined && moveTo(lyricOnsets[later])}
+          onClick={() => later !== undefined && moveSyllable(k, later)}
           aria-label={`Move "${syl.text}" later`}
         >▶</button>
         {syl.moved && (
@@ -2076,7 +2180,7 @@ const BassStaff = forwardRef<PlayHandle, BassStaffProps>(function BassStaff({ re
             type="button"
             className={appStyles.syllableArrow}
             style={{ left: x + half + ARROW_SIZE + 6, top, width: ARROW_SIZE, height: ARROW_SIZE }}
-            onClick={() => moveTo(null)}
+            onClick={() => dispatch(setLyricTiming({ part: lyricOwner, line: syl.line, at: syl.at, beat: null }))}
             aria-label={`Put "${syl.text}" back`}
             title="Put it back where it lands by itself"
           >↺</button>
@@ -2131,14 +2235,32 @@ const BassStaff = forwardRef<PlayHandle, BassStaffProps>(function BassStaff({ re
         {showBass && section && (
           // Over the clef (in tab, over the TAB letters): its bottom a little
           // above the staff's or tab's top line.
-          <BassPatternMenu
+          <RhythmMenu
             key={part}
+            options={BASS_RHYTHMS}
             current={currentPattern}
             onPick={(pattern) => dispatch(setBassPattern({ part, pattern }))}
+            heading="Bass rhythm for the whole part"
+            label="Bass rhythms"
+            title="Set the whole bass part to a common rhythm"
             style={{
               left: CLEF_X,
               top: (offset + (viewMode === 'staff' ? STAFF_Y_OFFSET + MAIN_LINES_Y[0] : TAB_LINE_Y[0]) - RHYTHM_BUTTON_GAP) * fitScale,
             }}
+          />
+        )}
+        {melody && melodyNotes.length > 0 && (
+          // Over the treble clef: after the bass's, so its menu opens over
+          // that one's button. It sets the meter of whoever owns the words.
+          <RhythmMenu
+            key={`melody:${part}`}
+            options={MELODY_RHYTHMS}
+            current={currentMeter}
+            onPick={(meter) => dispatch(setLyricMeter({ part: melody.owner, meter }))}
+            heading="Melody rhythm for the whole part"
+            label="Melody rhythms"
+            title="Set the whole melody to a poetic meter"
+            style={{ left: CLEF_X, top: (melodyShift + TREBLE_CLEF_TOP - MELODY_RHYTHM_GAP) * fitScale }}
           />
         )}
         {syllableArrows && pickedSyllable !== null && syllableArrowButtons(pickedSyllable)}

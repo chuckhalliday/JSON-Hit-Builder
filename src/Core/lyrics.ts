@@ -14,6 +14,9 @@ export interface Syllable {
   line: number; // which phrase (non-blank line) it's in
   at: number; // its place in that line
   moved: boolean; // dragged off its automatic spot
+  // The longest it's sung, in beats, when its meter cuts it short of the
+  // next syllable (an unstressed one in a falling meter: an eighth).
+  hold?: number;
 }
 
 // Syllables dragged off their automatic spots, by line: each line's moves
@@ -29,6 +32,42 @@ export interface LyricPlacement {
 }
 
 export const NO_WORDS = '-';
+
+// ---- Meters ----------------------------------------------------------------
+
+// The rhythms a part's words can be set in (the Rhythm menu over the treble
+// clef). Even is the plain setting placeLyrics describes. The poetic meters
+// put a stressed syllable on beats 1 and 3, its unstressed ones beside it on
+// the eighth grid, and mark where each foot ends. A rising meter (da-DUM)
+// leads into the stress with pickup eighths and holds it; its lines start on
+// pickups and land on the downbeat, as Even's do. A falling one (DUM-da)
+// follows the stress with its unstressed syllables, the last an eighth with
+// a rest after it; its lines start on the downbeat. (Played as a stream, a
+// rising foot and its falling twin would otherwise be the same notes, only
+// grouped apart.) A line with more syllables than its meter has room for is
+// set evenly.
+export type LyricMeter = 'even' | 'iambic' | 'trochaic' | 'anapestic' | 'dactylic';
+
+export interface LyricMeterDef {
+  id: LyricMeter;
+  name: string;
+  foot: string; // its syllables, the stressed one in capitals
+  about: string;
+  // Beats after each stress its unstressed syllables fall on (the next
+  // foot's pickups, for a rising meter), and which way the foot goes.
+  weak?: number[];
+  rising?: boolean;
+}
+
+export const LYRIC_METERS: LyricMeterDef[] = [
+  { id: 'even', name: 'Even', foot: 'da da da da', about: 'Syllables evenly on the beat (on eighths when a line is busy), each line landing on a downbeat' },
+  { id: 'iambic', name: 'Iambic', foot: 'da-DUM', weak: [1.5], rising: true, about: 'A pickup eighth into each held stress: lines start on the pickup and land on the downbeat' },
+  { id: 'trochaic', name: 'Trochaic', foot: 'DUM-da', weak: [1], rising: false, about: 'A stress on the beat, then an eighth and a rest: lines start on the downbeat' },
+  { id: 'anapestic', name: 'Anapestic', foot: 'da-da-DUM', weak: [1, 1.5], rising: true, about: 'Two pickup eighths into each stress: lines start on them and land on the downbeat' },
+  { id: 'dactylic', name: 'Dactylic', foot: 'DUM-da-da', weak: [0.5, 1], rising: false, about: 'Three eighths from the beat, then a rest: lines start on the downbeat' },
+];
+
+export const meterDef = (id: LyricMeter | undefined) => LYRIC_METERS.find(m => m.id === (id ?? 'even'))!;
 
 // ---- Syllables -------------------------------------------------------------
 
@@ -143,12 +182,13 @@ const onGrid = (beat: number, per: number) => Math.abs(beat * per - Math.round(b
 // runs back from there - on the beat when the syllables fit, else on
 // eighths, else on every step - so short lines read as pickups and long
 // ones fill the bar. Syllables that don't fit even on every step are
-// counted as overflow and left off.
+// counted as overflow and left off. A `meter` other than Even sets each line
+// of a bar or longer in its feet instead, when they fit (meterSlots).
 //
 // Dragged syllables (`timing`) then move to their beats - each one only if a
 // step starts there and it stays strictly between its neighbours, else it
 // keeps its automatic spot.
-export function placeLyrics(text: string, drumGroove: number[], timing?: LyricTiming): LyricPlacement {
+export function placeLyrics(text: string, drumGroove: number[], timing?: LyricTiming, meter?: LyricMeter): LyricPlacement {
   const lineTexts = lyricLines(text);
   const lines = lineTexts.map(lineSyllables);
   const total = lines.reduce((n, line) => n + line.length, 0);
@@ -156,6 +196,7 @@ export function placeLyrics(text: string, drumGroove: number[], timing?: LyricTi
   const length = drumGroove.reduce((t, d) => (onsets.push(t), t + d), 0);
   const placement: LyricPlacement = { syllables: [], total, overflow: 0, lines: lines.length };
   if (lines.length === 0 || onsets.length === 0) return placement;
+  const def = meterDef(meter);
 
   const bars = Math.max(1, Math.round(length / 4));
   const m = lines.length;
@@ -175,12 +216,45 @@ export function placeLyrics(text: string, drumGroove: number[], timing?: LyricTi
       upToLanding,
     ];
     const fit = tiers.find(tier => tier.length >= line.length);
-    const slots = fit ? fit.slice(fit.length - line.length) : steps.slice(0, line.length);
+    const metered = def.weak && span >= 4 ? meterSlots(def, line.length, from, to, land, steps) : null;
+    const slots: Array<{ step: number, beat: number, hold?: number }> = metered ?? (fit ? fit.slice(fit.length - line.length) : steps.slice(0, line.length));
     placement.overflow += line.length - slots.length;
-    slots.forEach((slot, i) => placement.syllables.push({ ...line[i], step: slot.step, beat: slot.beat, line: k, at: i, moved: false }));
+    slots.forEach((slot, i) => placement.syllables.push({
+      ...line[i], step: slot.step, beat: slot.beat, line: k, at: i, moved: false, ...(slot.hold ? { hold: slot.hold } : {}),
+    }));
   });
   if (timing) applyTiming(placement.syllables, lineTexts, timing, onsets);
   return placement;
+}
+
+// A line's steps in a meter, in its stretch [from, to): a stress on every
+// other beat from the stretch's start (beats 1 and 3), its unstressed
+// syllables at their offsets - each on the step nearest (the later on a tie,
+// so a shuffle's "&" is its swung one), and in a falling meter held an
+// eighth. A rising line runs back from a stress: the landing, or a later one
+// when it needs the room. A falling one runs on from the top. Null when the
+// line has more syllables than there are places.
+function meterSlots(meter: LyricMeterDef, count: number, from: number, to: number, land: number, steps: Array<{ beat: number, step: number }>) {
+  if (steps.length === 0) return null;
+  const nearest = (beat: number) => steps.reduce((near, s) => (Math.abs(s.beat - beat) <= Math.abs(near.beat - beat) + EPS / 2 ? s : near));
+  const places: Array<{ beat: number, step: number, hold?: number }> = [];
+  for (let at = from; at < to - EPS; at += 2) {
+    for (const [offset, stress] of [[0, true], ...meter.weak!.map(w => [w, false])] as Array<[number, boolean]>) {
+      if (at + offset >= to - EPS) continue;
+      const { beat, step } = nearest(at + offset);
+      if (places.length && beat <= places[places.length - 1].beat + EPS) continue;
+      const eighth = nearest(beat + 0.5).beat - beat;
+      places.push({ beat, step, ...(stress || meter.rising ? {} : { hold: eighth > EPS ? eighth : 0.5 }) });
+    }
+  }
+  if (meter.rising) {
+    for (let end = land; end < to - EPS; end += 2) {
+      const upTo = places.filter(p => p.beat <= end + EPS);
+      if (upTo.length >= count) return upTo.slice(upTo.length - count);
+    }
+    return null;
+  }
+  return places.length >= count ? places.slice(0, count) : null;
 }
 
 // The phrases of a part's words: its non-blank lines, trimmed (none for "-").
@@ -214,19 +288,69 @@ function applyTiming(syllables: Syllable[], lineTexts: string[], timing: LyricTi
   }
 }
 
-// The timing with syllable `at` of line `line` dragged to `beat` (or, for
-// null, put back), for words `text`. Lines whose words have changed since
-// their moves were made lose them.
-export function withLyricMove(text: string, timing: LyricTiming | undefined, line: number, at: number, beat: number | null): LyricTiming | undefined {
+export interface SyllableMove {
+  line: number;
+  at: number;
+  beat: number | null; // null: back where it lands by itself
+}
+
+// The timing with each syllable `at` of line `line` dragged to `beat` (or,
+// for null, put back), for words `text`. Lines whose words have changed
+// since their moves were made lose them.
+export function withLyricMoves(text: string, timing: LyricTiming | undefined, moves: SyllableMove[]): LyricTiming | undefined {
   const lines = lyricLines(text);
   const next: LyricTiming = lines.map((lineText, k) => {
     const entry = timing?.[k];
     const beats = entry && entry.text === lineText ? [...entry.beats] : [];
-    if (k === line) beats[at] = beat === null ? null : Math.round(beat * 1000) / 1000;
+    for (const move of moves) if (move.line === k) beats[move.at] = move.beat === null ? null : Math.round(move.beat * 1000) / 1000;
     const kept = Array.from({ length: lineSyllables(lineText).length }, (_, i) => beats[i] ?? null);
     return kept.some(b => b !== null) ? { text: lineText, beats: kept } : null;
   });
   return next.some(Boolean) ? next : undefined;
+}
+
+export const withLyricMove = (text: string, timing: LyricTiming | undefined, line: number, at: number, beat: number | null) =>
+  withLyricMoves(text, timing, [{ line, at, beat }]);
+
+// The step whose onset is nearest a beat (onsets in order).
+function nearestStep(onsets: number[], beat: number): number {
+  let lo = 0;
+  let hi = onsets.length - 1;
+  while (lo < hi) {
+    const mid = (lo + hi) >> 1;
+    if (onsets[mid] < beat) lo = mid + 1;
+    else hi = mid;
+  }
+  return lo > 0 && beat - onsets[lo - 1] < onsets[lo] - beat ? lo - 1 : lo;
+}
+
+// A part's syllables (the steps they're on, in order) with syllable `i`
+// dragged to step `to`: the step each is then on. Between its neighbours it
+// moves alone. Past one, it pushes that one onto the step beside it, and
+// every syllable beyond along by as much as a block - keeping their rhythm
+// (each on the step nearest its new beat, should the grid there differ) - as
+// far as the part's first and last steps. Null past those.
+export function pushedSteps(steps: number[], i: number, to: number, onsets: number[]): number[] | null {
+  const out = [...steps];
+  out[i] = to;
+  const last = onsets.length - 1;
+  for (const dir of [1, -1]) {
+    const first = i + dir;
+    if (steps[first] === undefined || dir * (steps[first] - to) > 0) continue;
+    if (to + dir < 0 || to + dir > last) return null;
+    const shift = onsets[to + dir] - onsets[steps[first]];
+    let prev = to;
+    for (let k = first; k >= 0 && k < steps.length; k += dir) {
+      const beat = onsets[steps[k]] + shift;
+      if (beat < -EPS || beat > onsets[last] + EPS) return null;
+      let step = nearestStep(onsets, beat);
+      if (dir * (step - prev) <= 0) step = prev + dir;
+      if (step < 0 || step > last) return null;
+      out[k] = step;
+      prev = step;
+    }
+  }
+  return out;
 }
 
 // ---- Which words a part sings ---------------------------------------------
@@ -235,20 +359,21 @@ export interface PartWords {
   text: string;
   // The earlier part whose words this one repeats, when it has none of its own.
   from: number | null;
-  // Their dragged syllables - which travel with the words.
+  // Their dragged syllables and meter - which travel with the words.
   timing?: LyricTiming;
+  meter?: LyricMeter;
 }
 
 // A part's own words, or - for a repeated section other than a verse, left
 // blank - those of the last earlier part of the same kind that has some.
-export function partLyrics(parts: Array<{ type: string; lyrics?: string; lyricTiming?: LyricTiming }>, index: number): PartWords {
+export function partLyrics(parts: Array<{ type: string; lyrics?: string; lyricTiming?: LyricTiming; lyricMeter?: LyricMeter }>, index: number): PartWords {
   const part = parts[index];
   const own = part?.lyrics?.trim() ?? '';
-  if (own) return own === NO_WORDS ? { text: '', from: null } : { text: part!.lyrics!, from: null, timing: part!.lyricTiming };
+  if (own) return own === NO_WORDS ? { text: '', from: null } : { text: part!.lyrics!, from: null, timing: part!.lyricTiming, meter: part!.lyricMeter };
   if (!part || part.type === 'Verse') return { text: '', from: null };
   for (let i = index - 1; i >= 0; i--) {
     const earlier = parts[i].lyrics?.trim() ?? '';
-    if (parts[i].type === part.type && earlier && earlier !== NO_WORDS) return { text: parts[i].lyrics!, from: i, timing: parts[i].lyricTiming };
+    if (parts[i].type === part.type && earlier && earlier !== NO_WORDS) return { text: parts[i].lyrics!, from: i, timing: parts[i].lyricTiming, meter: parts[i].lyricMeter };
   }
   return { text: '', from: null };
 }

@@ -8,7 +8,7 @@
 
 import { ChordEvent, Key } from './theory';
 import { GenerationTuning } from '../types';
-import type { LyricTiming } from './lyrics';
+import type { LyricMeter, LyricTiming } from './lyrics';
 import type { PartMelody } from './melody';
 
 export type SectionLabel =
@@ -78,6 +78,7 @@ export interface SectionInstance {
   // section: a second verse has its own words.
   lyrics?: string;
   lyricTiming?: LyricTiming; // syllables dragged on the staff
+  lyricMeter?: LyricMeter; // the meter they're set in (absent: Even)
   melody?: PartMelody; // the tune for these words (see melody.ts)
 }
 

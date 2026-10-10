@@ -1,4 +1,4 @@
-import { lineSyllables, partLyrics, placeLyrics, syllabify, withLyricMove } from './lyrics';
+import { LyricMeter, lineSyllables, partLyrics, placeLyrics, pushedSteps, syllabify, withLyricMove, withLyricMoves } from './lyrics';
 import { generateDoc } from './generate';
 import { realizeSong } from './realize';
 import { stepXs } from '../SongStructure/bass';
@@ -90,6 +90,62 @@ describe('placeLyrics', () => {
   });
 });
 
+describe('meters', () => {
+  // 4 bars of eighths, two lines: each line a two-bar stretch [0, 8).
+  const line = (n: number) => Array.from({ length: n }, (_, i) => `s${i}`).join(' ');
+  const set = (n: number, meter: LyricMeter, groove = eighths(4)) =>
+    placeLyrics(`${line(n)}\n${line(n)}`, groove, undefined, meter).syllables.filter(s => s.line === 0);
+  const beats = (n: number, meter: LyricMeter) => set(n, meter).map(s => s.beat);
+
+  it('sets iambic lines in short-long pairs, from a pickup to the downbeat', () => {
+    expect(beats(4, 'iambic')).toEqual([1.5, 2, 3.5, 4]);
+    expect(beats(5, 'iambic')).toEqual([0, 1.5, 2, 3.5, 4]);
+    // A line that needs the room lands on a later stress.
+    expect(beats(6, 'iambic')).toEqual([1.5, 2, 3.5, 4, 5.5, 6]);
+  });
+
+  it('starts trochaic lines on the downbeat, each unstressed syllable an eighth and a rest', () => {
+    expect(set(5, 'trochaic').map(s => [s.beat, s.hold])).toEqual([[0, undefined], [1, 0.5], [2, undefined], [3, 0.5], [4, undefined]]);
+  });
+
+  it('leads anapests into the stress on two eighths, and follows a dactyl\'s with them', () => {
+    expect(beats(3, 'anapestic')).toEqual([3, 3.5, 4]);
+    expect(beats(7, 'anapestic')).toEqual([0, 1, 1.5, 2, 3, 3.5, 4]);
+    expect(set(7, 'dactylic').map(s => [s.beat, s.hold])).toEqual([[0, undefined], [0.5, 0.5], [1, 0.5], [2, undefined], [2.5, 0.5], [3, 0.5], [4, undefined]]);
+  });
+
+  it('sets a rising foot and its falling twin apart, whatever the line\'s length', () => {
+    for (let n = 2; n <= 7; n++) {
+      expect(beats(n, 'trochaic')).not.toEqual(beats(n, 'iambic'));
+      expect(beats(n, 'dactylic')).not.toEqual(beats(n, 'anapestic'));
+    }
+  });
+
+  it('sets a line too busy for its meter evenly, as it sets lines shorter than a bar', () => {
+    expect(beats(8, 'iambic')).toEqual(beats(8, 'even'));
+    expect(beats(9, 'trochaic')).toEqual(beats(9, 'even'));
+    expect(placeLyrics('a b\nc d', eighths(1), undefined, 'trochaic').syllables).toEqual(placeLyrics('a b\nc d', eighths(1)).syllables);
+  });
+
+  it("swings the offbeats in a shuffle, onto each beat's last triplet", () => {
+    const shuffle = new Array(16).fill([1 / 3, 1 / 3, 1 / 3]).flat();
+    expect(set(4, 'iambic', shuffle).map(s => s.beat)).toEqual([1 + 2 / 3, 2, 3 + 2 / 3, 4].map(b => expect.closeTo(b, 6)));
+    // A falling foot's eighth is the swung long one.
+    expect(set(2, 'trochaic', shuffle)[1].hold).toBeCloseTo(2 / 3, 6);
+  });
+
+  it('still lets a syllable be dragged off it, between its neighbours', () => {
+    const text = `${line(4)}\n${line(4)}`;
+    const placed = placeLyrics(text, eighths(4), withLyricMove(text, undefined, 0, 1, 1.5), 'trochaic').syllables;
+    expect(placed.slice(0, 4).map(s => [s.beat, s.moved])).toEqual([[0, false], [1.5, true], [2, false], [3, false]]);
+  });
+
+  it("travels with the words a repeated section sings", () => {
+    const parts = [{ type: 'Chorus', lyrics: 'the hook', lyricMeter: 'dactylic' as LyricMeter }, { type: 'Chorus' }];
+    expect(partLyrics(parts, 1)).toMatchObject({ from: 0, meter: 'dactylic' });
+  });
+});
+
 describe('dragged syllables', () => {
   const text = 'one two three\nfour five six';
   // 4 bars of eighths: two-bar phrases, each landing on beats 2, 3, 4 of its stretch.
@@ -132,6 +188,47 @@ describe('dragged syllables', () => {
     expect(placed.filter(s => s.moved).map(s => [s.line, s.at])).toEqual([[1, 2]]);
     // Putting every move back clears the timing altogether.
     expect(withLyricMove(text, withLyricMove(text, timing, 0, 1, null), 1, 2, null)).toBeUndefined();
+  });
+});
+
+describe('pushing syllables along', () => {
+  // Two bars of eighths: step k starts on beat k / 2.
+  const onsets = eighths(2).map((_, k) => k / 2);
+
+  it('moves a syllable alone between its neighbours', () => {
+    expect(pushedSteps([2, 4, 8], 1, 7, onsets)).toEqual([2, 7, 8]);
+  });
+
+  it('pushes the next one onto the step beside it, and every one beyond along by as much', () => {
+    // Dragged onto the next one's step, it pushes it (and the one after) a
+    // step on, still a beat apart.
+    expect(pushedSteps([2, 4, 8, 10], 1, 8, onsets)).toEqual([2, 8, 9, 11]);
+    expect(pushedSteps([2, 4, 8, 10], 1, 9, onsets)).toEqual([2, 9, 10, 12]);
+  });
+
+  it('pushes the ones before along when dragged back past them', () => {
+    expect(pushedSteps([2, 4, 8, 10], 2, 3, onsets)).toEqual([0, 2, 3, 10]);
+  });
+
+  it("goes no further than the part's first and last steps", () => {
+    expect(pushedSteps([2, 4, 8, 10], 2, 2, onsets)).toBeNull();
+    expect(pushedSteps([2, 14, 15], 0, 14, onsets)).toBeNull();
+    expect(pushedSteps([2, 14, 15], 0, 13, onsets)).toEqual([13, 14, 15]);
+  });
+
+  it('keeps the rhythm on a grid that changes, each one on the step nearest its beat', () => {
+    // A beat of sixteenths, then eighths: pushed a sixteenth, the eighths
+    // beyond have no step there, and land on the nearest (later on a tie).
+    const mixed = [0, 0.25, 0.5, 0.75, 1, 1.5, 2, 2.5, 3, 3.5];
+    const steps = pushedSteps([0, 1, 4, 6], 0, 1, mixed)!;
+    expect(steps).toEqual([1, 2, 5, 7]);
+    steps.slice(1).forEach((s, k) => expect(s).toBeGreaterThan(steps[k]));
+  });
+
+  it('records every syllable a push moves in one timing', () => {
+    const text = 'one two three\nfour five six';
+    const timing = withLyricMoves(text, undefined, [{ line: 0, at: 2, beat: 5 }, { line: 1, at: 0, beat: 10.5 }]);
+    expect(timing).toEqual([{ text: 'one two three', beats: [null, null, 5] }, { text: 'four five six', beats: [10.5, null, null] }]);
   });
 });
 
