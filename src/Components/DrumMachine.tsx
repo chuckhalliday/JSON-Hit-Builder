@@ -51,13 +51,15 @@ interface StepTrackerProps {
   part: number;
   lampsRef: React.MutableRefObject<HTMLInputElement[]>;
   manualSeekEpochRef?: React.MutableRefObject<number>;
+  // Shown in the label column (the next part's name, on its preview).
+  caption?: React.ReactNode;
 }
 
 // The bar ruler and step lamps: the part's timeline, kept apart from the
 // drum grid so it can stay in view (pinned under the keyboard) while the
 // sections below it are collapsed or scrolled. Its columns line up with the
 // grid's and the staff's, and its width sets theirs.
-export function StepTracker({ onRenderWidthChange, part, lampsRef, manualSeekEpochRef }: StepTrackerProps) {
+export function StepTracker({ onRenderWidthChange, part, lampsRef, manualSeekEpochRef, caption }: StepTrackerProps) {
   const dispatch = useDispatch()
   const song = useSelector((state: { song: SongState }) => state.song);
   const steps = song.songStructure[part].stepIds
@@ -133,7 +135,9 @@ export function StepTracker({ onRenderWidthChange, part, lampsRef, manualSeekEpo
   return (
     <div className={styles.machine} ref={trackerRef} loop-pick={picking ?? undefined}>
       {/* Holds the drum grid's label column, so the columns line up. */}
-      <div className={styles.labelList} />
+      <div className={styles.labelList}>
+        {caption && <span className={styles.caption}>{caption}</span>}
+      </div>
 
       <div className={styles.grid}>
         {/* Bar ruler: loop points */}
@@ -198,7 +202,7 @@ export function StepTracker({ onRenderWidthChange, part, lampsRef, manualSeekEpo
                   if (manualSeekEpochRef) {
                     manualSeekEpochRef.current++;
                   }
-                  handleStep(stepId);
+                  handleStep(stepId, false);
                 }}
               />
               <div className={styles.lamp__content} />

@@ -145,6 +145,16 @@ export function partWindow(region: LoopRegion | null, partIndex: number, part: P
   };
 }
 
+// The drum step playback moves on to after `step` while it stays in `part`:
+// the next step, or the loop's start when the loop ends with this step. Null
+// when playback leaves the part (or stops) after it.
+export function upcomingStep(part: number, drumGroove: Groove, step: number, loop: LoopRegion | null): number | null {
+  if (loop && loop.end.part === part && Math.abs(stepBeat(drumGroove, step + 1) - loop.end.beat) < EPS) {
+    return loop.start.part === part ? trackWindow(drumGroove, loop.start.beat, sum(drumGroove)).start : null;
+  }
+  return step + 1 < drumGroove.length ? step + 1 : null;
+}
+
 // DAW-style position: "Verse 1 · 3.1" is bar 3, beat 1; "3.2½" an offbeat.
 export function describePoint(point: LoopPoint, parts: Array<Pick<Part, 'type' | 'repeat'>>): string {
   const part = parts[point.part];

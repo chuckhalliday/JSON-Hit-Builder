@@ -1,5 +1,5 @@
 import { configureStore } from '@reduxjs/toolkit';
-import { trackWindow, partWindow, regionFromSpans, beatsInPart, barAtStep, barSpan, stepSpan, clampRegion, containsPoint, overlapsRegion, describePoint, partBars } from './loop';
+import { trackWindow, partWindow, regionFromSpans, beatsInPart, barAtStep, barSpan, stepSpan, clampRegion, containsPoint, overlapsRegion, describePoint, partBars, upcomingStep } from './loop';
 import song, { setLoopPick, pickLoopSpan, setLoop, extendLoop, SongState } from '../reducers';
 import { createRandomSong } from '../SongStructure/createSong';
 import { generateDoc } from '../Core/generate';
@@ -66,6 +66,23 @@ describe('loop windows', () => {
     expect(clampRegion({ start: { part: 5, beat: 0 }, end: { part: 6, beat: 0 } }, parts)).toBeNull();
     expect(clampRegion({ start: { part: 0, bar: 1 }, end: { part: 0, bar: 2 } } as any, parts)).toBeNull();
     expect(clampRegion(null, parts)).toBeNull();
+  });
+
+  it('finds the step playback moves on to, back to the loop start where the loop ends', () => {
+    const loopBar = (p: number, bar: number) => regionFromSpans(barSpan(p, bar), barSpan(p, bar));
+    // Two bars of eighths, then a bar with a rounded triplet.
+    const drum = [...new Array(16).fill(0.5), 0.5, 0.16, 0.17, 0.17, 1, 2];
+    expect(upcomingStep(1, drum, 7, null)).toBe(8);
+    expect(upcomingStep(1, drum, drum.length - 1, null)).toBeNull();
+    // Looping bar 2 of this part: its last step wraps to its first.
+    expect(upcomingStep(1, drum, 15, loopBar(1, 1))).toBe(8);
+    expect(upcomingStep(1, drum, 14, loopBar(1, 1))).toBe(15);
+    // A loop from a step after the triplet back from the part's end.
+    expect(upcomingStep(1, drum, drum.length - 1, { start: { part: 1, beat: 9 }, end: { part: 1, beat: 12 } })).toBe(20);
+    // A loop that starts in another part leaves this one.
+    expect(upcomingStep(1, drum, 15, { start: { part: 0, beat: 0 }, end: { part: 1, beat: 8 } })).toBeNull();
+    // A loop ending in another part doesn't wrap here.
+    expect(upcomingStep(1, drum, 15, loopBar(2, 1))).toBe(16);
   });
 
   const songs = [

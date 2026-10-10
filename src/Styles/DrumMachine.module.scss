@@ -43,6 +43,14 @@ $rowGap: 8px;
   }
 }
 
+// Two short lines beside the lamps: "Next" over the part's name.
+.caption {
+  font-size: 10px;
+  font-weight: 600;
+  line-height: 1.1;
+  text-align: center;
+}
+
 // A drum's title: click to mute it, double-click to fill or clear its row.
 // No double-tap zoom or text selection, so double-clicks reach the grid.
 .drumTitle {
