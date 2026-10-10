@@ -1,4 +1,4 @@
-import React, { forwardRef, useEffect, useImperativeHandle, useLayoutEffect, useRef, useState } from "react";
+import React, { forwardRef, useEffect, useImperativeHandle, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { playDrums } from "../Playback/playSong";
 import { setDrumState, setDrumCells, retractDrumEdit, SongState, setCurrentBeat, setLoop, extendLoop, pickLoopSpan } from "../reducers";
@@ -9,6 +9,7 @@ import styles from "../Styles/DrumMachine.module.scss";
 import { DrumHit, SongStructure } from "../types";
 import { useLampStep } from "../Playback/useLampStep";
 import { barCopyEdits, DrumCellEdit, stepBarsOf } from "../Core/drumBars";
+import { BarFit } from "./barFit";
 
 // The drums in the store's row order (by voice), named as their titles
 // show them.
@@ -46,6 +47,17 @@ function stepSpacing(drumGroove: number[], step: number) {
   }
 }
 
+// Each step column's place in a fitted layout (see barFit), as styles - or
+// none, for the natural layout.
+function useColumnStyles(fit: BarFit | undefined) {
+  return useMemo(() => fit?.columns.map(c => ({
+    width: c.width,
+    marginLeft: c.marginLeft,
+    marginRight: c.marginRight,
+    '--line': `${c.line}px`,
+  } as React.CSSProperties)), [fit]);
+}
+
 interface StepTrackerProps {
   onRenderWidthChange: (width: number) => void;
   part: number;
@@ -53,13 +65,15 @@ interface StepTrackerProps {
   manualSeekEpochRef?: React.MutableRefObject<number>;
   // Shown in the label column (the next part's name, on its preview).
   caption?: React.ReactNode;
+  // Bars fitted to the screen (phones, while playing).
+  fit?: BarFit;
 }
 
 // The bar ruler and step lamps: the part's timeline, kept apart from the
 // drum grid so it can stay in view (pinned under the keyboard) while the
 // sections below it are collapsed or scrolled. Its columns line up with the
 // grid's and the staff's, and its width sets theirs.
-export function StepTracker({ onRenderWidthChange, part, lampsRef, manualSeekEpochRef, caption }: StepTrackerProps) {
+export function StepTracker({ onRenderWidthChange, part, lampsRef, manualSeekEpochRef, caption, fit }: StepTrackerProps) {
   const dispatch = useDispatch()
   const song = useSelector((state: { song: SongState }) => state.song);
   const steps = song.songStructure[part].stepIds
@@ -69,6 +83,7 @@ export function StepTracker({ onRenderWidthChange, part, lampsRef, manualSeekEpo
 
   const handleStep = useLampStep(lampsRef, part, drumGroove, bassGroove, chordsGroove);
   const trackerRef = useRef<HTMLDivElement>(null);
+  const columnStyles = useColumnStyles(fit);
 
   let drumFractions: string[] = []
 
@@ -130,10 +145,10 @@ export function StepTracker({ onRenderWidthChange, part, lampsRef, manualSeekEpo
       const width = trackerRef.current.scrollWidth;
       onRenderWidthChange(width);
     }
-  }, [onRenderWidthChange, drumGroove]);
+  }, [onRenderWidthChange, drumGroove, fit]);
 
   return (
-    <div className={styles.machine} ref={trackerRef} loop-pick={picking ?? undefined}>
+    <div className={fit ? `${styles.machine} ${styles.fit}` : styles.machine} ref={trackerRef} loop-pick={picking ?? undefined}>
       {/* Holds the drum grid's label column, so the columns line up. */}
       <div className={styles.labelList}>
         {caption && <span className={styles.caption}>{caption}</span>}
@@ -149,6 +164,7 @@ export function StepTracker({ onRenderWidthChange, part, lampsRef, manualSeekEpo
               <span
                 key={stepId}
                 className={styles.barCell}
+                style={columnStyles?.[stepId]}
                 measure-end={spacing.measure}
                 beat-end={spacing.beat}
                 in-loop={stepInLoop(stepId) ? (song.loopEnabled ? 'on' : 'off') : undefined}
@@ -172,7 +188,7 @@ export function StepTracker({ onRenderWidthChange, part, lampsRef, manualSeekEpo
           {stepIds.map((stepId) => {
             const { measure, beat } = stepSpacing(drumGroove, stepId + 1)
             return(
-            <label key={stepId} className={styles.lamp} measure-end={measure} beat-end={beat}>
+            <label key={stepId} className={styles.lamp} style={columnStyles?.[stepId]} measure-end={measure} beat-end={beat}>
               <label className={styles.grooveLabel}>
                 {drumFractions[stepId]}
               </label>
@@ -226,6 +242,8 @@ interface DrumMachineProps {
   // clicking its title.
   muted?: boolean[];
   onToggleMute?: (voice: number) => void;
+  // Bars fitted to the screen (phones, while playing).
+  fit?: BarFit;
 }
 
 // The menu a double-click opens: on a title (`step` null) it fills or
@@ -251,6 +269,7 @@ const DrumMachine = forwardRef<PlayHandle, DrumMachineProps>(function DrumMachin
   fill,
   muted,
   onToggleMute,
+  fit,
 }, ref) {
   const [isPlaying, setIsPlaying] = React.useState(false);
   const stopRef = useRef(false);
@@ -272,6 +291,7 @@ const DrumMachine = forwardRef<PlayHandle, DrumMachineProps>(function DrumMachin
   const numOfSteps = drumGroove.length
 
   const handleStep = useLampStep(lampsRef, part, drumGroove, bassGroove, chordsGroove);
+  const columnStyles = useColumnStyles(fit);
 
     // Filled by the checkbox ref callbacks below. (Its initial value used to
     // be a grid of detached <input>s, built on every render and thrown away.)
@@ -432,7 +452,7 @@ const DrumMachine = forwardRef<PlayHandle, DrumMachineProps>(function DrumMachin
   }));
 
   return (
-    <div className={fill ? `${styles.machine} ${styles.fill}` : styles.machine}>
+    <div className={[styles.machine, fill ? styles.fill : '', fit ? styles.fit : ''].filter(Boolean).join(' ')}>
       {/* Renders titles: click to mute, double-click to fill or clear */}
       <div className={styles.labelList}>
         {trackIds.map((trackId) => (
@@ -459,7 +479,7 @@ const DrumMachine = forwardRef<PlayHandle, DrumMachineProps>(function DrumMachin
                 const id = trackId + '-' + stepId;
                 const { measure, beat } = stepSpacing(drumGroove, stepId + 1)
                 return (
-                  <label className={styles.cell} key={id} measure-end={measure} beat-end={beat}>
+                  <label className={styles.cell} key={id} style={columnStyles?.[stepId]} measure-end={measure} beat-end={beat}>
                     <input
                       key={id}
                       id={id}

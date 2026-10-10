@@ -372,3 +372,30 @@ $rowGap: 8px;
     height: 100%;
   }
 }
+
+// Bars fitted to the screen (phones, while playing): each step column takes
+// the width and margins set on it (barFit), in place of the fixed spacing.
+.machine.fit {
+  .row {
+    column-gap: 0;
+
+    & > * {
+      flex: none;
+    }
+
+    & > [measure-end=true]::after {
+      left: var(--line);
+    }
+  }
+
+  .cell__content {
+    width: 100%;
+  }
+
+  .lamp__content {
+    width: min(14px, 100%);
+    height: auto;
+    aspect-ratio: 1;
+    margin: 0 auto;
+  }
+}

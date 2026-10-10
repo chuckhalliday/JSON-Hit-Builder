@@ -13,6 +13,7 @@ import { parseKeyString } from '../Core/exportMidi';
 import { useTheme } from '../theme';
 import { partLyrics, placeLyrics } from '../Core/lyrics';
 import { stepXs } from '../SongStructure/bass';
+import { BarFit } from './barFit';
 import { canJoinBassNotes, canSplitBassNote } from '../Core/edits';
 import { PPQ, SIXTEENTH, beatsToTicks } from '../Core/time';
 import { canSplitMelodyNote, diatonicStep, melodyFor, noteValue, pitchAtStep } from '../Core/melody';
@@ -286,6 +287,10 @@ interface BassStaffProps {
   // Said by every header in place of its toggle (and the Staff/Tab switch):
   // the next part's preview names the part there.
   headerCaption?: string;
+  // Bars fitted to the screen (phones, while playing): everything drawn
+  // moves to its fitted place, and the canvas takes no edits (they'd store
+  // the moved positions).
+  fit?: BarFit;
 }
 
 
@@ -326,7 +331,7 @@ function readCanvasColors() {
   };
 }
 
-const BassStaff = forwardRef<PlayHandle, BassStaffProps>(function BassStaff({ renderWidth, part, lampsRef, onPlayingChange, viewMode, onViewModeChange, showWords, showBass, onToggleWords, onToggleBass, headers = true, fitHeight, syllableArrows = false, headerCaption }, ref) {
+const BassStaff = forwardRef<PlayHandle, BassStaffProps>(function BassStaff({ renderWidth, part, lampsRef, onPlayingChange, viewMode, onViewModeChange, showWords, showBass, onToggleWords, onToggleBass, headers = true, fitHeight, syllableArrows = false, headerCaption, fit }, ref) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const dispatch = useDispatch()
 
@@ -336,14 +341,22 @@ const BassStaff = forwardRef<PlayHandle, BassStaffProps>(function BassStaff({ re
   const acoustic = song.acoustic
   const beat = song.selectedBeat[2]
 
-  const bassGrid = song.songStructure[part].bassGrid
-  const bassNoteGrid = song.songStructure[part].bassNoteLocations
+  // Where things are drawn - moved to their places when the bars are fitted.
+  const placed = useMemo(() => {
+    const { bassGrid, bassNoteLocations, chordsLocation, measureLines } = song.songStructure[part];
+    if (!fit) return { bassGrid, bassNoteGrid: bassNoteLocations, chordGrid: chordsLocation, measureLines };
+    return {
+      bassGrid: bassGrid.map(fit.x),
+      bassNoteGrid: bassNoteLocations.map((n) => ({ ...n, x: fit.x(n.x) })),
+      chordGrid: chordsLocation.map(fit.x),
+      measureLines: measureLines.map(fit.x),
+    };
+  }, [fit, song.songStructure, part]);
+  const { bassGrid, bassNoteGrid, chordGrid, measureLines } = placed;
   const bassGroove = song.songStructure[part].bassGroove
   const drumGroove = song.songStructure[part].drumGroove
   const chordsGroove = song.songStructure[part].chordsGroove
   const chords = song.songStructure[part].chords
-  const chordGrid = song.songStructure[part].chordsLocation
-  const measureLines = song.songStructure[part].measureLines
 
   const handleStep = useLampStep(lampsRef, part, drumGroove, bassGroove, chordsGroove);
 
@@ -360,7 +373,10 @@ const BassStaff = forwardRef<PlayHandle, BassStaffProps>(function BassStaff({ re
   // this part, or the earlier part a repeat sings.
   const lyricOwner = words.from ?? part;
   const placedLyrics = useMemo(() => placeLyrics(lyricText, drumGrooveForLyrics, lyricTiming), [lyricText, drumGrooveForLyrics, lyricTiming]);
-  const lyricXs = useMemo(() => stepXs(drumGrooveForLyrics), [drumGrooveForLyrics]);
+  const lyricXs = useMemo(() => {
+    const xs = stepXs(drumGrooveForLyrics);
+    return fit ? xs.map(fit.x) : xs;
+  }, [drumGrooveForLyrics, fit]);
   const lyricOnsets = useMemo(() => {
     const onsets: number[] = [];
     drumGrooveForLyrics.reduce((t, d) => (onsets.push(t), t + d), 0);
@@ -440,7 +456,7 @@ const BassStaff = forwardRef<PlayHandle, BassStaffProps>(function BassStaff({ re
     setTabEdit(null);
     setMelodyChoice(null);
     setSelectedSyllable(null);
-  }, [part, viewMode, showWords, showBass]);
+  }, [part, viewMode, showWords, showBass, fit]);
   const pickedSyllable = selectedSyllable !== null && lyrics.syllables[selectedSyllable] ? selectedSyllable : null;
 
   // The rhythm strip (sculpted songs): while a note is selected, the part's
@@ -1965,7 +1981,11 @@ const BassStaff = forwardRef<PlayHandle, BassStaffProps>(function BassStaff({ re
         <canvas
           ref={canvasRef}
           id="myCanvas"
-          style={fitScale !== 1 ? { width: renderWidth || undefined, height: canvasHeight * fitScale } : undefined}
+          style={{
+            ...(fitScale !== 1 && { width: renderWidth || undefined, height: canvasHeight * fitScale }),
+            // Touches pass through to scroll the part instead.
+            ...(fit && { pointerEvents: 'none' }),
+          }}
         />
         {showBass && section && (
           // Over the clef (in tab, over the TAB letters): its bottom a little
