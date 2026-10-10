@@ -114,38 +114,73 @@ const FIT_MAX = 1.2;
 // A part's words while the Melody & lyrics section is collapsed.
 const NO_LYRICS = placeLyrics('', []);
 
-// A treble clef drawn in strokes (no font has one everywhere): x is the
-// curl's center, g the y of the G line it curls around, u the staff space.
+// A treble clef drawn as a filled shape (no font has one everywhere), in
+// the bass clef image's bold, thick-and-thin style: its centerline as cubic
+// segments (in staff spaces, y down, the G line at 0, the curl centered on
+// x 0), each with its width at the start, middle and end. Widths meet where
+// segments do, so the figure swells and tapers in one piece.
+type Point = [number, number];
+const TREBLE_CLEF: Array<{ c: [Point, Point, Point, Point], w: [number, number, number] }> = [
+  // The curl: from its end beside the stem, up and over to the left...
+  { c: [[0.62, 0.08], [0.66, -0.55], [0.20, -1.00], [-0.35, -0.98]], w: [0.16, 0.22, 0.18] },
+  // ...down the bowl's heavy left side...
+  { c: [[-0.35, -0.98], [-0.95, -0.98], [-1.30, -0.45], [-1.28, 0.10]], w: [0.18, 0.34, 0.46] },
+  // ...round the bottom...
+  { c: [[-1.28, 0.10], [-1.26, 0.80], [-0.60, 1.18], [0.05, 1.16]], w: [0.46, 0.36, 0.22] },
+  // ...up the right side...
+  { c: [[0.05, 1.16], [0.80, 1.14], [1.25, 0.62], [1.20, 0.00]], w: [0.22, 0.30, 0.40] },
+  // ...and the heaviest stroke, sweeping up across the staff to the loop.
+  { c: [[1.20, 0.00], [1.14, -0.80], [0.45, -1.35], [-0.05, -2.10]], w: [0.40, 0.50, 0.40] },
+  { c: [[-0.05, -2.10], [-0.50, -2.75], [-0.62, -3.40], [-0.30, -3.95]], w: [0.40, 0.28, 0.16] },
+  // The loop's thin top, leaning right...
+  { c: [[-0.30, -3.95], [-0.05, -4.40], [0.55, -4.55], [0.58, -3.90]], w: [0.16, 0.11, 0.13] },
+  // ...down into the stem...
+  { c: [[0.58, -3.90], [0.60, -3.25], [0.05, -2.85], [0.02, -2.10]], w: [0.13, 0.18, 0.20] },
+  // ...straight down through the bowl...
+  { c: [[0.02, -2.10], [0.12, -0.60], [0.25, 0.80], [0.36, 2.05]], w: [0.20, 0.20, 0.21] },
+  // ...and the hook into the ball.
+  { c: [[0.36, 2.05], [0.42, 2.72], [-0.20, 2.88], [-0.45, 2.40]], w: [0.21, 0.24, 0.30] },
+];
+const TREBLE_BALL = { at: [-0.40, 2.22] as Point, r: 0.44 };
+
+// x is the curl's center, g the y of the G line it curls around, u the
+// staff space. Fills in the context's fill style.
 function drawTrebleClef(ctx: CanvasRenderingContext2D, x: number, g: number, u: number) {
-  const P = (px: number, py: number): [number, number] => [x + px * u, g + py * u];
+  const P = ([px, py]: Point): Point => [x + px * u, g + py * u];
+  const SAMPLES = 24;
   ctx.save();
-  ctx.lineCap = 'round';
-  ctx.lineJoin = 'round';
-  // The whole figure in one hairline-to-medium stroke...
-  ctx.lineWidth = Math.max(1.2, u * 0.11);
+  // Each segment as a band either side of its centerline - all in one
+  // path, so where they meet and cross fills without seams.
   ctx.beginPath();
-  ctx.moveTo(...P(0.12, 0.18));
-  ctx.bezierCurveTo(...P(0.60, 0.15), ...P(0.62, -0.52), ...P(0.05, -0.55));
-  ctx.bezierCurveTo(...P(-0.62, -0.55), ...P(-0.82, 0.30), ...P(-0.42, 0.78));
-  ctx.bezierCurveTo(...P(-0.02, 1.18), ...P(0.95, 1.12), ...P(1.02, 0.35));
-  ctx.bezierCurveTo(...P(1.10, -0.35), ...P(0.50, -1.00), ...P(0.02, -1.50));
-  ctx.bezierCurveTo(...P(-0.55, -2.10), ...P(-0.78, -2.85), ...P(-0.40, -3.70));
-  ctx.bezierCurveTo(...P(-0.15, -4.25), ...P(0.62, -4.40), ...P(0.52, -3.62));
-  ctx.bezierCurveTo(...P(0.45, -2.95), ...P(-0.30, -2.40), ...P(-0.12, -1.40));
-  ctx.lineTo(...P(0.28, 1.95));
-  ctx.bezierCurveTo(...P(0.38, 2.65), ...P(-0.25, 2.85), ...P(-0.48, 2.40));
-  ctx.stroke();
-  // ...weighted where a printed clef is heavy: the outer bowl and the
-  // rising stroke into the loop.
-  ctx.lineWidth = Math.max(2, u * 0.2);
+  for (const { c, w } of TREBLE_CLEF) {
+    const left: Point[] = [];
+    const right: Point[] = [];
+    for (let k = 0; k <= SAMPLES; k++) {
+      const t = k / SAMPLES;
+      const s = 1 - t;
+      const at = (i: 0 | 1) => s * s * s * c[0][i] + 3 * s * s * t * c[1][i] + 3 * s * t * t * c[2][i] + t * t * t * c[3][i];
+      const slope = (i: 0 | 1) => 3 * s * s * (c[1][i] - c[0][i]) + 6 * s * t * (c[2][i] - c[1][i]) + 3 * t * t * (c[3][i] - c[2][i]);
+      const length = Math.hypot(slope(0), slope(1)) || 1;
+      // Half the width here: through the start, middle and end widths.
+      const h = ((1 - t) * w[0] + t * w[2] + 4 * t * s * (w[1] - (w[0] + w[2]) / 2)) / 2;
+      const nx = (slope(1) / length) * h;
+      const ny = (-slope(0) / length) * h;
+      left.push(P([at(0) + nx, at(1) + ny]));
+      right.push(P([at(0) - nx, at(1) - ny]));
+    }
+    ctx.moveTo(...left[0]);
+    left.forEach((p) => ctx.lineTo(...p));
+    right.reverse().forEach((p) => ctx.lineTo(...p));
+    ctx.closePath();
+  }
+  ctx.fill();
+  // The curl's rounded end, and the ball the hook ends in.
+  const [start] = TREBLE_CLEF;
   ctx.beginPath();
-  ctx.moveTo(...P(-0.42, 0.78));
-  ctx.bezierCurveTo(...P(-0.02, 1.18), ...P(0.95, 1.12), ...P(1.02, 0.35));
-  ctx.bezierCurveTo(...P(1.10, -0.35), ...P(0.50, -1.00), ...P(0.02, -1.50));
-  ctx.bezierCurveTo(...P(-0.55, -2.10), ...P(-0.78, -2.85), ...P(-0.40, -3.70));
-  ctx.stroke();
+  ctx.arc(...P(start.c[0]), (start.w[0] / 2) * u, 0, Math.PI * 2);
+  ctx.fill();
   ctx.beginPath();
-  ctx.arc(...P(-0.34, 2.28), u * 0.24, 0, Math.PI * 2);
+  ctx.arc(...P(TREBLE_BALL.at), TREBLE_BALL.r * u, 0, Math.PI * 2);
   ctx.fill();
   ctx.restore();
 }
