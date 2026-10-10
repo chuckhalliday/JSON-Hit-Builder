@@ -23,7 +23,8 @@ import { useSelector, useDispatch } from "react-redux"
 import { playVerse } from '../Playback/playSong';
 import { countIn } from '../Playback/metronome';
 import { getAudioContext } from '../Playback/audioContext';
-import { useLampStep } from '../Playback/useLampStep';
+import { turnTo, useLampStep } from '../Playback/useLampStep';
+import { barFit } from './barFit';
 import { incrementByAmount, setIsPlaying, setMidi, setAcoustic, SongState, setCurrentBeat, newSong, reorderParts, loadSong, setLoopPick, toggleLoop, setPartLinked, setPartSection, duplicatePart, deletePart, setSounds, undo } from '../reducers';
 import { isDetached, linkedCount } from '../Core/generate';
 import { beatsInPart, clampRegion, containsPoint, describePoint, partWindow, stepBeat, sum, trackWindow } from '../Playback/loop';
@@ -494,6 +495,34 @@ function App() {
   const [previewWidth, setPreviewWidth] = useState(0);
   const previewLampsRef = React.useRef<HTMLInputElement[]>([]);
 
+  // Phones fit each bar to the screen while playing (barFit): one bar takes
+  // the open part's width, less its left padding (where a bar's first step
+  // sits once turned to).
+  const [barWidth, setBarWidth] = useState(0);
+  const partViewObserver = React.useRef<ResizeObserver | null>(null);
+  const partViewRef = useCallback((el: HTMLDivElement | null) => {
+    partViewObserver.current?.disconnect();
+    partViewObserver.current = null;
+    if (!el) return;
+    const observer = new ResizeObserver(() => setBarWidth(el.clientWidth - (parseFloat(getComputedStyle(el).paddingLeft) || 0)));
+    observer.observe(el);
+    partViewObserver.current = observer;
+  }, []);
+  const fitOf = (part: number) =>
+    isPhone && isPlaying && barWidth > 0 && song.songStructure[part] ? barFit(song.songStructure[part].drumGroove, barWidth) : undefined;
+  // Fitting moves every bar, so turn to the playhead's bar whenever the fit
+  // comes or goes (playback starting or stopping) or a part opens with it.
+  const openFit = fitOf(currentPart);
+  const wasFitted = React.useRef(false);
+  React.useLayoutEffect(() => {
+    if (!openFit && !wasFitted.current) return;
+    wasFitted.current = !!openFit;
+    const groove = song.songStructure[currentPart]?.drumGroove;
+    if (!groove) return;
+    const [atPart, atStep] = song.selectedBeat;
+    turnTo(lampsRef.current, groove, atPart === currentPart ? atStep : 0);
+  }, [openFit, currentPart]);
+
   useEffect(() => {
      if (isPlaying) {
       const entry = nextEntryRef.current;
@@ -933,6 +962,7 @@ function App() {
                         fitHeight={isPhone ? sectionBodyHeight : undefined}
                         syllableArrows={isPhone && !isPreview}
                         headerCaption={caption}
+                        fit={fitOf(part)}
                       />
                       <div className={isPhone ? styles.fillSection : undefined} hidden={isPhone && !showing('drums')}>
                         {!isPhone && (caption
@@ -945,6 +975,7 @@ function App() {
                             ref={isPreview ? undefined : drumMachineRef}
                             part={part}
                             lampsRef={isPreview ? previewLampsRef : lampsRef}
+                            fit={fitOf(part)}
                             fill={isPhone}
                             muted={mutedDrums}
                             onToggleMute={isPreview ? undefined : toggleDrumMute}
@@ -1001,7 +1032,7 @@ function App() {
                   </>
                 );
                 return (
-                  <div className={styles.openedPart}>
+                  <div className={styles.openedPart} ref={partViewRef}>
                     {/* Bar numbers and lamps stay pinned under the keyboard,
                         whichever sections below are collapsed or scrolled to. */}
                     <div className={styles.trackerBar} style={wide}>
@@ -1010,6 +1041,7 @@ function App() {
                         part={index}
                         lampsRef={lampsRef}
                         manualSeekEpochRef={manualSeekEpochRef}
+                        fit={openFit}
                       />
                       {preview(upNext !== null && (
                         <StepTracker
@@ -1017,6 +1049,7 @@ function App() {
                           part={upNext}
                           lampsRef={previewLampsRef}
                           caption={<>Next<br />{partName(upNext)}</>}
+                          fit={fitOf(upNext)}
                         />
                       ))}
                     </div>

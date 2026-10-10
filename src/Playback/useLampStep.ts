@@ -14,6 +14,43 @@ function sidewaysScroller(el: HTMLElement): HTMLElement | null {
   return null;
 }
 
+// A step's column: its lamp's <label>, as wide as the step's cells.
+const columnOf = (lamps: HTMLInputElement[], drumGroove: number[], step: number) =>
+  (step < drumGroove.length ? lamps[step]?.parentElement ?? null : null);
+
+// The open part's sideways view, found from one of its columns.
+function partView(column: HTMLElement) {
+  const scroller = column.isConnected ? sidewaysScroller(column) : null;
+  if (!scroller) return null;
+  const viewLeft = scroller.getBoundingClientRect().left + scroller.clientLeft;
+  // Where the part's content starts when it isn't scrolled.
+  const inset = parseFloat(getComputedStyle(scroller).paddingLeft) || 0;
+  return {
+    inView(el: HTMLElement) {
+      const { left, right } = el.getBoundingClientRect();
+      return left >= viewLeft - 1 && right <= viewLeft + scroller.clientWidth + 1;
+    },
+    // Scrolls so the bar starting at `barStart` is at the left edge - or
+    // `target` itself, when the bar is too wide for `target` to fit.
+    // Instant, not smooth: this runs on every playback step, and a scroll
+    // animation is main-thread work that can delay pending sample-load
+    // promises past their scheduled audio-clock time.
+    show(target: HTMLElement, barStart: HTMLElement) {
+      const fits = target.getBoundingClientRect().right - barStart.getBoundingClientRect().left <= scroller.clientWidth - inset;
+      scroller.scrollLeft += (fits ? barStart : target).getBoundingClientRect().left - viewLeft - inset;
+    },
+  };
+}
+
+// Turns the part to `step`'s page: its bar at the left edge (or the step
+// itself, where the bar is wider than the screen).
+export function turnTo(lamps: HTMLInputElement[], drumGroove: number[], step: number, stepBars = stepBarsOf(drumGroove)) {
+  const target = columnOf(lamps, drumGroove, step);
+  const barStart = columnOf(lamps, drumGroove, stepBars.indexOf(stepBars[step]));
+  const view = target && partView(target);
+  if (view && barStart) view.show(target, barStart);
+}
+
 export function useLampStep(
   lampsRef: React.MutableRefObject<HTMLInputElement[]>,
   part: number,
@@ -31,37 +68,16 @@ export function useLampStep(
   // view (playback started off screen, or the part was scrolled away) brings
   // its own bar back.
   const follow = useCallback((lampIndex: number) => {
-    // A step's column: its lamp's <label>, as wide as the step's cells.
-    const column = (step: number) => (step < drumGroove.length ? lampsRef.current[step]?.parentElement ?? null : null);
-    const current = column(lampIndex);
-    const scroller = current?.isConnected ? sidewaysScroller(current) : null;
-    if (!current || !scroller) return;
-    const viewLeft = scroller.getBoundingClientRect().left + scroller.clientLeft;
-    // Where the part's content starts when it isn't scrolled.
-    const inset = parseFloat(getComputedStyle(scroller).paddingLeft) || 0;
-    const inView = (el: HTMLElement) => {
-      const { left, right } = el.getBoundingClientRect();
-      return left >= viewLeft - 1 && right <= viewLeft + scroller.clientWidth + 1;
-    };
-    // Brings `step` into view with its bar's first step at the left edge -
-    // or `step` itself there, when the bar is too wide for it to fit (phones).
-    // Instant, not smooth: this runs on every playback step, and a scroll
-    // animation is main-thread work that can delay pending sample-load
-    // promises past their scheduled audio-clock time.
-    const show = (step: number) => {
-      const target = column(step);
-      const barStart = column(stepBars.indexOf(stepBars[step]));
-      if (!target || !barStart) return;
-      const fits = target.getBoundingClientRect().right - barStart.getBoundingClientRect().left <= scroller.clientWidth - inset;
-      scroller.scrollLeft += (fits ? barStart : target).getBoundingClientRect().left - viewLeft - inset;
-    };
+    const current = columnOf(lampsRef.current, drumGroove, lampIndex);
+    const view = current && partView(current);
+    if (!current || !view) return;
     const song = store.getState().song;
     const next = upcomingStep(part, drumGroove, lampIndex, song.loopEnabled ? clampRegion(song.loop, song.songStructure) : null);
-    const nextColumn = next === null ? null : column(next);
-    if (next !== null && nextColumn && (stepBars[next] !== stepBars[lampIndex] || !inView(nextColumn))) {
-      show(next);
-    } else if (!inView(current)) {
-      show(lampIndex);
+    const nextColumn = next === null ? null : columnOf(lampsRef.current, drumGroove, next);
+    if (next !== null && nextColumn && (stepBars[next] !== stepBars[lampIndex] || !view.inView(nextColumn))) {
+      turnTo(lampsRef.current, drumGroove, next, stepBars);
+    } else if (!view.inView(current)) {
+      turnTo(lampsRef.current, drumGroove, lampIndex, stepBars);
     }
   }, [lampsRef, part, drumGroove, stepBars, store]);
 
