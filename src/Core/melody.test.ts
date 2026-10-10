@@ -1,7 +1,8 @@
 import { configureStore } from '@reduxjs/toolkit';
-import { songReducer, newSong, setPartLyrics, setMelodyEnabled, setMelodyNote, rerollMelody, toggleMelodyLock, rerollLayer, setLyricTiming, setMelodySplits, undo, SongState } from '../reducers';
+import { songReducer, newSong, setPartLyrics, setMelodyEnabled, setMelodyNote, rerollMelody, toggleMelodyLock, rerollLayer, setLyricTiming, setLyricMeter, setMelodySplits, setMelodyTurn, moveSyllables, undo, SongState } from '../reducers';
 import { melodySegments } from '../Playback/playMelody';
-import { canSplitMelodyNote, diatonicStep, melodyFor, noteValue, pitchAtStep, MELODY_HIGH, MELODY_LOW } from './melody';
+import { canSplitMelodyNote, diatonicStep, fitToChord, melodyFor, noteValue, pitchAtStep, restsBetween, writtenValues, MELODY_HIGH, MELODY_LOW } from './melody';
+import { LyricMeter, partLyrics, placeLyrics, pushedSteps } from './lyrics';
 import { chordAt } from './bassline';
 import { chordTones, mod12 } from './theory';
 import { transposedKey } from './realize';
@@ -211,6 +212,306 @@ describe("the melody's rhythm strip", () => {
     expect(canSplitMelodyNote({ dur: 0.5, splits: 0 })).toBe(true);
     expect(canSplitMelodyNote({ dur: 0.25, splits: 1 })).toBe(false);
     expect(canSplitMelodyNote({ dur: 4, splits: 4 })).toBe(false);
+  });
+});
+
+describe("the melody's meter (Rhythm menu)", () => {
+  const notesOf = (x: ReturnType<typeof setup>, part = x.v) => melodyFor(x.st().doc, x.st().songStructure, part)!.notes;
+
+  // Every stretch of the part is a note, a rest split off one, or a silence
+  // written as rests - one after another, from the top to the end.
+  const expectTiled = (x: ReturnType<typeof setup>, part: number) => {
+    const m = melodyFor(x.st().doc, x.st().songStructure, part)!;
+    const spans = [
+      ...m.notes.flatMap(n => [{ beat: n.beat, dur: n.dur }, ...n.rests]),
+      ...m.rests,
+    ].sort((a, b) => a.beat - b.beat);
+    let at = 0;
+    spans.forEach(s => { expect(s.beat).toBeCloseTo(at, 1); at = s.beat + s.dur; });
+    expect(at).toBeCloseTo(x.st().songStructure[part].drumGroove.reduce((a, b) => a + b, 0), 1);
+  };
+
+  it('sets the words in it, on the part and its form instance, as one undo step', () => {
+    const x = setup();
+    const even = notesOf(x).map(n => n.beat);
+    x.store.dispatch(setLyricMeter({ part: x.v, meter: 'trochaic' }));
+    expect(x.st().songStructure[x.v].lyricMeter).toBe('trochaic');
+    expect(x.st().doc!.form[x.v].lyricMeter).toBe('trochaic');
+    expect(notesOf(x).map(n => n.beat)).not.toEqual(even);
+    expect(x.st().past!.at(-1)!.label).toBe('meter');
+    // Even is the plain setting, stored as no meter at all.
+    x.store.dispatch(setLyricMeter({ part: x.v, meter: 'even' }));
+    expect(x.st().songStructure[x.v].lyricMeter).toBeUndefined();
+    expect(notesOf(x).map(n => n.beat)).toEqual(even);
+    x.store.dispatch(undo());
+    expect(x.st().songStructure[x.v].lyricMeter).toBe('trochaic');
+  });
+
+  it('puts back syllables dragged and notes split by hand', () => {
+    const x = setup();
+    const n = notesOf(x).find(m => m.full >= 1)!;
+    x.store.dispatch(setMelodySplits({ part: x.v, line: n.line, at: n.at, splits: 1 }));
+    x.store.dispatch(setLyricTiming({ part: x.v, line: 0, at: 0, beat: notesOf(x)[0].beat - 1 }));
+    x.store.dispatch(setLyricMeter({ part: x.v, meter: 'iambic' }));
+    expect(x.st().songStructure[x.v].lyricTiming).toBeUndefined();
+    expect(x.st().doc!.form[x.v].lyricTiming).toBeUndefined();
+    expect(x.st().doc!.form[x.v].melody?.rhythm).toBeUndefined();
+    expect(notesOf(x).every(m => m.splits === 0)).toBe(true);
+  });
+
+  it("sings a falling meter's unstressed syllables as eighths, and playback hears the rests", () => {
+    const x = setup();
+    x.store.dispatch(setLyricMeter({ part: x.v, meter: 'dactylic' }));
+    // Every verse line fits its two bars of dactyls: the syllables off beats
+    // 1 and 3 are the unstressed ones, a line's last included ("quiet now":
+    // DUM-da-da DUM-da).
+    const notes = notesOf(x);
+    const weak = notes.filter(m => m.beat % 2 !== 0);
+    expect(weak.some((m, k) => notes[notes.indexOf(m) + 1]?.line !== m.line)).toBe(true);
+    weak.forEach(m => expect(m.dur).toBe(0.5));
+    const lineEnd = weak.find(m => notes[notes.indexOf(m) + 1]?.line !== m.line)!;
+    const segment = melodySegments({ notes: [lineEnd], from: 0, to: lineEnd.beat + 2 }).find(sg => sg.midi !== null)!;
+    expect(segment.sound).toBe(0.5);
+  });
+
+  it('carries to a repeated chorus singing the same words', () => {
+    const x = setup();
+    x.store.dispatch(setLyricMeter({ part: x.c, meter: 'anapestic' }));
+    const s = x.st();
+    const repeat = s.songStructure.findIndex((p, i) => i > x.c && p.type === 'Chorus');
+    expect(partLyrics(s.songStructure, repeat).meter).toBe('anapestic');
+    expect(melodyFor(s.doc, s.songStructure, repeat)!.notes.length).toBe(notesOf(x, x.c).length);
+  });
+
+  it('leaves no stretch of the part unwritten, in any meter', () => {
+    for (const meter of ['even', 'iambic', 'trochaic', 'anapestic', 'dactylic'] as LyricMeter[]) {
+      const x = setup();
+      x.store.dispatch(setLyricMeter({ part: x.v, meter }));
+      x.store.dispatch(setLyricMeter({ part: x.c, meter }));
+      x.st().songStructure.forEach((_, i) => { if (melodyFor(x.st().doc, x.st().songStructure, i)) expectTiled(x, i); });
+    }
+  });
+
+  it('writes a silence as the longest rests that start on their own beat', () => {
+    expect(restsBetween(1.5, 8)).toEqual([{ beat: 1.5, dur: 0.5 }, { beat: 2, dur: 2 }, { beat: 4, dur: 4 }]);
+    expect(restsBetween(3, 5.25)).toEqual([{ beat: 3, dur: 1 }, { beat: 4, dur: 1 }, { beat: 5, dur: 0.25 }]);
+    expect(restsBetween(4, 4)).toEqual([]);
+  });
+});
+
+describe('notes held over a bar line', () => {
+  // The verse's first syllable dragged `beats` later, pushing the rest along.
+  const pushVerse = (x: ReturnType<typeof setup>, beats: number) => {
+    const p = x.st().songStructure[x.v];
+    const onsets: number[] = [];
+    p.drumGroove.reduce((t, d) => (onsets.push(t), t + d), 0);
+    const placed = placeLyrics(p.lyrics!, p.drumGroove, p.lyricTiming, p.lyricMeter).syllables;
+    const to = onsets.findIndex(t => Math.abs(t - placed[0].beat - beats) < 0.02);
+    const steps = pushedSteps(placed.map(s => s.step), 0, to, onsets)!;
+    x.store.dispatch(moveSyllables({ part: x.v, moves: placed.map((s, k) => ({ line: s.line, at: s.at, beat: onsets[steps[k]] })) }));
+  };
+  const keyOf = (x: ReturnType<typeof setup>) => transposedKey(x.st().doc!.key, x.st().doc!.form[x.v].transpose);
+  const chordAtBeat = (x: ReturnType<typeof setup>, beat: number) =>
+    chordAt(x.st().doc!.sections[x.st().doc!.form[x.v].sectionId].harmony, Math.round(beat * 960));
+  const chordPcs = (x: ReturnType<typeof setup>, beat: number) => chordTones(chordAtBeat(x, beat)).map(r => mod12(keyOf(x).tonic + r));
+
+  it('writes them in pieces cut at the bar line: tied on, or slurred to a chord tone the next bar has', () => {
+    let crossing = 0, slurs = 0;
+    for (const seed of [77, 3, 41, 12, 500, 9]) for (const beats of [3, 2.5, 1]) {
+      const x = setup(seed);
+      pushVerse(x, beats);
+      notesOf(x).forEach(n => {
+        expect(n.pieces[0]).toMatchObject({ beat: n.beat, midi: n.midi });
+        expect(n.pieces[0].join).toBeUndefined();
+        let at = n.beat;
+        n.pieces.forEach((p, j) => {
+          // One after another through the note, none across a bar line.
+          expect(p.beat).toBeCloseTo(at, 6);
+          expect(Math.floor(p.beat / 4 + 1e-6)).toBe(Math.floor(p.beat + p.dur - 1e-3) >> 2);
+          at = p.beat + p.dur;
+          if (j === 0) return;
+          const prev = n.pieces[j - 1];
+          const newBar = Math.abs(p.beat % 4) < 1e-6;
+          if (p.join === 'tie') {
+            expect(p.midi).toBe(prev.midi);
+            if (newBar) expect(chordPcs(x, p.beat)).toContain(mod12(p.midi));
+          } else {
+            expect(p.join).toBe('slur');
+            expect(newBar).toBe(true);
+            expect(chordPcs(x, p.beat)).not.toContain(mod12(prev.midi));
+            // The nearest one (on a two-note chord, that can be a third away).
+            expect(p.midi).toBe(fitToChord(prev.midi, chordAtBeat(x, p.beat), keyOf(x)));
+            slurs++;
+          }
+          if (newBar) crossing++;
+        });
+        expect(at).toBeCloseTo(n.beat + n.dur, 6);
+      });
+    }
+    expect(crossing).toBeGreaterThan(0);
+    expect(slurs).toBeGreaterThan(0);
+  });
+
+  const notesOf = (x: ReturnType<typeof setup>) => melodyFor(x.st().doc, x.st().songStructure, x.v)!.notes;
+
+  it('writes a length the staff has no one value for as tied values, from the beat', () => {
+    expect(writtenValues(0, 4)).toEqual([{ beat: 0, dur: 4 }]);
+    expect(writtenValues(0.5, 2)).toEqual([{ beat: 0.5, dur: 1.5 }]);
+    expect(writtenValues(1.75, 3.5)).toEqual([{ beat: 1.75, dur: 0.25 }, { beat: 2, dur: 1.5 }]);
+    expect(writtenValues(0.5, 4)).toEqual([{ beat: 0.5, dur: 0.5 }, { beat: 1, dur: 3 }]);
+    expect(writtenValues(0, 2.5)).toEqual([{ beat: 0, dur: 2 }, { beat: 2, dur: 0.5 }]);
+    // A triplet's remnant stays on the note it's part of.
+    expect(writtenValues(0, 1 / 3)).toEqual([{ beat: 0, dur: 1 / 3 }]);
+  });
+
+  it('fits a held pitch to the next chord: kept if a chord tone, else to the nearest, falling on a tie', () => {
+    const cMajor = { tonic: 0, mode: 'major' as const };
+    const c = { root: 0, quality: 'maj' as const };
+    expect(fitToChord(64, c, cMajor)).toBe(64);
+    expect(fitToChord(65, c, cMajor)).toBe(64);
+    expect(fitToChord(62, c, cMajor)).toBe(60);
+  });
+
+  it('sings a slurred syllable on to its new pitch, the vowel carrying over', () => {
+    const note = { beat: 3, dur: 2, midi: 64, text: 'light', hyphen: false, pieces: [{ beat: 3, dur: 1, midi: 64 }, { beat: 4, dur: 1, midi: 62, join: 'slur' as const }] };
+    const sung = melodySegments({ notes: [note], from: 0, to: 6 }).filter(s => s.midi !== null);
+    expect(sung.map(s => [s.midi, s.length, s.sound])).toEqual([[64, 1, 1], [62, 2, 1]]);
+    expect(sung[0].syllable!.onset.length).toBeGreaterThan(0);
+    expect(sung[0].syllable!.coda).toEqual([]);
+    expect(sung[1].syllable!.onset).toEqual([]);
+    expect(sung[1].syllable!.coda.length).toBeGreaterThan(0);
+    expect(sung[1].syllable!.vowel).toBe(sung[0].syllable!.vowel);
+  });
+
+  it('exports a slurred syllable as a note per pitch, under its one lyric', () => {
+    const x = setup();
+    pushVerse(x, 3);
+    const s = x.st();
+    const melody = s.songStructure.map((_, i) => melodyFor(s.doc, s.songStructure, i)?.notes ?? null);
+    const track = readMidiFile(songToMidi({ songStructure: s.songStructure, bpm: s.bpm, key: s.key, melody })).tracks.find(t => t.some(e => e.metaType === 0x03 && e.text === 'Melody'))!;
+    const sung = melody.flatMap(m => m ?? []);
+    const pitches = sung.reduce((n, m) => n + 1 + m.pieces.filter(p => p.join === 'slur').length, 0);
+    expect(track.filter(e => e.metaType === 0x05).length).toBe(sung.length);
+    expect(track.filter(e => (e.status & 0xf0) === 0x90).length).toBe(pitches);
+  });
+
+  it("fits a frozen tune's moved notes to the chords they land on, keeping those that fit", () => {
+    let refitted = 0;
+    for (const seed of [77, 3, 41]) {
+      const x = setup(seed);
+      x.store.dispatch(toggleMelodyLock({ part: x.v }));
+      const before = notesOf(x).map(n => n.midi);
+      pushVerse(x, 2.5);
+      const inst = x.st().doc!.form[x.v];
+      const key = transposedKey(x.st().doc!.key, inst.transpose);
+      const scale = [0, 2, 4, 5, 7, 9, 11].map(s => mod12(key.tonic + (key.mode === 'major' ? s : [0, 2, 3, 5, 7, 8, 10][[0, 2, 4, 5, 7, 9, 11].indexOf(s)])));
+      notesOf(x).forEach((n, k, all) => {
+        const tones = chordPcs(x, n.beat);
+        const strong = all[k + 1]?.line !== n.line || Math.round(n.beat * 960) % 1920 === 0;
+        const fitted = tones.includes(mod12(before[k])) || (!strong && scale.includes(mod12(before[k])));
+        if (fitted) expect(n.midi).toBe(before[k]);
+        else { expect(tones).toContain(mod12(n.midi)); refitted++; }
+      });
+      expect(x.st().doc!.form[x.v].melody!.locked).toBe(true);
+      x.store.dispatch(undo());
+      expect(notesOf(x).map(n => n.midi)).toEqual(before);
+    }
+    expect(refitted).toBeGreaterThan(0);
+  });
+});
+
+describe("singing a syllable on past its first pitch", () => {
+  const notesOf = (x: ReturnType<typeof setup>) => melodyFor(x.st().doc, x.st().songStructure, x.v)!.notes;
+  // The verse's first line pushed 3 beats later: "light" is then held over
+  // into the next bar.
+  const held = () => {
+    const x = setup();
+    const p = x.st().songStructure[x.v];
+    const placed = placeLyrics(p.lyrics!, p.drumGroove).syllables;
+    x.store.dispatch(moveSyllables({ part: x.v, moves: placed.map(s => ({ line: s.line, at: s.at, beat: s.beat + 3 })) }));
+    const k = notesOf(x).findIndex(n => n.pieces.some(q => q.turn?.kind === 'bar'));
+    return { x, k };
+  };
+
+  it('sets the pitch held over a bar line by hand, slurred to, as one locked undo step', () => {
+    const { x, k } = held();
+    expect(k).toBeGreaterThan(-1);
+    const n = notesOf(x)[k];
+    const over = n.pieces.find(q => q.turn?.kind === 'bar')!;
+    const pastBefore = x.st().past!.length;
+    // A pitch neither the syllable's nor the one the chord took.
+    const pick = [1, 2, 3, 4].map(d => n.midi + d).find(m => m !== over.midi)!;
+    x.store.dispatch(setMelodyTurn({ part: x.v, line: n.line, at: n.at, turn: { kind: 'bar', index: 0 }, midi: pick }));
+    const after = notesOf(x)[k];
+    const set = after.pieces.filter(q => q.turn?.kind === 'bar');
+    expect(set.map(q => q.midi)).toEqual(set.map(() => pick));
+    expect(set[0].join).toBe('slur');
+    // The syllable's own pitch, and every other note, stay.
+    expect(after.midi).toBe(n.midi);
+    expect(x.st().doc!.form[x.v].melody!.locked).toBe(true);
+    expect(x.st().past!.length).toBe(pastBefore + 1);
+    expect(x.st().past!.at(-1)!.label).toBe('melody edit');
+    // Set to the pitch held, it's tied again.
+    x.store.dispatch(setMelodyTurn({ part: x.v, line: n.line, at: n.at, turn: { kind: 'bar', index: 0 }, midi: n.pieces[0].midi }));
+    expect(notesOf(x)[k].pieces.find(q => q.turn?.kind === 'bar')!.join).toBe('tie');
+    x.store.dispatch(undo());
+    x.store.dispatch(undo());
+    expect(notesOf(x)[k].pieces).toEqual(n.pieces);
+  });
+
+  it('sings a split rest when it gets a pitch: slurred to, the syllable carrying on', () => {
+    const x = setup();
+    const k = notesOf(x).findIndex(m => m.full === 1 && m.beat % 4 < 2);
+    const n = notesOf(x)[k];
+    x.store.dispatch(setMelodySplits({ part: x.v, line: n.line, at: n.at, splits: 1 }));
+    x.store.dispatch(setMelodyTurn({ part: x.v, line: n.line, at: n.at, turn: { kind: 'fill', index: 0 }, midi: n.midi + 2 }));
+    const sung = notesOf(x)[k];
+    expect(sung.rests).toEqual([{ beat: n.beat + 0.5, dur: 0.5, midi: n.midi + 2 }]);
+    expect(sung.pieces.map(q => [q.beat, q.dur, q.midi, q.join])).toEqual([[n.beat, 0.5, n.midi, undefined], [n.beat + 0.5, 0.5, n.midi + 2, 'slur']]);
+    expect(sung.pieces[1].turn).toEqual({ kind: 'fill', index: 0 });
+    // No rest left there to write, and playback sings both pitches on the one syllable.
+    expect(melodyFor(x.st().doc, x.st().songStructure, x.v)!.rests.some(r => r.beat >= n.beat && r.beat < n.beat + 1)).toBe(false);
+    const segments = melodySegments({ notes: notesOf(x), from: n.beat, to: n.beat + 1 }).filter(s => s.midi !== null);
+    expect(segments.map(s => [s.midi, s.sound])).toEqual([[n.midi, 0.5], [n.midi + 2, 0.5]]);
+    expect(segments[1].syllable!.onset).toEqual([]);
+    // Rested again from the strip, it's a rest.
+    x.store.dispatch(setMelodyTurn({ part: x.v, line: n.line, at: n.at, turn: { kind: 'fill', index: 0 }, midi: null }));
+    expect(notesOf(x)[k].rests).toEqual([{ beat: n.beat + 0.5, dur: 0.5 }]);
+    expect(notesOf(x)[k].pieces.length).toBe(1);
+  });
+
+  it("sings rests only in order, and lays them out anew (rested) when the note's split again", () => {
+    const x = setup();
+    const k = notesOf(x).findIndex(m => m.full === 1 && m.beat % 4 < 2);
+    const n = notesOf(x)[k];
+    x.store.dispatch(setMelodySplits({ part: x.v, line: n.line, at: n.at, splits: 2 }));
+    // The second rest given a pitch past a first still rested: not heard.
+    x.store.dispatch(setMelodyTurn({ part: x.v, line: n.line, at: n.at, turn: { kind: 'fill', index: 1 }, midi: n.midi + 1 }));
+    expect(notesOf(x)[k].pieces.length).toBe(1);
+    x.store.dispatch(setMelodyTurn({ part: x.v, line: n.line, at: n.at, turn: { kind: 'fill', index: 0 }, midi: n.midi - 1 }));
+    expect(notesOf(x)[k].pieces.map(q => q.midi)).toEqual([n.midi, n.midi - 1, n.midi + 1]);
+    // Another note's edit keeps them; a new split rests them all.
+    x.store.dispatch(setMelodyNote({ part: x.v, line: 0, at: 0, midi: 67 }));
+    expect(notesOf(x)[k].pieces.length).toBe(3);
+    x.store.dispatch(setMelodySplits({ part: x.v, line: n.line, at: n.at, splits: 1 }));
+    expect(notesOf(x)[k].rests.every(r => r.midi === undefined)).toBe(true);
+    // As does a new meter, which sets the rhythm afresh.
+    x.store.dispatch(setMelodyTurn({ part: x.v, line: n.line, at: n.at, turn: { kind: 'fill', index: 0 }, midi: n.midi - 1 }));
+    x.store.dispatch(setLyricMeter({ part: x.v, meter: 'iambic' }));
+    expect(x.st().doc!.form[x.v].melody!.lines!.every(e => !e?.on)).toBe(true);
+  });
+
+  it('exports a rest sung as a note of its own under the one lyric', () => {
+    const x = setup();
+    const n = notesOf(x).find(m => m.full === 1 && m.beat % 4 < 2)!;
+    x.store.dispatch(setMelodySplits({ part: x.v, line: n.line, at: n.at, splits: 1 }));
+    x.store.dispatch(setMelodyTurn({ part: x.v, line: n.line, at: n.at, turn: { kind: 'fill', index: 0 }, midi: n.midi + 2 }));
+    const s = x.st();
+    const melody = s.songStructure.map((_, i) => melodyFor(s.doc, s.songStructure, i)?.notes ?? null);
+    const track = readMidiFile(songToMidi({ songStructure: s.songStructure, bpm: s.bpm, key: s.key, melody })).tracks.find(t => t.some(e => e.metaType === 0x03 && e.text === 'Melody'))!;
+    const sungNotes = melody.flatMap(m => m ?? []);
+    expect(track.filter(e => e.metaType === 0x05).length).toBe(sungNotes.length);
+    expect(track.filter(e => (e.status & 0xf0) === 0x90).length).toBe(sungNotes.reduce((c, m) => c + 1 + m.pieces.filter(q => q.join === 'slur').length, 0));
   });
 });
 

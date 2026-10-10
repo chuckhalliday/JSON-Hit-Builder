@@ -1526,15 +1526,15 @@ $phone-stage-top: 192px;
     align-items: center;
 }
 
-// The Rhythm button over the bass clef (placed by its bottom center), and
-// its menu of common bass rhythms.
-.bassPatternWrap {
+// The Rhythm button over a clef (placed by its bottom center), and its menu
+// of common rhythms for the bass line or the words.
+.rhythmMenuWrap {
     position: absolute;
     z-index: 3;
     transform: translate(-50%, -100%);
 }
 
-.bassPatternButton {
+.rhythmMenuButton {
     height: 22px;
     padding: 0 8px;
     border: 1px solid var(--c-border);
@@ -1555,13 +1555,13 @@ $phone-stage-top: 192px;
     }
 }
 
-.bassPatternButtonOn {
+.rhythmMenuButtonOn {
     color: var(--c-text);
     border-color: var(--c-info);
     background-color: var(--c-info-soft);
 }
 
-.bassPatternMenu {
+.rhythmMenu {
     position: absolute;
     top: calc(100% + 4px);
     left: 0;
@@ -1575,7 +1575,7 @@ $phone-stage-top: 192px;
     box-shadow: var(--shadow-pop);
 }
 
-.bassPatternOptions {
+.rhythmMenuOptions {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 4px;
@@ -1607,6 +1607,16 @@ $phone-stage-top: 192px;
 
     .patternHit {
       background-color: var(--c-info);
+    }
+}
+
+// A meter's foot (da-DUM), its stressed syllable in bold.
+.meterFoot {
+    font-size: 11px;
+    color: var(--c-text-muted);
+
+    b {
+      color: var(--c-info);
     }
 }
 

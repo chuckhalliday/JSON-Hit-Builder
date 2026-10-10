@@ -10,8 +10,9 @@ import { feelFor, velocity } from "./realism";
 // part's start).
 export interface MelodyPlayback {
   // With their syllables (text, and whether the word goes on), the
-  // acoustic voice sings the words.
-  notes: Array<{ beat: number, dur: number, midi: number, text?: string, hyphen?: boolean }>;
+  // acoustic voice sings the words. A note's slurred pieces are new pitches
+  // its syllable is sung on to (MelodyNote.pieces).
+  notes: Array<{ beat: number, dur: number, midi: number, text?: string, hyphen?: boolean, pieces?: Array<{ beat: number, dur: number, midi: number, join?: 'tie' | 'slur' }> }>;
   from: number;
   to: number;
 }
@@ -31,7 +32,22 @@ export function melodySegments({ notes, from, to }: MelodyPlayback): Segment[] {
   // Pronounced across the whole part first, so words cut by the stretch's
   // start still read as words.
   const sounds = notes.every(n => n.text !== undefined) ? sungSyllables(notes.map(n => ({ text: n.text!, hyphen: !!n.hyphen }))) : null;
-  const sung = notes.map((n, i) => ({ ...n, syllable: sounds?.[i] })).filter(n => n.beat >= from - EPS && n.beat < to - EPS);
+  // A syllable sung on to new pitches is a note per pitch: the first opens
+  // it, the vowel carries on through the rest, the last closes it. It sounds
+  // as long as its pieces (rests sung included).
+  const sung = notes.flatMap((n, i) => {
+    const pieces = n.pieces ?? [];
+    const turns = pieces.filter(p => p.join === 'slur');
+    const starts = [n.beat, ...turns.map(p => p.beat)];
+    const end = pieces.length ? pieces[pieces.length - 1].beat + pieces[pieces.length - 1].dur : n.beat + n.dur;
+    const syllable = sounds?.[i];
+    return starts.map((beat, k) => ({
+      beat,
+      dur: (starts[k + 1] ?? end) - beat,
+      midi: k === 0 ? n.midi : turns[k - 1].midi,
+      syllable: syllable && turns.length ? { onset: k === 0 ? syllable.onset : [], vowel: syllable.vowel, coda: k === turns.length ? syllable.coda : [] } : syllable,
+    }));
+  }).filter(n => n.beat >= from - EPS && n.beat < to - EPS);
   if (sung.length === 0) return to > from ? [{ length: to - from, midi: null, sound: 0 }] : [];
   const segments: Segment[] = [];
   if (sung[0].beat > from + EPS) segments.push({ length: sung[0].beat - from, midi: null, sound: 0 });

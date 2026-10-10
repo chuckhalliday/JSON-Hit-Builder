@@ -85,7 +85,7 @@ export function parseKeyString(keyString: string): Key | null {
 export interface ExportInput {
   songStructure: Part[];
   // Each part's sung melody (Core/melody.ts), if the song has one.
-  melody?: Array<Array<{ beat: number, dur: number, midi: number, text: string, hyphen: boolean }> | null>;
+  melody?: Array<Array<{ beat: number, dur: number, midi: number, text: string, hyphen: boolean, pieces?: Array<{ beat: number, dur: number, midi: number, join?: 'tie' | 'slur' }> }> | null>;
   bpm: number;
   key: string;
   title?: string;
@@ -146,9 +146,18 @@ export function songToMidi({ songStructure, bpm, key, title, melody }: ExportInp
     });
 
     melody?.[index]?.forEach(m => {
-      const at = partStart + Math.round(m.beat * 12) * (PPQ / 12);
+      const tick = (beat: number) => partStart + Math.round(beat * 12) * (PPQ / 12);
+      const at = tick(m.beat);
       sung.push(lyricEvent(at, m.text + (m.hyphen ? '-' : '')));
-      sung.push(...note(MELODY_CHANNEL, m.midi, at, Math.max(30, Math.round(m.dur * PPQ * 0.95)), velocity(CHORD_VELOCITY, at - partStart, part.energy) + 10));
+      // A note per pitch the syllable is sung on (slurred to over a bar
+      // line, or in a rest sung); tied pieces are one note.
+      const pieces = m.pieces ?? [];
+      const turns = pieces.filter(p => p.join === 'slur');
+      const last = pieces[pieces.length - 1];
+      [{ beat: m.beat, midi: m.midi }, ...turns].forEach((p, k, all) => {
+        const end = all[k + 1]?.beat ?? (last ? last.beat + last.dur : m.beat + m.dur);
+        sung.push(...note(MELODY_CHANNEL, p.midi, tick(p.beat), Math.max(30, Math.round((end - p.beat) * PPQ * 0.95)), velocity(CHORD_VELOCITY, at - partStart, part.energy) + 10));
+      });
     });
 
     partStart = stepPos[stepPos.length - 1];
