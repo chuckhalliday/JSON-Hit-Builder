@@ -1320,7 +1320,7 @@ $phone-stage-top: 192px;
 // below collapsed or scrolled away. Opaque, so what scrolls under it stays
 // hidden, and clipped so the bar lines of its last row don't poke out below
 // it - with `clip`, not `hidden`, which would make it a scroller of its own
-// that a lamp's scrollIntoView could shift out of line with the grid.
+// that could shift out of line with the grid.
 .trackerBar {
     position: sticky;
     top: 0;
@@ -1365,8 +1365,31 @@ $phone-stage-top: 192px;
     background-color: var(--c-surface-2);
 }
 
+// The open part's staff and drum grid, with the next part's preview beside
+// them during playback.
+.partBody {
+    position: relative;
+}
+
+// The room past the open part's end during playback (a screen wide; see
+// App), with the next part's matching rows dimmed in it when playback goes
+// on there. Clipped at the side only: a preview taller than the open part
+// runs on below it rather than being cut short.
+.previewPane {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    right: 0;
+    // In the bar/lamp strip, its content sits where the open part's does.
+    padding-block: inherit;
+    overflow-x: clip;
+    opacity: 0.45;
+    pointer-events: none;
+}
+
 // Phones: the open section's space, everything under the tabs.
 .sectionBody {
+    position: relative;
     flex: 1 1 0;
     min-height: 0;
 
@@ -1417,6 +1440,12 @@ $phone-stage-top: 192px;
 .sectionToggleCaret {
     width: 10px;
     font-size: 12px;
+}
+
+// In the dimmed preview, so in full text color.
+.sectionCaption {
+    color: var(--c-text);
+    cursor: default;
 }
 
 // The bass's Staff/Tab switch, in its section header.

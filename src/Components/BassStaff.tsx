@@ -3,7 +3,7 @@ import { useSelector, useDispatch } from 'react-redux';
 import playBass from '../Playback/playBass';
 import { editBassRhythm, setBassPattern, setBassState, setCurrentBeat, setLyricTiming, setMelodyNote, setMelodySplits, SongState } from '../reducers';
 import { PlayHandle } from './Piano';
-import SectionToggle from './SectionToggle';
+import SectionToggle, { SectionCaption } from './SectionToggle';
 import { useLampStep } from '../Playback/useLampStep';
 import appStyles from '../Styles/App.module.scss';
 import { NoteLocation } from '../types';
@@ -283,6 +283,9 @@ interface BassStaffProps {
   // Phones: a tapped syllable is picked, with arrow buttons to step it
   // along (fingers can't drag one reliably).
   syllableArrows?: boolean;
+  // Said by every header in place of its toggle (and the Staff/Tab switch):
+  // the next part's preview names the part there.
+  headerCaption?: string;
 }
 
 
@@ -323,7 +326,7 @@ function readCanvasColors() {
   };
 }
 
-const BassStaff = forwardRef<PlayHandle, BassStaffProps>(function BassStaff({ renderWidth, part, lampsRef, onPlayingChange, viewMode, onViewModeChange, showWords, showBass, onToggleWords, onToggleBass, headers = true, fitHeight, syllableArrows = false }, ref) {
+const BassStaff = forwardRef<PlayHandle, BassStaffProps>(function BassStaff({ renderWidth, part, lampsRef, onPlayingChange, viewMode, onViewModeChange, showWords, showBass, onToggleWords, onToggleBass, headers = true, fitHeight, syllableArrows = false, headerCaption }, ref) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const dispatch = useDispatch()
 
@@ -1927,7 +1930,7 @@ const BassStaff = forwardRef<PlayHandle, BassStaffProps>(function BassStaff({ re
 
   // The Bass section's header, with the Staff/Tab switch while it's open:
   // above the canvas, in a gap under the words, or (collapsed) below them.
-  const bassHeader = (
+  const bassHeader = headerCaption ? <SectionCaption label={headerCaption} /> : (
     <SectionToggle label="Bass" open={showBass} onToggle={onToggleBass}>
       {showBass && (
         <button
@@ -1949,7 +1952,7 @@ const BassStaff = forwardRef<PlayHandle, BassStaffProps>(function BassStaff({ re
     // stop sticking a screen-width into the scroll. Matching the canvas's
     // actual rendered width here gives it room to stick the whole way.
     <div style={{ width: renderWidth || '100%', position: 'relative' }}>
-      {headers && (hasMelody || hasLyrics) && (
+      {headers && (hasMelody || hasLyrics) && (headerCaption ? <SectionCaption label={headerCaption} /> :
         <SectionToggle
           label={hasMelody && hasLyrics ? 'Melody & lyrics' : hasMelody ? 'Melody' : 'Lyrics'}
           open={showWords}

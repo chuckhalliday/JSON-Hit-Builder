@@ -28,3 +28,13 @@ export default function SectionToggle({ label, open, onToggle, children }: Secti
     </div>
   );
 }
+
+// A section header's place in the next part's preview: just the part's
+// name, the same size as a header, so the rows line up.
+export function SectionCaption({ label }: { label: string }) {
+  return (
+    <div className={styles.sectionToggleRow}>
+      <span className={`${styles.sectionToggle} ${styles.sectionCaption}`}>{label}</span>
+    </div>
+  );
+}

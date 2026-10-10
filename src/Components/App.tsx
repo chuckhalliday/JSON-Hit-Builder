@@ -13,7 +13,7 @@ import { PaletteInput, SoundPick } from '../Core/timbre';
 import { SectionLabel } from '../Core/doc';
 import { melodyFor } from '../Core/melody';
 import DrumMachine, { StepTracker } from "./DrumMachine";
-import SectionToggle from './SectionToggle';
+import SectionToggle, { SectionCaption } from './SectionToggle';
 import FitBox from './FitBox';
 import { PHONE_QUERY, useMediaQuery } from './useMediaQuery';
 import { partLyrics, placeLyrics } from '../Core/lyrics';
@@ -59,6 +59,10 @@ function listInputsAndOutputs(midiAccess: WebMidi.MIDIAccess) {
     );
   }
 }
+
+// A preview's ref: out of reach of the mouse, keyboard and screen readers.
+// (Set by hand: React 18 doesn't know the attribute.)
+const inert = (el: HTMLElement | null) => el?.setAttribute('inert', '');
 
 function onMIDIFailure(msg: string) {
   console.error(`Failed to get MIDI access - ${msg}`);
@@ -485,6 +489,10 @@ function App() {
   const handleRenderWidthChange = useCallback((width: number) => {
     setRenderWidth(prev => (prev === width ? prev : width));
   }, []);
+  // The next part's preview, shown to the right of the open part during
+  // playback: its width, and its lamps (kept apart from the playhead's).
+  const [previewWidth, setPreviewWidth] = useState(0);
+  const previewLampsRef = React.useRef<HTMLInputElement[]>([]);
 
   useEffect(() => {
      if (isPlaying) {
@@ -824,14 +832,26 @@ function App() {
                 )}
               </button>
               {isOpen && currentPart === index && (() => {
-                const wide = { width: renderWidth ? `max(${renderWidth}px, 100%)` : '100%' };
+                // During playback the part runs on a screen's width to the
+                // right, so its last bar can snap to the left edge like any
+                // other. When playback goes on into the next part, that room
+                // shows a dimmed preview of it.
+                const upNext = isPlaying && !(loopOn && loopRegion?.end.part === index) && index + 1 < song.songStructure.length ? index + 1 : null;
+                const wide = { width: isPlaying ? `calc(${renderWidth}px + 100%)` : renderWidth ? `max(${renderWidth}px, 100%)` : '100%' };
                 const hasPanel = !!(song.doc && songProps.sectionId && song.doc.sections[songProps.sectionId]);
-                // The part's vocal section, if it has a melody or words.
-                const hasMelody = (melodyFor(song.doc, song.songStructure, index)?.notes.length ?? 0) > 0;
-                const hasWords = placeLyrics(partLyrics(song.songStructure, index).text, songProps.drumGroove).syllables.length > 0;
-                const vocalTab = hasMelody && hasWords ? 'Vocal' : hasMelody ? 'Melody' : hasWords ? 'Lyrics' : null;
-                const phoneOpen: PartSection = phoneSection === 'words' && !vocalTab ? 'drums' : phoneSection;
-                const shows = (section: PartSection) => (isPhone ? phoneOpen === section : !collapsed[section]);
+                // What a part shows: its vocal section, if it has a melody or
+                // words, and its sections in view - on phones the one picked
+                // (its drums, for a part without that vocal section), on
+                // wider screens all but those collapsed.
+                const sectionView = (part: number) => {
+                  const hasMelody = (melodyFor(song.doc, song.songStructure, part)?.notes.length ?? 0) > 0;
+                  const hasWords = placeLyrics(partLyrics(song.songStructure, part).text, song.songStructure[part].drumGroove).syllables.length > 0;
+                  const vocal = hasMelody && hasWords ? 'Vocal' : hasMelody ? 'Melody' : hasWords ? 'Lyrics' : null;
+                  const open: PartSection = phoneSection === 'words' && !vocal ? 'drums' : phoneSection;
+                  return { vocal, open, shows: (section: PartSection) => (isPhone ? open === section : !collapsed[section]) };
+                };
+                const { vocal: vocalTab, open: phoneOpen, shows } = sectionView(index);
+                const partName = (part: number) => `${song.songStructure[part].type} (${song.songStructure[part].repeat})`;
                 const tabs: Array<[PartSection, string]> = [['section', 'Section'], ...(vocalTab ? [['words', vocalTab] as [PartSection, string]] : []), ['bass', 'Bass'], ['drums', 'Drums']];
                 const titleRow = (
                   <div className={styles.partTitleRow}>
@@ -889,6 +909,58 @@ function App() {
                     })()}
                   </div>
                 );
+                // A part's staff and drum grid: the open part's, or the next
+                // part's in its preview - drawn as it will open, but with
+                // lamps of its own, no hold on the playback handles, and the
+                // part's name where its section headers would be.
+                const body = (part: number, isPreview: boolean) => {
+                  const { shows: showing } = isPreview ? sectionView(part) : { shows };
+                  const caption = isPreview ? partName(part) : undefined;
+                  return (
+                    <>
+                      <BassStaff
+                        ref={isPreview ? undefined : bassStaffRef}
+                        renderWidth={isPreview ? previewWidth : renderWidth}
+                        part={part}
+                        lampsRef={isPreview ? previewLampsRef : lampsRef}
+                        viewMode={bassViewMode}
+                        onViewModeChange={setBassViewMode}
+                        showWords={showing('words')}
+                        showBass={showing('bass')}
+                        onToggleWords={() => toggleSection('words')}
+                        onToggleBass={() => toggleSection('bass')}
+                        headers={!isPhone}
+                        fitHeight={isPhone ? sectionBodyHeight : undefined}
+                        syllableArrows={isPhone && !isPreview}
+                        headerCaption={caption}
+                      />
+                      <div className={isPhone ? styles.fillSection : undefined} hidden={isPhone && !showing('drums')}>
+                        {!isPhone && (caption
+                          ? <SectionCaption label={caption} />
+                          : <SectionToggle label="Drums" open={showing('drums')} onToggle={() => toggleSection('drums')} />)}
+                        {/* Hidden rather than unmounted: its checkboxes mirror the
+                            store and its ref plays the part's drums. */}
+                        <div className={isPhone ? styles.fillSection : undefined} hidden={!showing('drums')}>
+                          <DrumMachine
+                            ref={isPreview ? undefined : drumMachineRef}
+                            part={part}
+                            lampsRef={isPreview ? previewLampsRef : lampsRef}
+                            fill={isPhone}
+                            muted={mutedDrums}
+                            onToggleMute={isPreview ? undefined : toggleDrumMute}
+                          />
+                        </div>
+                      </div>
+                    </>
+                  );
+                };
+                // The room past the part's end during playback, holding
+                // `content` (if any) - read-only.
+                const preview = (content: React.ReactNode) => isPlaying && (
+                  <div key={upNext ?? 'end'} ref={inert} className={styles.previewPane} style={{ left: renderWidth }}>
+                    {content}
+                  </div>
+                );
                 const sections = (
                   <>
                     {isPhone ? (
@@ -918,36 +990,14 @@ function App() {
                         </div>
                       </div>
                     )}
-                    <BassStaff
-                      ref={bassStaffRef}
-                      renderWidth={renderWidth}
-                      part={index}
-                      lampsRef={lampsRef}
-                      viewMode={bassViewMode}
-                      onViewModeChange={setBassViewMode}
-                      showWords={shows('words')}
-                      showBass={shows('bass')}
-                      onToggleWords={() => toggleSection('words')}
-                      onToggleBass={() => toggleSection('bass')}
-                      headers={!isPhone}
-                      fitHeight={isPhone ? sectionBodyHeight : undefined}
-                      syllableArrows={isPhone}
-                    />
-                    <div className={isPhone ? styles.fillSection : undefined} style={wide} hidden={isPhone && !shows('drums')}>
-                      {!isPhone && <SectionToggle label="Drums" open={shows('drums')} onToggle={() => toggleSection('drums')} />}
-                      {/* Hidden rather than unmounted: its checkboxes mirror the
-                          store and its ref plays the part's drums. */}
-                      <div className={isPhone ? styles.fillSection : undefined} hidden={!shows('drums')}>
-                        <DrumMachine
-                          ref={drumMachineRef}
-                          part={index}
-                          lampsRef={lampsRef}
-                          fill={isPhone}
-                          muted={mutedDrums}
-                          onToggleMute={toggleDrumMute}
-                        />
+                    {isPhone ? (
+                      <>{body(index, false)}{preview(upNext !== null && body(upNext, true))}</>
+                    ) : (
+                      <div className={styles.partBody} style={wide}>
+                        {body(index, false)}
+                        {preview(upNext !== null && body(upNext, true))}
                       </div>
-                    </div>
+                    )}
                   </>
                 );
                 return (
@@ -961,6 +1011,14 @@ function App() {
                         lampsRef={lampsRef}
                         manualSeekEpochRef={manualSeekEpochRef}
                       />
+                      {preview(upNext !== null && (
+                        <StepTracker
+                          onRenderWidthChange={setPreviewWidth}
+                          part={upNext}
+                          lampsRef={previewLampsRef}
+                          caption={<>Next<br />{partName(upNext)}</>}
+                        />
+                      ))}
                     </div>
                     {isPhone ? (
                       <>
