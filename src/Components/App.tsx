@@ -17,7 +17,7 @@ import SectionToggle, { SectionCaption } from './SectionToggle';
 import FitBox from './FitBox';
 import { PHONE_QUERY, useMediaQuery } from './useMediaQuery';
 import { partLyrics, placeLyrics } from '../Core/lyrics';
-import BassStaff from "./BassStaff";
+import BassStaff, { keyLead } from "./BassStaff";
 import Piano, { PlayHandle } from './Piano';
 import { useSelector, useDispatch } from "react-redux"
 import { playVerse } from '../Playback/playSong';
@@ -25,6 +25,8 @@ import { countIn } from '../Playback/metronome';
 import { getAudioContext } from '../Playback/audioContext';
 import { turnTo, useLampStep } from '../Playback/useLampStep';
 import { barFit } from './barFit';
+import { partKey } from '../Core/keySignature';
+import { keySignature } from '../Core/theory';
 import { incrementByAmount, setIsPlaying, setMidi, setAcoustic, SongState, setCurrentBeat, newSong, reorderParts, loadSong, setLoopPick, toggleLoop, setPartLinked, setPartSection, duplicatePart, deletePart, setSounds, undo } from '../reducers';
 import { isDetached, linkedCount } from '../Core/generate';
 import { beatsInPart, clampRegion, containsPoint, describePoint, partWindow, stepBeat, sum, trackWindow } from '../Playback/loop';
@@ -508,6 +510,9 @@ function App() {
     observer.observe(el);
     partViewObserver.current = observer;
   }, []);
+  // How far a part's key signature pushes its steps right (the staves draw
+  // it; the grid's columns follow).
+  const leadOf = (part: number) => keyLead(keySignature(partKey(song.doc, song.key, part)));
   const fitOf = (part: number) =>
     isPhone && isPlaying && barWidth > 0 && song.songStructure[part] ? barFit(song.songStructure[part].drumGroove, barWidth) : undefined;
   // Fitting moves every bar, so turn to the playhead's bar whenever the fit
@@ -976,6 +981,7 @@ function App() {
                             part={part}
                             lampsRef={isPreview ? previewLampsRef : lampsRef}
                             fit={fitOf(part)}
+                            lead={leadOf(part)}
                             fill={isPhone}
                             muted={mutedDrums}
                             onToggleMute={isPreview ? undefined : toggleDrumMute}
@@ -1042,6 +1048,7 @@ function App() {
                         lampsRef={lampsRef}
                         manualSeekEpochRef={manualSeekEpochRef}
                         fit={openFit}
+                        lead={leadOf(index)}
                       />
                       {preview(upNext !== null && (
                         <StepTracker
@@ -1050,6 +1057,7 @@ function App() {
                           lampsRef={previewLampsRef}
                           caption={<>Next<br />{partName(upNext)}</>}
                           fit={fitOf(upNext)}
+                          lead={leadOf(upNext)}
                         />
                       ))}
                     </div>
