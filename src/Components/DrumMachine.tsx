@@ -67,13 +67,16 @@ interface StepTrackerProps {
   caption?: React.ReactNode;
   // Bars fitted to the screen (phones, while playing).
   fit?: BarFit;
+  // Room for the staves' key signature: the columns start this much further
+  // right (see keyLead).
+  lead?: number;
 }
 
 // The bar ruler and step lamps: the part's timeline, kept apart from the
 // drum grid so it can stay in view (pinned under the keyboard) while the
 // sections below it are collapsed or scrolled. Its columns line up with the
 // grid's and the staff's, and its width sets theirs.
-export function StepTracker({ onRenderWidthChange, part, lampsRef, manualSeekEpochRef, caption, fit }: StepTrackerProps) {
+export function StepTracker({ onRenderWidthChange, part, lampsRef, manualSeekEpochRef, caption, fit, lead = 0 }: StepTrackerProps) {
   const dispatch = useDispatch()
   const song = useSelector((state: { song: SongState }) => state.song);
   const steps = song.songStructure[part].stepIds
@@ -145,12 +148,12 @@ export function StepTracker({ onRenderWidthChange, part, lampsRef, manualSeekEpo
       const width = trackerRef.current.scrollWidth;
       onRenderWidthChange(width);
     }
-  }, [onRenderWidthChange, drumGroove, fit]);
+  }, [onRenderWidthChange, drumGroove, fit, lead]);
 
   return (
     <div className={fit ? `${styles.machine} ${styles.fit}` : styles.machine} ref={trackerRef} loop-pick={picking ?? undefined}>
       {/* Holds the drum grid's label column, so the columns line up. */}
-      <div className={styles.labelList}>
+      <div className={styles.labelList} style={lead ? { paddingRight: lead } : undefined}>
         {caption && <span className={styles.caption}>{caption}</span>}
       </div>
 
@@ -244,6 +247,8 @@ interface DrumMachineProps {
   onToggleMute?: (voice: number) => void;
   // Bars fitted to the screen (phones, while playing).
   fit?: BarFit;
+  // Room for the staves' key signature (as StepTracker's).
+  lead?: number;
 }
 
 // The menu a double-click opens: on a title (`step` null) it fills or
@@ -270,6 +275,7 @@ const DrumMachine = forwardRef<PlayHandle, DrumMachineProps>(function DrumMachin
   muted,
   onToggleMute,
   fit,
+  lead = 0,
 }, ref) {
   const [isPlaying, setIsPlaying] = React.useState(false);
   const stopRef = useRef(false);
@@ -454,7 +460,7 @@ const DrumMachine = forwardRef<PlayHandle, DrumMachineProps>(function DrumMachin
   return (
     <div className={[styles.machine, fill ? styles.fill : '', fit ? styles.fit : ''].filter(Boolean).join(' ')}>
       {/* Renders titles: click to mute, double-click to fill or clear */}
-      <div className={styles.labelList}>
+      <div className={styles.labelList} style={lead ? { paddingRight: lead } : undefined}>
         {trackIds.map((trackId) => (
           <button
             key={trackId}

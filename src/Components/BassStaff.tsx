@@ -7,9 +7,9 @@ import SectionToggle, { SectionCaption } from './SectionToggle';
 import { useLampStep } from '../Playback/useLampStep';
 import appStyles from '../Styles/App.module.scss';
 import { NoteLocation } from '../types';
-import { isStaffPitch, PITCH_MIN_Y } from '../SongStructure/bassPitch';
-import { spellPc, staffY } from '../Core/theory';
-import { parseKeyString } from '../Core/exportMidi';
+import { bassPitch, isStaffPitch, PITCH_MAX_Y, PITCH_MIN_Y, STAFF_STEP } from '../SongStructure/bassPitch';
+import { keySignature, spellPc, staffY } from '../Core/theory';
+import { partKey, shownAccidentals, signaturePlaces, StaffNote } from '../Core/keySignature';
 import { useTheme } from '../theme';
 import { partLyrics, placeLyrics } from '../Core/lyrics';
 import { stepXs } from '../SongStructure/bass';
@@ -184,6 +184,85 @@ function drawTrebleClef(ctx: CanvasRenderingContext2D, x: number, g: number, u: 
   ctx.fill();
   ctx.restore();
 }
+
+// Accidentals drawn as engraved shapes, to match the clefs (a typed # is a
+// hash, not a sharp): each this many staff spaces wide.
+const ACCIDENTAL_WIDTH = { sharp: 0.8, flat: 0.7, natural: 0.58 };
+const accidentalWidth = (alteration: number, u: number) =>
+  (alteration > 0 ? ACCIDENTAL_WIDTH.sharp : alteration < 0 ? ACCIDENTAL_WIDTH.flat : ACCIDENTAL_WIDTH.natural) * u;
+
+// A sharp (1), flat (-1) or natural (0) with its left edge at x, centered on
+// the line or space at y; u the staff space. Fills in the fill style.
+function drawAccidental(ctx: CanvasRenderingContext2D, alteration: number, x: number, y: number, u: number) {
+  const stem = Math.max(1.1, 0.11 * u);
+  const bar = 0.3 * u;
+  // A thick bar across from x0 to x1, centered on cy, rising to the right.
+  const slab = (x0: number, x1: number, cy: number, rise: number) => {
+    ctx.moveTo(x0, cy + rise / 2 - bar / 2);
+    ctx.lineTo(x1, cy - rise / 2 - bar / 2);
+    ctx.lineTo(x1, cy - rise / 2 + bar / 2);
+    ctx.lineTo(x0, cy + rise / 2 + bar / 2);
+    ctx.closePath();
+  };
+  ctx.beginPath();
+  if (alteration > 0) {
+    const w = ACCIDENTAL_WIDTH.sharp * u;
+    ctx.rect(x + 0.24 * w - stem / 2, y - 1.2 * u, stem, 2.55 * u);
+    ctx.rect(x + 0.76 * w - stem / 2, y - 1.35 * u, stem, 2.55 * u);
+    slab(x, x + w, y - 0.42 * u, 0.24 * u);
+    slab(x, x + w, y + 0.42 * u, 0.24 * u);
+  } else if (alteration < 0) {
+    const w = ACCIDENTAL_WIDTH.flat * u;
+    ctx.rect(x, y - 1.75 * u, stem, 2.3 * u);
+    // The bowl, between an outer and an inner curve: heaviest at its lower
+    // right.
+    ctx.moveTo(x + stem / 2, y + 0.55 * u);
+    ctx.bezierCurveTo(x + 0.45 * w, y + 0.3 * u, x + 1.05 * w, y - 0.05 * u, x + 0.98 * w, y - 0.32 * u);
+    ctx.bezierCurveTo(x + 0.92 * w, y - 0.62 * u, x + 0.35 * w, y - 0.6 * u, x + stem / 2, y - 0.18 * u);
+    ctx.lineTo(x + stem / 2, y + 0.02 * u);
+    ctx.bezierCurveTo(x + 0.3 * w, y - 0.32 * u, x + 0.66 * w, y - 0.36 * u, x + 0.66 * w, y - 0.18 * u);
+    ctx.bezierCurveTo(x + 0.66 * w, y + 0.02 * u, x + 0.38 * w, y + 0.24 * u, x + stem / 2, y + 0.38 * u);
+    ctx.closePath();
+  } else {
+    const w = ACCIDENTAL_WIDTH.natural * u;
+    ctx.rect(x, y - 1.3 * u, stem, 1.9 * u);
+    ctx.rect(x + w - stem, y - 0.6 * u, stem, 1.9 * u);
+    slab(x, x + w, y - 0.32 * u, 0.2 * u);
+    slab(x, x + w, y + 0.32 * u, 0.2 * u);
+  }
+  ctx.fill();
+}
+
+// Both staves' key signatures start here, clear of the wider (bass) clef.
+const KEY_X = 86;
+const STAFF_SPACE = 15;
+const KEY_GAP = 0.12 * STAFF_SPACE;
+// A note's accidental sits this far clear of its head (half its width).
+const NOTEHEAD_HALF = 7.9;
+const ACCIDENTAL_GAP = 0.25 * STAFF_SPACE;
+// Where an accidental goes before a note centered at x.
+const accidentalLeft = (alteration: number, x: number) => x - NOTEHEAD_HALF - ACCIDENTAL_GAP - accidentalWidth(alteration, STAFF_SPACE);
+const signatureStep = (signature: number) => accidentalWidth(Math.sign(signature), STAFF_SPACE) + KEY_GAP;
+// How far a key signature pushes the part's steps to the right, so the
+// first note (and a flat before it, the widest) still clears it - the
+// staves' notes, and the grid's columns with them. None in C major.
+const FIRST_ONSET = 115;
+export function keyLead(signature: number): number {
+  if (!signature) return 0;
+  const end = KEY_X + Math.abs(signature) * signatureStep(signature) + 0.6 * STAFF_SPACE;
+  return Math.max(0, Math.ceil(end - accidentalLeft(-1, FIRST_ONSET)));
+}
+
+// A key signature after a clef: `at` gives the y of each place (a diatonic
+// step, as written) on that staff.
+function drawKeySignature(ctx: CanvasRenderingContext2D, signature: number, clef: 'treble' | 'bass', x: number, at: (step: number) => number) {
+  signaturePlaces(signature, clef).forEach((step, i) => {
+    drawAccidental(ctx, Math.sign(signature), x + i * signatureStep(signature), at(step), STAFF_SPACE);
+  });
+}
+// The bass staff's y for a written diatonic step (it sounds an octave lower:
+// E1 sounds at y 120, written as E2, step 16).
+const bassWrittenY = (step: number) => PITCH_MAX_Y - (step - 16) * STAFF_STEP;
 
 // The rhythm strip in the space under the staff (staff coordinates): its
 // band, where its notes' heads and its rests' middles sit, and how much
@@ -451,6 +530,27 @@ const BassStaff = forwardRef<PlayHandle, BassStaffProps>(function BassStaff({ re
     : 0;
   const bassHeaderInGap = wordsShown && showBass;
   const melodyKey = song.doc?.form[part] ? transposedKey(song.doc.key, song.doc.form[part].transpose) : null;
+  // The part's key, its signature on both staves, and the room it takes.
+  const key = partKey(song.doc, song.key, part);
+  const signature = keySignature(key);
+  const lead = keyLead(signature);
+  // Read by the mouse handlers: everything after the clefs is drawn this far
+  // right of where its stored position puts it.
+  const leadRef = useRef(lead);
+  leadRef.current = lead;
+  // The accidental each note shows, if any (shownAccidentals): bars split
+  // at the bar lines, and a note's place the line or space it's on.
+  const barAt = useCallback((x: number) => measureLines.filter((line) => line < x).length, [measureLines]);
+  const bassMarks = useMemo(() => shownAccidentals(bassNoteGrid.map((n): StaffNote | null => {
+    if (!isStaffPitch(n.y)) return null;
+    const place = Math.round((PITCH_MAX_Y - n.y) / STAFF_STEP);
+    // E (letter 2) on the bottom place, as bassPitch reads it.
+    return { bar: barAt(n.x), place, letter: (place + 2) % 7, alteration: bassPitch(n.y, n.acc).midi - bassPitch(n.y, 'none').midi };
+  }), signature), [bassNoteGrid, barAt, signature]);
+  const melodyMarks = useMemo(() => shownAccidentals(melodyNotes.map((n): StaffNote => {
+    const place = diatonicStep(n.midi, n.spelled);
+    return { bar: barAt(lyricXs[n.step]), place, letter: place % 7, alteration: n.spelled.acc };
+  }), signature), [melodyNotes, lyricXs, barAt, signature]);
   // The melody note whose accidentals are on offer.
   const [melodyChoice, setMelodyChoice] = useState<number | null>(null);
 
@@ -638,11 +738,11 @@ const BassStaff = forwardRef<PlayHandle, BassStaffProps>(function BassStaff({ re
     // A faint, labelled band, so the strip reads as an editor, not notation.
     ctx.globalAlpha = 0.08;
     ctx.fillStyle = colors.hover;
-    ctx.fillRect(0, STRIP_TOP, renderWidth, STRIP_BOTTOM - STRIP_TOP);
+    ctx.fillRect(-lead, STRIP_TOP, renderWidth, STRIP_BOTTOM - STRIP_TOP);
     ctx.globalAlpha = 1;
     ctx.fillStyle = colors.muted;
     ctx.font = '10px "Helvetica Neue", Arial, sans-serif';
-    ctx.fillText('RHYTHM', 14, STRIP_MIDDLE + 4);
+    ctx.fillText('RHYTHM', 14 - lead, STRIP_MIDDLE + 4);
     // Notes in their own shapes, smaller: the selected one (and a hovered one
     // that can split) lit, ones too short to split dimmed.
     notes.forEach(({ k, x, splittable }) => {
@@ -904,7 +1004,8 @@ const BassStaff = forwardRef<PlayHandle, BassStaffProps>(function BassStaff({ re
     ctx.restore();
   }
 
-  function drawNote(ctx: CanvasRenderingContext2D, location: { x: number, y: number, acc: string }) {
+  // `mark`: the accidental it shows (see bassMarks), if any.
+  function drawNote(ctx: CanvasRenderingContext2D, location: { x: number, y: number, acc: string }, mark: number | null = null) {
     const CANVAS = canvasRef.current;
     let match = false
     let index = 0
@@ -931,12 +1032,7 @@ const BassStaff = forwardRef<PlayHandle, BassStaffProps>(function BassStaff({ re
         // is where that pitch actually lands on the canvas.
         const py = location.y + STAFF_Y_OFFSET;
         drawLedgerLines(ctx, location);
-        if (location.acc === 'flat') {
-          ctx.fillText('♭', location.x + spacing * -3.5, py - spacing * 2 + fontSize);
-        }
-        if (location.acc === 'sharp') {
-          ctx.fillText('#', location.x + spacing * -2.5, py - spacing * 1.9 + fontSize );
-        }
+        if (mark !== null) drawAccidental(ctx, mark, accidentalLeft(mark, location.x), py, STAFF_SPACE);
         // Notes above the staff's top ledger lines take their stem (and
         // flags) downward, mirrored about the notehead, so they stay on the
         // canvas.
@@ -1004,8 +1100,8 @@ const BassStaff = forwardRef<PlayHandle, BassStaffProps>(function BassStaff({ re
   function drawTabLines(ctx: CanvasRenderingContext2D) {
     TAB_LINE_Y.forEach((y) => {
       ctx.beginPath();
-      ctx.moveTo(0, y);
-      ctx.lineTo(renderWidth, y);
+      ctx.moveTo(-lead, y);
+      ctx.lineTo(renderWidth - lead, y);
       ctx.stroke();
     });
   }
@@ -1014,9 +1110,9 @@ const BassStaff = forwardRef<PlayHandle, BassStaffProps>(function BassStaff({ re
     ctx.fillStyle = colors.ink;
     ctx.font = '11px sans-serif';
     ctx.textAlign = 'center';
-    ctx.fillText('T', 20, 62 + STAFF_Y_OFFSET);
-    ctx.fillText('A', 20, 75 + STAFF_Y_OFFSET);
-    ctx.fillText('B', 20, 88 + STAFF_Y_OFFSET);
+    ctx.fillText('T', 20 - lead, 62 + STAFF_Y_OFFSET);
+    ctx.fillText('A', 20 - lead, 75 + STAFF_Y_OFFSET);
+    ctx.fillText('B', 20 - lead, 88 + STAFF_Y_OFFSET);
     ctx.textAlign = 'left';
   }
 
@@ -1174,11 +1270,11 @@ const BassStaff = forwardRef<PlayHandle, BassStaffProps>(function BassStaff({ re
     ctx.save();
     ctx.globalAlpha = 0.08;
     ctx.fillStyle = colors.hover;
-    ctx.fillRect(0, MELODY_STRIP_TOP, renderWidth, MELODY_STRIP_BOTTOM - MELODY_STRIP_TOP);
+    ctx.fillRect(-lead, MELODY_STRIP_TOP, renderWidth, MELODY_STRIP_BOTTOM - MELODY_STRIP_TOP);
     ctx.globalAlpha = 1;
     ctx.fillStyle = colors.muted;
     ctx.font = '10px "Helvetica Neue", Arial, sans-serif';
-    ctx.fillText('RHYTHM', 14, MELODY_STRIP_MIDDLE + 4);
+    ctx.fillText('RHYTHM', 14 - lead, MELODY_STRIP_MIDDLE + 4);
     melodyStrip().forEach(({ k, x, restX, splittable, join }) => {
       const n = melodyNotes[k];
       const lit = k === melodyChoice || (hover?.op === 'split' && hover.k === k);
@@ -1244,8 +1340,8 @@ const BassStaff = forwardRef<PlayHandle, BassStaffProps>(function BassStaff({ re
     ctx.lineWidth = 1;
     for (let k = 0; k < 5; k++) {
       ctx.beginPath();
-      ctx.moveTo(0, MELODY_TOP + k * SPACING * 2);
-      ctx.lineTo(renderWidth, MELODY_TOP + k * SPACING * 2);
+      ctx.moveTo(-lead, MELODY_TOP + k * SPACING * 2);
+      ctx.lineTo(renderWidth - lead, MELODY_TOP + k * SPACING * 2);
       ctx.stroke();
     }
     measureLines.forEach((x) => {
@@ -1254,7 +1350,8 @@ const BassStaff = forwardRef<PlayHandle, BassStaffProps>(function BassStaff({ re
       ctx.lineTo(x, MELODY_TOP + SPACING * 8);
       ctx.stroke();
     });
-    drawTrebleClef(ctx, CLEF_X, melodyY(32), SPACING * 2);
+    drawTrebleClef(ctx, CLEF_X - lead, melodyY(32), SPACING * 2);
+    drawKeySignature(ctx, signature, 'treble', KEY_X - lead, melodyY);
 
     ctx.font = '20px serif';
     melodyNotes.forEach((n, k) => {
@@ -1265,8 +1362,8 @@ const BassStaff = forwardRef<PlayHandle, BassStaffProps>(function BassStaff({ re
       ctx.strokeStyle = ctx.fillStyle;
       ctx.lineWidth = 1;
       drawMelodyLedgers(ctx, x, step);
-      if (n.spelled.acc < 0) ctx.fillText('♭', x - SPACING * 3.5, y - SPACING * 2 + 20);
-      if (n.spelled.acc > 0) ctx.fillText('#', x - SPACING * 2.5, y - SPACING * 1.9 + 20);
+      const mark = melodyMarks[k];
+      if (mark !== null) drawAccidental(ctx, mark, accidentalLeft(mark, x), y, STAFF_SPACE);
       // Stems up below the middle line (B4), down from it, as printed.
       drawNoteGlyph(ctx, x, y, noteValue(n.dur), step >= 34);
       ctx.fillStyle = colors.ink;
@@ -1370,6 +1467,11 @@ const BassStaff = forwardRef<PlayHandle, BassStaffProps>(function BassStaff({ re
         ctx.clearRect(0, 0, CANVAS.width, CANVAS.height);
         ctx.strokeStyle = colors.ink;
         ctx.lineWidth = 1;
+        // Everything after the clefs and key signatures sits `lead` to the
+        // right of its stored position; the clefs, key signatures, staff
+        // lines and labels are drawn back at the left (x - lead).
+        ctx.save();
+        ctx.translate(lead, 0);
         // The staff/tab sits under the lyric band (when there is one); the
         // chord names stay at the top.
         ctx.save();
@@ -1393,8 +1495,8 @@ const BassStaff = forwardRef<PlayHandle, BassStaffProps>(function BassStaff({ re
           MAIN_LINES_Y.forEach((pitchY) => {
             const y = pitchY + STAFF_Y_OFFSET;
             ctx.beginPath();
-            ctx.moveTo(0, y);
-            ctx.lineTo(renderWidth, y);
+            ctx.moveTo(-lead, y);
+            ctx.lineTo(renderWidth - lead, y);
             ctx.stroke();
           });
           // The extra ledger lines above/below the staff are drawn per-note
@@ -1414,10 +1516,12 @@ const BassStaff = forwardRef<PlayHandle, BassStaffProps>(function BassStaff({ re
           // Centered on the staff's actual middle line (D2), not the canvas's
           // geometric center - the canvas isn't vertically symmetric around
           // the staff since it has 3 ledger lines above but only 1 below.
-          drawClef(ctx, { x: CLEF_X, y: MAIN_LINES_Y[2] + STAFF_Y_OFFSET, acc:'none' });
+          drawClef(ctx, { x: CLEF_X - lead, y: MAIN_LINES_Y[2] + STAFF_Y_OFFSET, acc:'none' });
+          ctx.fillStyle = colors.ink;
+          drawKeySignature(ctx, signature, 'bass', KEY_X - lead, (step) => bassWrittenY(step) + STAFF_Y_OFFSET);
 
-          bassNoteGrid.forEach((note) => {
-            drawNote(ctx, note);
+          bassNoteGrid.forEach((note, k) => {
+            drawNote(ctx, note, bassMarks[k]);
           });
           drawTripletMarks(ctx);
           if (pendingNote) {
@@ -1452,6 +1556,7 @@ const BassStaff = forwardRef<PlayHandle, BassStaffProps>(function BassStaff({ re
         })
         drawLyrics(ctx);
         drawMelody(ctx);
+        ctx.restore();
       }
     }
   }
@@ -1468,7 +1573,7 @@ const BassStaff = forwardRef<PlayHandle, BassStaffProps>(function BassStaff({ re
       const CANVAS = canvasRef.current;
       if (!CANVAS) return;
       const rect = CANVAS.getBoundingClientRect();
-      MOUSE.x = clientX - rect.left;
+      MOUSE.x = clientX - rect.left - leadRef.current;
       // Back to canvas pixels when it's shown squeezed or stretched.
       const scaleY = rect.height ? CANVAS.height / rect.height : 1;
       MOUSE.y = (clientY - rect.top) * scaleY - bandRef.current;
@@ -1497,7 +1602,7 @@ const BassStaff = forwardRef<PlayHandle, BassStaffProps>(function BassStaff({ re
       return {
         moveTo(clientX: number) {
           const rect = CANVAS!.getBoundingClientRect();
-          const x = clientX - rect.left;
+          const x = clientX - rect.left - leadRef.current;
           const step = range.reduce((best, s) => (Math.abs(lyricXs[s] - x) < Math.abs(lyricXs[best] - x) ? s : best), from);
           if (lyricDrag.current && step !== lyricDrag.current.step) {
             lyricDrag.current = { ...lyricDrag.current, step };
@@ -1841,7 +1946,6 @@ const BassStaff = forwardRef<PlayHandle, BassStaffProps>(function BassStaff({ re
       const fret = Number(text);
       if (current && current.stringIndex === edit.stringIndex && current.fret === fret && note.string === edit.stringIndex) return;
       const midi = BASS_OPEN_MIDI[edit.stringIndex] + fret;
-      const key = parseKeyString(song.key) ?? { tonic: 0, mode: 'major' as const };
       const spelled = spellPc(midi, key);
       const acc = spelled.acc > 0 ? 'sharp' : spelled.acc < 0 ? 'flat' : 'none';
       updated = { ...note, y: staffY(midi, spelled), acc, string: edit.stringIndex };
@@ -1939,11 +2043,13 @@ const BassStaff = forwardRef<PlayHandle, BassStaffProps>(function BassStaff({ re
     const earlier = range.filter((step) => step < syl.step).pop();
     const later = range.find((step) => step > syl.step);
     // Its box as drawn: its width, squeezed to fit between its neighbours.
-    const x = lyricXs[syl.step];
+    const at = lyricXs[syl.step];
     const room = Math.min(
-      k > 0 ? x - lyricXs[syllables[k - 1].step] : Infinity,
-      k < syllables.length - 1 ? lyricXs[syllables[k + 1].step] - x : Infinity,
+      k > 0 ? at - lyricXs[syllables[k - 1].step] : Infinity,
+      k < syllables.length - 1 ? lyricXs[syllables[k + 1].step] - at : Infinity,
     ) - 6;
+    // Where it's drawn, past the key signature.
+    const x = at + lead;
     const half = Math.max(Math.min(lyricTextWidth(syl.text), room) / 2, 8) + 2;
     const top = (lyricY - 5) * fitScale - ARROW_SIZE / 2;
     const moveTo = (beat: number | null) => dispatch(setLyricTiming({ part: lyricOwner, line: syl.line, at: syl.at, beat }));
@@ -2046,7 +2152,7 @@ const BassStaff = forwardRef<PlayHandle, BassStaffProps>(function BassStaff({ re
             key={`${tabEdit.x}:${tabEdit.stringIndex}`}
             className={appStyles.tabInput}
             style={{
-              left: tabEdit.x - 15,
+              left: tabEdit.x - 15 + lead,
               top: (canvasRef.current?.offsetTop ?? 0) + (offset + TAB_LINE_Y[rowOfString(tabEdit.stringIndex)]) * fitScale - 12,
             }}
             value={tabEdit.value}
