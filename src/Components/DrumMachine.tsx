@@ -70,7 +70,8 @@ export function StepTracker({ onRenderWidthChange, part, lampsRef, manualSeekEpo
 
   let drumFractions: string[] = []
 
-  for (let i = 0; i < drumGroove.length; i++) {
+  let at = 0
+  for (let i = 0; i < drumGroove.length; at += drumGroove[i], i++) {
     if (drumGroove[i] === 0.5) {
       drumFractions.push('1/8')
     } else if (drumGroove[i] === 0.25){
@@ -83,6 +84,12 @@ export function StepTracker({ onRenderWidthChange, part, lampsRef, manualSeekEpo
       drumFractions.push('--T')
     } else if (drumGroove[i] === 0.09){
       drumFractions.push('*16T')
+    } else if (Math.abs(drumGroove[i] - 1 / 3) < 0.005) {
+      // A shuffle's eighth-note triplets, three to a beat.
+      drumFractions.push(Math.abs(at - Math.round(at)) < 0.005 ? '*4T' : '--T')
+    } else {
+      // Keeps every later step's label under its own step.
+      drumFractions.push('')
     }
   }
 

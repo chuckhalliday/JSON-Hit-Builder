@@ -1494,6 +1494,90 @@ $phone-stage-top: 192px;
     align-items: center;
 }
 
+// The Rhythm button over the bass clef (placed by its bottom center), and
+// its menu of common bass rhythms.
+.bassPatternWrap {
+    position: absolute;
+    z-index: 3;
+    transform: translate(-50%, -100%);
+}
+
+.bassPatternButton {
+    height: 22px;
+    padding: 0 8px;
+    border: 1px solid var(--c-border);
+    border-radius: 4px;
+    background-color: var(--c-surface-2);
+    color: var(--c-text-muted);
+    font: inherit;
+    font-size: 11px;
+    font-weight: 700;
+    white-space: nowrap;
+    cursor: pointer;
+    transition: background-color 0.15s, color 0.15s, border-color 0.15s;
+
+    &:hover {
+      color: var(--c-text);
+      border-color: var(--c-info);
+      background-color: var(--c-info-soft);
+    }
+}
+
+.bassPatternButtonOn {
+    color: var(--c-text);
+    border-color: var(--c-info);
+    background-color: var(--c-info-soft);
+}
+
+.bassPatternMenu {
+    position: absolute;
+    top: calc(100% + 4px);
+    left: 0;
+    z-index: 20;
+    width: max-content;
+    max-width: calc(100vw - 32px);
+    padding: 8px;
+    background: var(--c-surface);
+    border: 1px solid var(--c-border-strong);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-pop);
+}
+
+.bassPatternOptions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 4px;
+
+    .menuOption {
+      row-gap: 5px;
+      padding: 5px 8px;
+      text-align: left;
+    }
+}
+
+// A bar of a pattern: a cell per eighth (per triplet, for a shuffle),
+// grouped by beat, lit where a note starts.
+.patternCells {
+    display: flex;
+    column-gap: 4px;
+}
+
+.patternBeat {
+    display: flex;
+    column-gap: 2px;
+
+    span {
+      width: 7px;
+      height: 7px;
+      border-radius: 1px;
+      background-color: var(--c-border);
+    }
+
+    .patternHit {
+      background-color: var(--c-info);
+    }
+}
+
 // Set Start / Set End armed: waiting for a step or bar click.
 .pickArmed {
     background-color: var(--c-loop) !important;
