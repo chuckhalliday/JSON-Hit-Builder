@@ -18,7 +18,7 @@
     "react-redux": "^8.1.1"
   },
   "engines": {
-    "node": ">=24"
+    "node": "24.x"
   },
   "devDependencies": {
     "@babel/preset-env": "^7.22.10",
