@@ -15,6 +15,9 @@ describe('MIDI routing', () => {
   });
 
   it('starts on the IAC buses, the routing playback always used, and takes changes', () => {
+    // Node 21+ has a navigator of its own reporting the host's platform
+    // ('linux', 'darwin'): stand in a Mac browser's.
+    Object.defineProperty(globalThis, 'navigator', { value: { platform: 'MacIntel' }, configurable: true });
     expect(getMidiRouting()).toEqual(PRESETS.mac.routing);
     setMidiRouting({ ...PRESETS.windows.routing, chords: 'Keys' });
     expect(getMidiRouting()).toEqual({ drums: 'loopMIDI Port 1', bass: 'loopMIDI Port 2', chords: 'Keys', melody: 'loopMIDI Port 4' });
