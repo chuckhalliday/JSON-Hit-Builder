@@ -11,6 +11,11 @@ import { Groove } from '../types';
 import { stepXs } from '../SongStructure/bass';
 import { stepBarsOf } from '../Core/drumBars';
 
+// Where a part's first step column starts in its rows, unscrolled: past the
+// drum names' column (DrumMachine's: 10px in, 80 wide, then an 8px gap),
+// before any room for its key signature (keyLead).
+export const STEPS_START = 98;
+
 // A step column's natural width, and the rows' gap after their last column.
 const COLUMN = 30;
 const GAP = 8;

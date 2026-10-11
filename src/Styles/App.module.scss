@@ -1372,6 +1372,48 @@ $phone-stage-top: 192px;
 // them during playback.
 .partBody {
     position: relative;
+    // Its room before the part (playback run on into it) inside its width.
+    box-sizing: border-box;
+}
+
+// The room before the open part on wider screens when playback ran on into
+// it from another part: the end of that part, dimmed like the preview and
+// right-aligned in it (App sets its width and its content's place).
+.headPane {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    padding-block: inherit;
+    overflow-x: clip;
+    opacity: 0.45;
+    pointer-events: none;
+}
+
+// While playing (wider screens), the open part's bars but the one playing,
+// dimmed to match the preview: the background laid over them, translucent.
+// From the part's start (once its first bar has gone by) to the playing
+// one, and after it; playBar sets where (as --dim-start, --bar-from and
+// --bar-to on each of them). Under the sticky section headers, and the
+// clefs' block at the playing bar.
+.dimBefore,
+.dimAfter {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    z-index: 0;
+    pointer-events: none;
+    background-color: var(--c-bg);
+    opacity: 0.55;
+}
+
+.dimBefore {
+    left: var(--dim-start, 0px);
+    width: max(0px, calc(var(--bar-from, 0px) - var(--dim-start, 0px)));
+}
+
+.dimAfter {
+    left: var(--bar-to, 0px);
 }
 
 // The room past the open part's end during playback (a screen wide; see
@@ -1480,6 +1522,16 @@ $phone-stage-top: 192px;
 // stick, and taking the gap's clicks so they never reach the staff).
 .canvasWrap {
     position: relative;
+
+    // While playing: the staves' clefs and key signatures at the start of
+    // the bar shown (BassStaff places it), over the end of the bar before -
+    // and over the dimming, which it isn't part of.
+    .clefBlock {
+      position: absolute;
+      top: 0;
+      z-index: 1;
+      pointer-events: none;
+    }
 
     // A block, so no line-box gap is left under it. Its touches are edits
     // (see BassStaff): no double-tap zoom, selection or long-press callout,

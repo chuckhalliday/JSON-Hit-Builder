@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react'
+import { flushSync } from 'react-dom';
 import Info from './Info';
 import Generate from './Generate';
 import Save from './Save';
@@ -23,8 +24,9 @@ import { useSelector, useDispatch } from "react-redux"
 import { playVerse } from '../Playback/playSong';
 import { countIn } from '../Playback/metronome';
 import { getAudioContext } from '../Playback/audioContext';
-import { turnTo, useLampStep } from '../Playback/useLampStep';
-import { barFit } from './barFit';
+import { playBar, showingBar, turnTo, useLampStep } from '../Playback/useLampStep';
+import { barFit, STEPS_START } from './barFit';
+import { stepBarsOf } from '../Core/drumBars';
 import { partKey } from '../Core/keySignature';
 import { keySignature } from '../Core/theory';
 import { incrementByAmount, setIsPlaying, setMidi, setAcoustic, SongState, setCurrentBeat, newSong, reorderParts, loadSong, setLoopPick, toggleLoop, setPartLinked, setPartSection, duplicatePart, deletePart, setSounds, undo } from '../reducers';
@@ -236,9 +238,14 @@ function App() {
   // Bumped to re-run the playback effect when a loop wraps within one part
   // (the part index doesn't change, so it alone wouldn't trigger it).
   const [playTick, setPlayTick] = useState(0);
+  // The part playback last ran on from, into which (cleared when it stops).
+  const [entered, setEntered] = useState<{ from: number, to: number } | null>(null);
+  useEffect(() => {
+    if (!isPlaying) setEntered(null);
+  }, [isPlaying]);
 
   const partGrooves = song.songStructure[verse] ?? { drumGroove: [], bassGroove: [], chordsGroove: [] };
-  const handleStep = useLampStep(lampsRef, verse, partGrooves.drumGroove, partGrooves.bassGroove, partGrooves.chordsGroove);
+  const handleStep = useLampStep(lampsRef, verse, partGrooves.drumGroove, partGrooves.bassGroove, partGrooves.chordsGroove, entered?.to === verse);
 
   const pianoRef = React.useRef<PlayHandle>(null);
   const bassStaffRef = React.useRef<PlayHandle>(null);
@@ -403,12 +410,21 @@ function App() {
         // exactly where it finishes.
         nextStartRef.current = result.endTime;
         nextEntryRef.current = entry;
-        dispatch(setCurrentBeat(entry))
-        if (nextVerse !== verse) {
-          activeVerseRef.current = nextVerse;
-          showPart(nextVerse);
-        }
-        setPlayTick(t => t + 1);
+        // All in one synchronous render, so the playback effect starting the
+        // next segment runs straight after it - not after a separate render
+        // for the store's update, and a paint. Its first notes have to be
+        // scheduled before this segment runs out (PART_LOOKAHEAD), or it
+        // starts late: a pause between parts.
+        const next = entry;
+        flushSync(() => {
+          dispatch(setCurrentBeat(next))
+          if (nextVerse !== verse) {
+            activeVerseRef.current = nextVerse;
+            setEntered({ from: verse, to: nextVerse });
+            showPart(nextVerse);
+          }
+          setPlayTick(t => t + 1);
+        });
       } else {
       dispatch(setIsPlaying({ isPlaying: false }))
       console.log("End")
@@ -502,9 +518,11 @@ function App() {
   // sits once turned to).
   const [barWidth, setBarWidth] = useState(0);
   const partViewObserver = React.useRef<ResizeObserver | null>(null);
+  const partViewEl = React.useRef<HTMLDivElement | null>(null);
   const partViewRef = useCallback((el: HTMLDivElement | null) => {
     partViewObserver.current?.disconnect();
     partViewObserver.current = null;
+    partViewEl.current = el;
     if (!el) return;
     const observer = new ResizeObserver(() => setBarWidth(el.clientWidth - (parseFloat(getComputedStyle(el).paddingLeft) || 0)));
     observer.observe(el);
@@ -513,8 +531,14 @@ function App() {
   // How far a part's key signature pushes its steps right (the staves draw
   // it; the grid's columns follow).
   const leadOf = (part: number) => keyLead(keySignature(partKey(song.doc, song.key, part)));
+  // A fitted bar takes the screen less the room before it, where the
+  // staves' clefs and key signatures go (as at the part's start).
   const fitOf = (part: number) =>
-    isPhone && isPlaying && barWidth > 0 && song.songStructure[part] ? barFit(song.songStructure[part].drumGroove, barWidth) : undefined;
+    isPhone && isPlaying && barWidth > 0 && song.songStructure[part]
+      ? barFit(song.songStructure[part].drumGroove, barWidth - STEPS_START - leadOf(part))
+      : undefined;
+  // The bar a part's playhead is in (its step's).
+  const barAt = (part: number, step: number) => stepBarsOf(song.songStructure[part]?.drumGroove ?? [])[step] ?? 0;
   // Fitting moves every bar, so turn to the playhead's bar whenever the fit
   // comes or goes (playback starting or stopping) or a part opens with it.
   const openFit = fitOf(currentPart);
@@ -525,8 +549,45 @@ function App() {
     const groove = song.songStructure[currentPart]?.drumGroove;
     if (!groove) return;
     const [atPart, atStep] = song.selectedBeat;
-    turnTo(lampsRef.current, groove, atPart === currentPart ? atStep : 0);
+    const step = atPart === currentPart ? atStep : 0;
+    turnTo(lampsRef.current, groove, step);
+    if (openFit) showingBar(currentPart, barAt(currentPart, step));
   }, [openFit, currentPart]);
+  // Playback starting shows the clefs at the playhead's bar from the first
+  // (the count-in included); each bar the view moves to takes them on.
+  React.useLayoutEffect(() => {
+    if (!isPlaying) return;
+    const [atPart, atStep] = song.selectedBeat;
+    showingBar(atPart, barAt(atPart, atStep));
+  }, [isPlaying]);
+
+  // Wider screens: when playback runs on into the open part from another,
+  // the end of that one shows to its left (dimmed, a screen wide), so the
+  // part's first bar can play from the middle with what came before it
+  // beside it. Its width, and its lamps (kept apart from the others).
+  const headPart = !isPhone && isPlaying && entered && entered.to === currentPart ? entered.from : null;
+  const headWidth = headPart !== null && song.songStructure[headPart] && barWidth > 0 ? barWidth : 0;
+  const [headPartWidth, setHeadPartWidth] = useState(0);
+  const headLampsRef = React.useRef<HTMLInputElement[]>([]);
+  // The part opens with the bar it's entered at already in the middle.
+  React.useLayoutEffect(() => {
+    if (headPart === null) return;
+    const groove = song.songStructure[currentPart]?.drumGroove;
+    if (!groove) return;
+    const [atPart, atStep] = song.selectedBeat;
+    const step = atPart === currentPart ? atStep : 0;
+    playBar(lampsRef.current, groove, step);
+    showingBar(currentPart, barAt(currentPart, step));
+  }, [headPart, currentPart]);
+  // That room comes and goes before the part's content, so keep the view
+  // where it was (in the same part) when it does.
+  const headShown = React.useRef<{ el: HTMLElement | null, width: number }>({ el: null, width: 0 });
+  React.useLayoutEffect(() => {
+    const el = partViewEl.current;
+    const was = headShown.current;
+    headShown.current = { el, width: headWidth };
+    if (el && el === was.el && headWidth !== was.width) el.scrollLeft += headWidth - was.width;
+  }, [headWidth, currentPart]);
 
   useEffect(() => {
      if (isPlaying) {
@@ -708,6 +769,18 @@ function App() {
   }, [loopPick, dispatch]);
   const loopRegion = clampRegion(song.loop, song.songStructure);
   const loopOn = !!song.loopEnabled && loopRegion !== null;
+  // During playback the part runs on a screen's width to the right, so its
+  // last bar can snap to the left edge (phones) or the middle (wider
+  // screens) like any other. When playback goes on into the next part, that
+  // room shows a dimmed preview of it.
+  const upNextOf = (index: number) =>
+    isPlaying && !(loopOn && loopRegion?.end.part === index) && index + 1 < song.songStructure.length ? index + 1 : null;
+  // The panes beside the open part - the part before's end, the next one's
+  // start - fill in just after it, in the background: a part change renders
+  // the newly open part alone first, and its music waits on that (see
+  // playSong).
+  const panesKey = `${currentPart}:${headPart}:${upNextOf(currentPart)}`;
+  const panesReady = React.useDeferredValue(panesKey) === panesKey;
 
   // Space plays/pauses, unless focus is somewhere Space already means
   // something (a text field, or a button Space would click).
@@ -866,12 +939,12 @@ function App() {
                 )}
               </button>
               {isOpen && currentPart === index && (() => {
-                // During playback the part runs on a screen's width to the
-                // right, so its last bar can snap to the left edge like any
-                // other. When playback goes on into the next part, that room
-                // shows a dimmed preview of it.
-                const upNext = isPlaying && !(loopOn && loopRegion?.end.part === index) && index + 1 < song.songStructure.length ? index + 1 : null;
-                const wide = { width: isPlaying ? `calc(${renderWidth}px + 100%)` : renderWidth ? `max(${renderWidth}px, 100%)` : '100%' };
+                const upNext = upNextOf(index);
+                const wide = { width: isPlaying ? `calc(${headWidth + renderWidth}px + 100%)` : renderWidth ? `max(${renderWidth}px, 100%)` : '100%' };
+                // The rows that hold the part's bars start past the room
+                // before it (if any).
+                const rowStyle = { ...wide, paddingLeft: headWidth || undefined };
+                const partEnd = headWidth + renderWidth;
                 const hasPanel = !!(song.doc && songProps.sectionId && song.doc.sections[songProps.sectionId]);
                 // What a part shows: its vocal section, if it has a melody or
                 // words, and its sections in view - on phones the one picked
@@ -947,14 +1020,14 @@ function App() {
                 // part's in its preview - drawn as it will open, but with
                 // lamps of its own, no hold on the playback handles, and the
                 // part's name where its section headers would be.
-                const body = (part: number, isPreview: boolean) => {
+                const body = (part: number, isPreview: boolean, width = previewWidth) => {
                   const { shows: showing } = isPreview ? sectionView(part) : { shows };
                   const caption = isPreview ? partName(part) : undefined;
                   return (
                     <>
                       <BassStaff
                         ref={isPreview ? undefined : bassStaffRef}
-                        renderWidth={isPreview ? previewWidth : renderWidth}
+                        renderWidth={isPreview ? width : renderWidth}
                         part={part}
                         lampsRef={isPreview ? previewLampsRef : lampsRef}
                         viewMode={bassViewMode}
@@ -994,9 +1067,25 @@ function App() {
                 // The room past the part's end during playback, holding
                 // `content` (if any) - read-only.
                 const preview = (content: React.ReactNode) => isPlaying && (
-                  <div key={upNext ?? 'end'} ref={inert} className={styles.previewPane} style={{ left: renderWidth }}>
+                  <div key={upNext ?? 'end'} ref={inert} className={styles.previewPane} style={{ left: partEnd }}>
                     {content}
                   </div>
+                );
+                // The room before the part (wider screens, playback run on
+                // into it), holding the end of `content` - read-only.
+                const head = (content: React.ReactNode) => headWidth > 0 && (
+                  <div key={headPart ?? 'none'} ref={inert} className={styles.headPane} style={{ width: headWidth }}>
+                    <div style={{ marginLeft: headWidth - headPartWidth, width: headPartWidth }}>{content}</div>
+                  </div>
+                );
+                // While playing (wider screens), the part's bars but the one
+                // playing are dimmed as the preview is: covered by the
+                // background, translucent. playBar marks where they are.
+                const dim = isPlaying && !isPhone && (
+                  <>
+                    <div className={styles.dimBefore} data-dim="" />
+                    <div className={styles.dimAfter} data-dim="" style={{ width: `max(0px, calc(${partEnd}px - var(--bar-to, ${partEnd}px)))` }} />
+                  </>
                 );
                 const sections = (
                   <>
@@ -1028,11 +1117,13 @@ function App() {
                       </div>
                     )}
                     {isPhone ? (
-                      <>{body(index, false)}{preview(upNext !== null && body(upNext, true))}</>
+                      <>{body(index, false)}{preview(panesReady && upNext !== null && body(upNext, true))}</>
                     ) : (
-                      <div className={styles.partBody} style={wide}>
+                      <div className={styles.partBody} style={rowStyle}>
+                        {head(panesReady && headPart !== null && body(headPart, true, headPartWidth))}
                         {body(index, false)}
-                        {preview(upNext !== null && body(upNext, true))}
+                        {preview(panesReady && upNext !== null && body(upNext, true))}
+                        {dim}
                       </div>
                     )}
                   </>
@@ -1041,7 +1132,15 @@ function App() {
                   <div className={styles.openedPart} ref={partViewRef}>
                     {/* Bar numbers and lamps stay pinned under the keyboard,
                         whichever sections below are collapsed or scrolled to. */}
-                    <div className={styles.trackerBar} style={wide}>
+                    <div className={styles.trackerBar} style={rowStyle}>
+                      {head(panesReady && headPart !== null && (
+                        <StepTracker
+                          onRenderWidthChange={setHeadPartWidth}
+                          part={headPart}
+                          lampsRef={headLampsRef}
+                          lead={leadOf(headPart)}
+                        />
+                      ))}
                       <StepTracker
                         onRenderWidthChange={handleRenderWidthChange}
                         part={index}
@@ -1050,7 +1149,7 @@ function App() {
                         fit={openFit}
                         lead={leadOf(index)}
                       />
-                      {preview(upNext !== null && (
+                      {preview(panesReady && upNext !== null && (
                         <StepTracker
                           onRenderWidthChange={setPreviewWidth}
                           part={upNext}
@@ -1060,6 +1159,7 @@ function App() {
                           lead={leadOf(upNext)}
                         />
                       ))}
+                      {dim}
                     </div>
                     {isPhone ? (
                       <>
