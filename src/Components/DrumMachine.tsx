@@ -7,7 +7,8 @@ import { useDispatch, useSelector, useStore } from "react-redux";
 import { PlayHandle } from "./Piano";
 import styles from "../Styles/DrumMachine.module.scss";
 import { DrumHit, SongStructure } from "../types";
-import { useLampStep } from "../Playback/useLampStep";
+import { useLampStep, useShownBar } from "../Playback/useLampStep";
+import { stepXs } from "../SongStructure/bass";
 import { barCopyEdits, DrumCellEdit, stepBarsOf } from "../Core/drumBars";
 import { BarFit } from "./barFit";
 
@@ -151,7 +152,7 @@ export function StepTracker({ onRenderWidthChange, part, lampsRef, manualSeekEpo
   }, [onRenderWidthChange, drumGroove, fit, lead]);
 
   return (
-    <div className={fit ? `${styles.machine} ${styles.fit}` : styles.machine} ref={trackerRef} loop-pick={picking ?? undefined}>
+    <div className={fit ? `${styles.machine} ${styles.fit}` : styles.machine} ref={trackerRef} loop-pick={picking ?? undefined} data-step-tracker="">
       {/* Holds the drum grid's label column, so the columns line up. */}
       <div className={styles.labelList} style={lead ? { paddingRight: lead } : undefined}>
         {caption && <span className={styles.caption}>{caption}</span>}
@@ -299,6 +300,24 @@ const DrumMachine = forwardRef<PlayHandle, DrumMachineProps>(function DrumMachin
   const handleStep = useLampStep(lampsRef, part, drumGroove, bassGroove, chordsGroove);
   const columnStyles = useColumnStyles(fit);
 
+  // While playing, the drum names stand at the start of the bar the view
+  // shows (useShownBar), as the staves' clefs do: moved up from the part's
+  // first step to that bar's, over the end of the bar before (and its
+  // dimming). A part not being played (a preview) shows none.
+  const shownBar = useShownBar();
+  const stepBars = useMemo(() => stepBarsOf(drumGroove), [drumGroove]);
+  const namesStep = song.isPlaying && shownBar?.part === part ? stepBars.indexOf(shownBar.bar) : -1;
+  const namesShift = useMemo(() => {
+    if (namesStep <= 0) return 0;
+    const xs = stepXs(drumGroove);
+    const place = (x: number) => (fit ? fit.x(x) : x);
+    return place(xs[namesStep]) - place(xs[0]);
+  }, [namesStep, drumGroove, fit]);
+  const namesStyle: React.CSSProperties = {
+    ...(lead ? { paddingRight: lead } : {}),
+    ...(song.isPlaying && (namesStep === -1 ? { visibility: 'hidden' } : { transform: `translateX(${namesShift}px)` })),
+  };
+
     // Filled by the checkbox ref callbacks below. (Its initial value used to
     // be a grid of detached <input>s, built on every render and thrown away.)
     const stepsRef = React.useRef<HTMLInputElement[][]>([]);
@@ -336,7 +355,6 @@ const DrumMachine = forwardRef<PlayHandle, DrumMachineProps>(function DrumMachin
   const trackIds = [...DRUM_NAMES.keys()].reverse();
   //Array of beats
   const stepIds = [...steps.keys()]
-  const stepBars = stepBarsOf(drumGroove);
 
   const [menu, setMenu] = useState<DrumMenu | null>(null);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -460,7 +478,7 @@ const DrumMachine = forwardRef<PlayHandle, DrumMachineProps>(function DrumMachin
   return (
     <div className={[styles.machine, fill ? styles.fill : '', fit ? styles.fit : ''].filter(Boolean).join(' ')}>
       {/* Renders titles: click to mute, double-click to fill or clear */}
-      <div className={styles.labelList} style={lead ? { paddingRight: lead } : undefined}>
+      <div className={namesStep === -1 ? styles.labelList : `${styles.labelList} ${styles.movingNames}`} style={namesStyle}>
         {trackIds.map((trackId) => (
           <button
             key={trackId}

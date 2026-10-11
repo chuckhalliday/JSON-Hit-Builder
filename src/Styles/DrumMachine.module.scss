@@ -43,6 +43,26 @@ $rowGap: 8px;
   }
 }
 
+// While playing, the drum names at the start of the bar shown (DrumMachine
+// moves them there): over the end of the bar before, and its dimming.
+.movingNames {
+  position: relative;
+  z-index: 1;
+  background-color: var(--c-bg);
+  // From the part view's edge (its padding), and a little past it, so no
+  // sliver of a cell from the bar before shows beside it.
+  margin-left: 0;
+  padding-left: 10px;
+  box-shadow: -12px 0 0 var(--c-bg);
+}
+
+// Over the end of the bar line that hangs below the bottom row, too (phones'
+// rows keep theirs within the grid).
+.machine:not(.fill) .movingNames {
+  padding-bottom: 8px;
+  margin-bottom: -8px;
+}
+
 // Two short lines beside the lamps: "Next" over the part's name.
 .caption {
   font-size: 10px;

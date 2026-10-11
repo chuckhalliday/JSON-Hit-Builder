@@ -4,7 +4,8 @@ import playBass from '../Playback/playBass';
 import { editBassRhythm, moveSyllables, setBassPattern, setBassState, setCurrentBeat, setLyricMeter, setLyricTiming, setMelodyNote, setMelodySplits, setMelodyTurn, SongState } from '../reducers';
 import { PlayHandle } from './Piano';
 import SectionToggle, { SectionCaption } from './SectionToggle';
-import { useLampStep } from '../Playback/useLampStep';
+import { useLampStep, useShownBar } from '../Playback/useLampStep';
+import { stepBarsOf } from '../Core/drumBars';
 import appStyles from '../Styles/App.module.scss';
 import { NoteLocation } from '../types';
 import { bassPitch, isStaffPitch, PITCH_MAX_Y, PITCH_MIN_Y, STAFF_STEP } from '../SongStructure/bassPitch';
@@ -256,6 +257,17 @@ export function keyLead(signature: number): number {
   const end = KEY_X + Math.abs(signature) * signatureStep(signature) + 0.6 * STAFF_SPACE;
   return Math.max(0, Math.ceil(end - accidentalLeft(-1, FIRST_ONSET)));
 }
+
+// How wide the staves' heads are - the clef, and the key signature after it
+// - from the left of the canvas, and a little more: on their own block at a
+// bar's start (BassStaff), up to just short of the bar's first note and
+// any accidental before it (accidentalLeft, past keyLead's room), over the
+// bar line before it - a line of music starts with its clef, not a bar line.
+const CLEF_RIGHT = 84;
+const leadInWidth = (signature: number) => (signature ? KEY_X + Math.abs(signature) * signatureStep(signature) : CLEF_RIGHT) + 7;
+// The block reaches this much further left, too: over the part view's left
+// padding, which is all that's before them at the part's start.
+const BLOCK_MARGIN = 10;
 
 // A key signature after a clef: `at` gives the y of each place (a diatonic
 // step, as written) on that staff.
@@ -544,6 +556,26 @@ const BassStaff = forwardRef<PlayHandle, BassStaffProps>(function BassStaff({ re
   // right of where its stored position puts it.
   const leadRef = useRef(lead);
   leadRef.current = lead;
+  // While playing, the clefs and key signatures stand at the start of the
+  // bar the view shows (useShownBar) - on a block of their own over the
+  // staves - instead of at the part's start; a part not being played (the
+  // next one's preview, the last one's end) shows none.
+  const songPlaying = song.isPlaying;
+  const shownBar = useShownBar();
+  const stepBars = useMemo(() => stepBarsOf(drumGroove), [drumGroove]);
+  const clefStep = songPlaying && shownBar?.part === part ? stepBars.indexOf(shownBar.bar) : -1;
+  // The block's place: the part's heads, moved up from its first step to
+  // that bar's.
+  const clefAt = clefStep === -1 ? null : lyricXs[clefStep] - FIRST_ONSET;
+  const clefCanvasRef = useRef<HTMLCanvasElement | null>(null);
+  // The bar lines drawn: all but the one before that bar - a line of music
+  // starts with its clef, not a bar line (the block covers it, but not
+  // where a bar squeezed to fit a phone brings it in close).
+  const drawnLines = useMemo(() => {
+    if (clefStep <= 0) return measureLines;
+    const before = measureLines.filter((x) => x < lyricXs[clefStep]);
+    return before.length ? measureLines.filter((x) => x !== before[before.length - 1]) : measureLines;
+  }, [measureLines, lyricXs, clefStep]);
   // The accidental each note shows, if any (shownAccidentals): bars split
   // at the bar lines, and a note's place the line or space it's on.
   const barAt = useCallback((x: number) => measureLines.filter((line) => line < x).length, [measureLines]);
@@ -1129,14 +1161,67 @@ const BassStaff = forwardRef<PlayHandle, BassStaffProps>(function BassStaff({ re
     });
   }
 
-  function drawTabLabel(ctx: CanvasRenderingContext2D) {
+  function drawTabLabel(ctx: CanvasRenderingContext2D, x: number) {
     ctx.fillStyle = colors.ink;
     ctx.font = '11px sans-serif';
     ctx.textAlign = 'center';
-    ctx.fillText('T', 20 - lead, 62 + STAFF_Y_OFFSET);
-    ctx.fillText('A', 20 - lead, 75 + STAFF_Y_OFFSET);
-    ctx.fillText('B', 20 - lead, 88 + STAFF_Y_OFFSET);
+    ctx.fillText('T', x + 20, 62 + STAFF_Y_OFFSET);
+    ctx.fillText('A', x + 20, 75 + STAFF_Y_OFFSET);
+    ctx.fillText('B', x + 20, 88 + STAFF_Y_OFFSET);
     ctx.textAlign = 'left';
+  }
+
+  // The staves' heads: the clefs and key signatures (tab's TAB), `x` along
+  // from where they stand at the part's start. On a block of their own
+  // (`backing`), each staff's background and lines go under them first, to
+  // cover the end of the bar before.
+  function drawLeadIn(ctx: CanvasRenderingContext2D, x: number, backing: boolean) {
+    // The block's span: from its margin before them to past them.
+    const left = x - BLOCK_MARGIN;
+    const right = x + leadInWidth(signature);
+    const back = (top: number, bottom: number, lines: number[]) => {
+      if (!backing) return;
+      ctx.fillStyle = colors.paper;
+      ctx.fillRect(left, top, right - left, bottom - top);
+      ctx.strokeStyle = colors.ink;
+      ctx.lineWidth = 1;
+      lines.forEach((y) => {
+        ctx.beginPath();
+        ctx.moveTo(left, y);
+        ctx.lineTo(right, y);
+        ctx.stroke();
+      });
+    };
+    if (showBass) {
+      ctx.save();
+      ctx.translate(0, offset);
+      if (viewMode === 'tab') {
+        back(TAB_LINE_Y[0] - 12, TAB_LINE_Y[TAB_LINE_Y.length - 1] + 12, TAB_LINE_Y);
+        drawTabLabel(ctx, x);
+      } else {
+        const lines = MAIN_LINES_Y.map((y) => y + STAFF_Y_OFFSET);
+        // From the top of the bass's own space (notes on the ledger lines
+        // above the staff, and their stems) down past its low ledger line.
+        back(lines[0] - 90, lines[lines.length - 1] + 30, lines);
+        // Centered on the staff's actual middle line (D2), not the canvas's
+        // geometric center - the canvas isn't vertically symmetric around
+        // the staff since it has 3 ledger lines above but only 1 below.
+        drawClef(ctx, { x: x + CLEF_X, y: MAIN_LINES_Y[2] + STAFF_Y_OFFSET, acc: 'none' });
+        ctx.fillStyle = colors.ink;
+        drawKeySignature(ctx, signature, 'bass', x + KEY_X, (step) => bassWrittenY(step) + STAFF_Y_OFFSET);
+      }
+      ctx.restore();
+    }
+    if (melodyNotes.length > 0) {
+      ctx.save();
+      ctx.translate(0, melodyShift);
+      const lines = [0, 1, 2, 3, 4].map((k) => MELODY_TOP + k * SPACING * 2);
+      back(lines[0] - 40, lines[lines.length - 1] + 30, lines);
+      ctx.fillStyle = colors.ink;
+      drawTrebleClef(ctx, x + CLEF_X, melodyY(32), SPACING * 2);
+      drawKeySignature(ctx, signature, 'treble', x + KEY_X, melodyY);
+      ctx.restore();
+    }
   }
 
   // The note column and string under the mouse in tab view (a click there
@@ -1428,14 +1513,12 @@ const BassStaff = forwardRef<PlayHandle, BassStaffProps>(function BassStaff({ re
       ctx.lineTo(renderWidth - lead, MELODY_TOP + k * SPACING * 2);
       ctx.stroke();
     }
-    measureLines.forEach((x) => {
+    drawnLines.forEach((x) => {
       ctx.beginPath();
       ctx.moveTo(x, MELODY_TOP);
       ctx.lineTo(x, MELODY_TOP + SPACING * 8);
       ctx.stroke();
     });
-    drawTrebleClef(ctx, CLEF_X - lead, melodyY(32), SPACING * 2);
-    drawKeySignature(ctx, signature, 'treble', KEY_X - lead, melodyY);
 
     ctx.font = '20px serif';
     melodyNotes.forEach((n, k) => {
@@ -1582,14 +1665,12 @@ const BassStaff = forwardRef<PlayHandle, BassStaffProps>(function BassStaff({ re
           // Collapsed: just the chord names and the melody and words.
         } else if (viewMode === 'tab') {
           drawTabLines(ctx);
-          for (let i = 0; i < measureLines.length; i++){
+          drawnLines.forEach((x) => {
             ctx.beginPath();
-            ctx.moveTo(measureLines[i], STAFF_Y_OFFSET + 45);
-            ctx.lineTo(measureLines[i], STAFF_Y_OFFSET + 105);
+            ctx.moveTo(x, STAFF_Y_OFFSET + 45);
+            ctx.lineTo(x, STAFF_Y_OFFSET + 105);
             ctx.stroke();
-          }
-
-          drawTabLabel(ctx);
+          });
 
           drawTabNotes(ctx);
         } else {
@@ -1604,22 +1685,16 @@ const BassStaff = forwardRef<PlayHandle, BassStaffProps>(function BassStaff({ re
           // in drawNote/drawLedgerLines, not as permanent lines here - notes
           // can still be placed on them and in the spaces around them.
 
-          for (let i = 0; i < measureLines.length; i++){
+          drawnLines.forEach((x) => {
             ctx.beginPath();
-            ctx.moveTo(measureLines[i], STAFF_Y_OFFSET + MAIN_LINES_Y[0]);
-            ctx.lineTo(measureLines[i], STAFF_Y_OFFSET + MAIN_LINES_Y[MAIN_LINES_Y.length - 1]);
+            ctx.moveTo(x, STAFF_Y_OFFSET + MAIN_LINES_Y[0]);
+            ctx.lineTo(x, STAFF_Y_OFFSET + MAIN_LINES_Y[MAIN_LINES_Y.length - 1]);
             ctx.stroke();
-          }
+          });
 
           const rawIndex = Math.round((MOUSE.y - STAFF_Y_OFFSET) / spacing);
           const index = Math.min(NOTE_MAX_Y / spacing, Math.max(NOTE_MIN_Y / spacing, rawIndex));
 
-          // Centered on the staff's actual middle line (D2), not the canvas's
-          // geometric center - the canvas isn't vertically symmetric around
-          // the staff since it has 3 ledger lines above but only 1 below.
-          drawClef(ctx, { x: CLEF_X - lead, y: MAIN_LINES_Y[2] + STAFF_Y_OFFSET, acc:'none' });
-          ctx.fillStyle = colors.ink;
-          drawKeySignature(ctx, signature, 'bass', KEY_X - lead, (step) => bassWrittenY(step) + STAFF_Y_OFFSET);
 
           bassNoteGrid.forEach((note, k) => {
             drawNote(ctx, note, bassMarks[k]);
@@ -1657,7 +1732,18 @@ const BassStaff = forwardRef<PlayHandle, BassStaffProps>(function BassStaff({ re
         })
         drawLyrics(ctx);
         drawMelody(ctx);
+        if (!songPlaying) drawLeadIn(ctx, -lead, false);
         ctx.restore();
+      }
+      // While playing, they're on their own block instead.
+      const block = clefCanvasRef.current;
+      const blockCtx = block?.getContext('2d');
+      if (block && blockCtx) {
+        const width = BLOCK_MARGIN + leadInWidth(signature);
+        if (block.width !== width) block.width = width;
+        if (block.height !== canvasHeight) block.height = canvasHeight;
+        blockCtx.clearRect(0, 0, block.width, block.height);
+        drawLeadIn(blockCtx, BLOCK_MARGIN, true);
       }
     }
   }
@@ -2124,7 +2210,7 @@ const BassStaff = forwardRef<PlayHandle, BassStaffProps>(function BassStaff({ re
   // Draw when what the staff shows changes, and once the clef image loads.
   useEffect(() => {
     requestDraw();
-  }, [requestDraw, renderWidth, bassNoteGrid, bassGroove, chords, chordGrid, bassGrid, measureLines, pendingNote, viewMode, tabEdit, colors, lyrics, lyricXs, melody, melodyChoice, showBass, canvasHeight, pickedSyllable]);
+  }, [requestDraw, renderWidth, bassNoteGrid, bassGroove, chords, chordGrid, bassGrid, measureLines, pendingNote, viewMode, tabEdit, colors, lyrics, lyricXs, melody, melodyChoice, showBass, canvasHeight, pickedSyllable, songPlaying, clefAt !== null, signature, lead, drawnLines]);
 
   useEffect(() => {
     if (!CLEF_IMAGE.complete) CLEF_IMAGE.addEventListener('load', requestDraw);
@@ -2232,6 +2318,13 @@ const BassStaff = forwardRef<PlayHandle, BassStaffProps>(function BassStaff({ re
             ...(fit && { pointerEvents: 'none' }),
           }}
         />
+        {clefAt !== null && (
+          <canvas
+            ref={clefCanvasRef}
+            className={appStyles.clefBlock}
+            style={{ left: clefAt - BLOCK_MARGIN, width: BLOCK_MARGIN + leadInWidth(signature), height: canvasHeight * fitScale }}
+          />
+        )}
         {showBass && section && (
           // Over the clef (in tab, over the TAB letters): its bottom a little
           // above the staff's or tab's top line.
